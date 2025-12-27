@@ -1,0 +1,32 @@
+<header class="topbar">
+
+  <!-- SEARCH -->
+  <div class="search-box">
+    <span class="search-icon">🔍</span>
+    <input type="text" placeholder="Search..." />
+  </div>
+
+  <!-- RIGHT -->
+  <div class="topbar-right">
+
+    <button class="icon-btn">🔔</button>
+    <button class="icon-btn">⚙️</button>
+
+    <!-- PROFILE -->
+    <div class="profile" (click)="toggleProfile()">
+      <img src="https://i.pravatar.cc/40" alt="User" />
+      <span class="name">Ali</span>
+
+      @if (showProfileMenu) {
+        <div class="profile-menu">
+          <a>My Profile</a>
+          <a>Settings</a>
+          <div class="divider"></div>
+          <a class="logout" (click)="logout()">Logout</a>
+        </div>
+      }
+    </div>
+
+  </div>
+
+</header>

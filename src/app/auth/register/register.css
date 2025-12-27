@@ -1,0 +1,123 @@
+.auth-wrapper {
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: #f4f6fb;
+}
+.auth-card button:hover {
+  background-color: #5a6fe6;
+  transform: translateY(-1px);
+}
+.auth-card input:focus {
+  border-color: #6b7cff;
+  box-shadow: 0 0 0 2px rgba(107,124,255,0.15);
+}
+
+.auth-card {
+  background: white;
+  width: 380px;
+  padding: 32px;
+  border-radius: 14px;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.25);
+}
+
+.auth-card h2 {
+  text-align: center;
+  margin-bottom: 25px;
+  color: #222;
+}
+
+.auth-card input {
+  width: 100%;
+  padding: 12px;
+  margin-bottom: 7px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  font-size: 14px;
+}
+
+.auth-card button {
+  width: 100%;
+  padding: 12px;
+  background: #667eea;
+  border: none;
+  border-radius: 8px;
+  color: white;
+  font-size: 15px;
+  cursor: pointer;
+}
+
+.auth-card button:hover {
+  background: #5a67d8;
+}
+
+.error {
+  margin-top: 10px;
+  color: red;
+  text-align: center;
+}
+
+.link {
+  margin-top: 18px;
+  text-align: center;
+}
+
+.link a {
+  color: #667eea;
+  text-decoration: none;
+  font-weight: 500;
+}
+.link-text {
+  margin-top: 18px;
+  text-align: center;
+  font-size: 14px;
+  color: #555;
+}
+
+.login-link {
+  margin-left: 6px;
+  color: #5a6dfc;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.login-link:hover {
+  color: #3f51b5;
+  text-decoration: underline;
+}
+.success-message-box {
+  color: #155724;
+  background-color: #d4edda;
+  border: 1px solid #c3e6cb;
+  padding: 12px;
+  margin-top: 15px;
+  border-radius: 6px;
+  display: block !important;
+  text-align: center;
+  font-weight: 500;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  animation: fadeIn 0.3s ease-in; /* Thoda animation behtar lagta hai */
+}
+
+/* Error message box (Dono ko aik jaisa design rakhne ke liye) */
+.error-message-box {
+  color: #721c24;
+  background-color: #f8d7da;
+  border: 1px solid #f5c6cb;
+  padding: 12px;
+  margin-top: 15px;
+  border-radius: 6px;
+  display: block !important;
+  text-align: center;
+  font-weight: 500;
+  animation: fadeIn 0.3s ease-in;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-5px); }
+  to { opacity: 1; transform: translateY(0); }
+}

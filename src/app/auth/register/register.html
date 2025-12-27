@@ -1,0 +1,50 @@
+<div class="auth-wrapper">
+  <div class="auth-card">
+    <h2>HR Portal Registration</h2>
+
+    <form [formGroup]="registerForm" (ngSubmit)="register()" autocomplete="off">
+
+      <div class="form-group">
+        <input type="text" placeholder="Username" formControlName="UserName" />
+        @if (registerForm.get('UserName')?.touched && registerForm.get('UserName')?.invalid) {
+          <small class="error">Username is required</small>
+        }
+      </div>
+
+      <div class="form-group">
+        <input type="email" placeholder="Email" formControlName="email" />
+        @if (registerForm.get('email')?.touched && registerForm.get('email')?.invalid) {
+          <small class="error">Valid email required</small>
+        }
+      </div>
+
+      <div class="form-group">
+        <input type="password" placeholder="Password" formControlName="password" />
+        @if (registerForm.get('password')?.touched && registerForm.get('password')?.invalid) {
+          <small class="error">Min 6 characters required for password</small>
+        }
+      </div>
+
+      <button type="submit" [disabled]="registerForm.invalid">
+        Register
+      </button>
+
+      @if (success) {
+        <div class="success-message-box">
+            {{ success }}
+        </div>
+      }
+
+      @if (error) {
+        <div class="error-message-box">
+            {{ error }}
+        </div>
+    }
+    </form>
+
+    <p class="link-text">
+        Already have an account?
+        <a routerLink="../login" class="login-link">Login</a>
+    </p>
+  </div>
+</div>
