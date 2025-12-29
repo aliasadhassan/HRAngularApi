@@ -1,5 +1,6 @@
 import { Component, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { AuthService } from '../../auth/auth';
 
 @Component({
   selector: 'app-topbar',
@@ -10,6 +11,9 @@ import { CommonModule } from '@angular/common';
 })
 export class TopbarComponent {
   showProfileMenu = false;
+
+  // Constructor mein AuthService inject karein
+  constructor(private authService: AuthService) {}
 
   toggleProfile() {
     this.showProfileMenu = !this.showProfileMenu;
@@ -25,6 +29,6 @@ export class TopbarComponent {
 
   logout() {
     console.log('Logout clicked');
-    //AuthService.logout();
+    this.authService.logout();
   }
 }

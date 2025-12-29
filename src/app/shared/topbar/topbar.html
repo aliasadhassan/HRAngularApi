@@ -22,7 +22,7 @@
           <a>My Profile</a>
           <a>Settings</a>
           <div class="divider"></div>
-          <a class="logout" (click)="logout()">Logout</a>
+          <a class="logout" (click)="logout(); $event.stopPropagation()">Logout</a>
         </div>
       }
     </div>

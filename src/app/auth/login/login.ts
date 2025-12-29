@@ -39,7 +39,7 @@ login() {
 
     this.authService.login(email, password).subscribe({
       next: (res: any) => {
-        console.log('Login success', res);
+        console.log('User authenticated successfully');
         localStorage.setItem('accessToken', res.accessToken); // Tip: Aksar yahan token save kiya jata hai
         
         this.router.navigate(['/app/dashboard']).then(() => {

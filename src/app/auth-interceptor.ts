@@ -12,15 +12,15 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
     withCredentials: true 
   });
 
-  return next(authReq).pipe(
+return next(authReq).pipe(
     catchError((error: HttpErrorResponse) => {
       
-      // Agar server se 401 (Unauthorized) response aaye
-      if (error.status === 401) {
+      // *** YEH CONDITION ADD KAREIN ***
+      // Sirf un errors par logout karein jo login ya register API se nahi aa rahin
+      const isAuthUrl = req.url.includes('/login') || req.url.includes('/register');
+
+      if (error.status === 401 && !isAuthUrl) { // Condition change hui
         console.warn('Unauthorized request - Logging out...');
-        
-        // Agar aapka refresh token bhi expire ho gaya ya invalid hai
-        // to yahan se logout call karein
         authService.logout(); 
       }
 
