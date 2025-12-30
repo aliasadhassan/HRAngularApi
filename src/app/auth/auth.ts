@@ -20,32 +20,21 @@ export class AuthService {
   }
 
   isAuthenticated(): boolean {
-    const authToken = localStorage.getItem('accessToken');
+  const authToken = localStorage.getItem('accessToken');
+  if (!authToken) return false;
 
-    if (!authToken) {
-      return false; // Token hai hi nahi
-    }
-
-    try {
-      const decodedToken: JwtPayload = jwtDecode(authToken);
-      const currentTime = Date.now() / 1000; // Current time in seconds
-
-      // Agar expiration time (exp) current time se kam hai, to token expire ho chuka hai
-      if (decodedToken.exp && decodedToken.exp < currentTime) {
-        console.log('Token expired. Logging out.');
-        // Zaroorat parne par yahan logout logic bhi add kar sakte hain
-        localStorage.removeItem('accessToken'); 
-        return false;
-      }
-
-      return true; // Token valid hai aur expire nahi hua
-    } catch (error) {
-      // Agar token invalid format mein hai to decode fail ho jayega, is case mein false return karein
-      console.error('Invalid token format:', error);
-      localStorage.removeItem('accessToken');
-      return false;
-    }
+  try {
+    const decodedToken: JwtPayload = jwtDecode(authToken);
+    const currentTime = Date.now() / 1000;
+    
+    // Agar expire ho chuka hai, toh yahan se logout MAT karein.
+    // Sirf yeh check karein ke format sahi hai ya nahi.
+    // Interceptor khud hi refresh token handle kar lega.
+    return !!decodedToken; 
+  } catch (error) {
+    return false;
   }
+}
 
   register(data: { username: string; password: string; email: string }): Observable<any> {
     return this.http.post(`${this.apiUrl}/register`, data);
@@ -78,8 +67,8 @@ export class AuthService {
   }
 
   tryRefreshToken(): Observable<any> {
-  const token = localStorage.getItem('accessToken');
-  if (!token) return of(null);
+  const accessToken = localStorage.getItem('accessToken');
+  if (!accessToken) return of(null);
 
   // POST parameters: (url, body, options)
   return this.httpClientWithoutInterceptors
@@ -88,13 +77,13 @@ export class AuthService {
       {}, // Empty body (or add { refreshToken: '...' } if required by your API)
       {
         withCredentials: true,
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${accessToken}` }
       }
     )
     .pipe(
       tap(res => {
         if (res && res.token) {
-          localStorage.setItem('accessToken', res.token);
+          localStorage.setItem('accessToken', res.accessToken);
         }
       }),
       catchError((error) => {
