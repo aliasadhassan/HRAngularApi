@@ -40,7 +40,8 @@ login() {
     this.authService.login(email, password).subscribe({
       next: (res: any) => {
         console.log('User authenticated successfully');
-        localStorage.setItem('accessToken', res.accessToken); // Tip: Aksar yahan token save kiya jata hai
+        localStorage.setItem('accessToken', res.accessToken);
+        localStorage.setItem('refreshToken', res.refreshToken);
         
         this.router.navigate(['/app/dashboard']).then(() => {
           this.cdr.detectChanges(); // Navigation ke baad UI update

@@ -1,14 +1,13 @@
-import { provideAppInitializer ,ApplicationConfig } from '@angular/core';
+import { provideAppInitializer, ApplicationConfig } from '@angular/core';
 import { provideRouter } from '@angular/router';
-
 import { routes } from './app.routes';
-import { provideHttpClient, withInterceptors } from '@angular/common/http';
-// Sirf woh interceptor import karein jismein aapka logic hai (e.g., tokenInterceptor)
-import { tokenInterceptor } from './token-interceptor'; 
-import { AuthService } from './auth/auth'; // AuthService ka path verify karein
-import { inject } from '@angular/core'; // inject function import karein
-import { catchError, of } from 'rxjs'; // Yeh zaroori imports hain
+import { provideHttpClient, withInterceptors, withXsrfConfiguration } from '@angular/common/http';
+import { tokenInterceptor } from './token-interceptor'; // Apna token interceptor import karein
+import { AuthService } from './auth/auth'; 
+import { inject } from '@angular/core'; 
+import { catchError, of } from 'rxjs'; 
 
+// Application start hotay hi check karega ke session valid hai ya nahi
 const initializeApp = () => {
   const authService = inject(AuthService);
   return authService.tryRefreshToken().pipe(
@@ -20,12 +19,17 @@ const initializeApp = () => {
   );
 };
 
-
 export const appConfig: ApplicationConfig = {
   providers: [
     provideRouter(routes),
     provideHttpClient(
-      withInterceptors([tokenInterceptor]) 
+      withInterceptors([tokenInterceptor]),
+      // *** YEH WALA CODE ZAROORI THA ***
+      // Ye setting ensure karti hai ke har cross-origin request ke sath
+      // browser automatically 'refreshToken' cookie bhejega.
+      withXsrfConfiguration({}) 
+      // withXsrfConfiguration use karne se automatically `withCredentials: true` enable ho jata hai 
+      // aur browser cookie bhej deta hai.
     ),
     // Naya tareeqa: provideAppInitializer function ko call karein
     provideAppInitializer(initializeApp) 

@@ -11,21 +11,23 @@ const refreshTokenSubject: BehaviorSubject<any> = new BehaviorSubject<any>(null)
 export const tokenInterceptor: HttpInterceptorFn = (req: HttpRequest<any>, next: HttpHandlerFn): Observable<HttpEvent<any>> => {
   const authService = inject(AuthService);
 
-  // 1. Agar request login ya register ki hai, to token add na karein aur na hi error handle karein
-  if (req.url.includes('/login') || req.url.includes('/register') || req.url.includes('/refreshToken')) {
+  // 1. URLs jo intercept nahi karni
+  if (req.url.includes('/login') || req.url.includes('/register') || req.url.includes('/refreshToken') || req.url.includes('/logout')) {
     return next(req);
   }
 
-  // 2. Baaqi requests mein token add karein agar user authenticated hai
-  const token = localStorage.getItem('accessToken');
-  if (token) {
-    req = addTokenHeader(req, token);
+  const accessToken = localStorage.getItem('accessToken');
+  const refreshToken = localStorage.getItem('refreshToken');
+
+  // 2. Agar accessToken hai to header lagayein
+  if (accessToken) {
+    req = addTokenHeader(req, accessToken);
   }
   
   return next(req).pipe(
     catchError((error) => {
-      // 3. Sirf 401 Unauthorized par handle karein, lekin login calls par nahi (uproar exclude ho chuki hain)
-      if (error instanceof HttpErrorResponse && error.status === 401) {
+      // 3. CHANGE: Sirf tab refresh karein agar 401 ho AUR dono tokens maujood hon
+      if (error instanceof HttpErrorResponse && error.status === 401 && accessToken && refreshToken) {
         return handle401Error(req, next, authService);
       }
       return throwError(() => error);
@@ -33,17 +35,6 @@ export const tokenInterceptor: HttpInterceptorFn = (req: HttpRequest<any>, next:
   );
 };
 
-// Helper function: Token header mein add karne ke liye
-function addTokenHeader(request: HttpRequest<any>, token: string | null) {
-  if (token) {
-    return request.clone({
-      headers: request.headers.set('Authorization', `Bearer ${token}`)
-    });
-  }
-  return request;
-}
-
-// Helper function: 401 error aur Refresh Token handle karne ke liye
 function handle401Error(request: HttpRequest<any>, next: HttpHandlerFn, authService: AuthService) {
   if (!isRefreshing) {
     isRefreshing = true;
@@ -53,14 +44,13 @@ function handle401Error(request: HttpRequest<any>, next: HttpHandlerFn, authServ
       switchMap((tokenResponse: any) => {
         isRefreshing = false;
         
-        // Backend response structure ke mutabiq check karein (e.g., tokenResponse.token)
-        const newToken = tokenResponse?.token;
+        // 4. CHANGE: Sirf accessToken check karein
+        const newToken = tokenResponse?.accessToken;
 
         if (newToken) {
-           refreshTokenSubject.next(newToken);
-           return next(addTokenHeader(request, newToken));
+          refreshTokenSubject.next(newToken);
+          return next(addTokenHeader(request, newToken));
         } else {
-           // Agar naya token nahi mila, to hi logout karein
            authService.logout();
            return throwError(() => new Error('Session expired.'));
         }
@@ -73,11 +63,27 @@ function handle401Error(request: HttpRequest<any>, next: HttpHandlerFn, authServ
     );
 
   } else {
-    // Agar refresh pehle se chal raha hai, to baaqi requests wait karein
     return refreshTokenSubject.pipe(
-      filter(token => token !== null),
+      filter(accessToken => accessToken !== null),
       take(1),
-      switchMap(token => next(addTokenHeader(request, token)))
+      switchMap(accessToken => next(addTokenHeader(request, accessToken)))
     );
   }
 }
+
+// Helper function: Dono tokens (Access aur Refresh) headers mein add karne ke liye
+function addTokenHeader(request: HttpRequest<any>, accessToken: string | null) {
+  const refreshToken = localStorage.getItem('refreshToken');
+  if (accessToken) {
+    let updatedHeaders = request.headers.set('Authorization', `Bearer ${accessToken}`);
+    if (refreshToken) {
+      updatedHeaders = updatedHeaders.set('X-Refresh-Token', refreshToken);
+    }
+    return request.clone({
+      headers: updatedHeaders
+    });
+  }
+  
+  return request;
+}
+
