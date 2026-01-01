@@ -1,48 +1,24 @@
-<aside class="sidebar">
+<!-- ngClass use karke 'collapsed' class add ya remove kar rahe hain -->
+<aside class="sidebar" [ngClass]="{ 'collapsed': isCollapsed }">
+  <div class="sidebar-logo"> 
+    <!-- Logo text sirf tab dikhega jab menu expand hoga -->
+    @if(!isCollapsed){
+      <span>phoenix</span>
+    }
 
-  <!-- LOGO -->
-  <div class="sidebar-logo">
-    <span class="logo-icon">🔥</span>
-    <span class="logo-text">phoenix</span>
+  <button class="toggle-btn" (click)="toggleCollapse()" title="Toggle Menu">
+   @if(!isCollapsed){
+        <span>&#x2715;</span> 
+    } @else {
+        <span>&#9776;</span> 
+    }
+  </button>
+
   </div>
 
-  <!-- NAV -->
-  <nav class="sidebar-nav">
-
-    <div class="nav-section">PAGES</div>
-
-    <a routerLink="app/dashboard" routerLinkActive="active" class="nav-item">
-      <span class="icon">📊</span>
-      <span>Dashboard</span>
-    </a>
-
-    <a routerLink="app/employees" routerLinkActive="active" class="nav-item">
-      <span class="icon">👥</span>
-      <span>Employees</span>
-    </a>
-
-    <a routerLink="app/attendance" routerLinkActive="active" class="nav-item">
-      <span class="icon">🕒</span>
-      <span>Attendance</span>
-    </a>
-
-    <a routerLink="app/leaves" routerLinkActive="active" class="nav-item">
-      <span class="icon">🌴</span>
-      <span>Leaves</span>
-    </a>
-
-    <div class="nav-section">SYSTEM</div>
-
-    <a routerLink="app/settings" routerLinkActive="active" class="nav-item">
-      <span class="icon">⚙️</span>
-      <span>Settings</span>
-    </a>
-
-    <a class="nav-item logout">
-      <span class="icon">🚪</span>
-      <span>Logout</span>
-    </a>
-
-  </nav>
+  <div class="sidebar-section">
+    @if(!isCollapsed){
+    <p class="section-title">PAGES</p>
+    }
+  </div>
 </aside>
-<!-- End of Sidebar -->

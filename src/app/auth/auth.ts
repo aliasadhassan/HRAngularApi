@@ -11,7 +11,7 @@ import { HttpBackend, HttpClient, HttpHeaders } from '@angular/common/http';
 export class AuthService {
   // Bina interceptor wala client taake refresh call loop mein na phanse
   private httpClientWithoutInterceptors: HttpClient;
-  private apiUrl = 'https://localhost:7049/api/values';
+  private apiUrl = 'https://localhost:7049/api/auth';
 
   constructor(private http: HttpClient, private router: Router, private httpBackend: HttpBackend) {
     this.httpClientWithoutInterceptors = new HttpClient(this.httpBackend);

@@ -1,85 +1,106 @@
+/* Overall Sidebar Container Styling */
 .sidebar {
-  width: 260px;
+  width: 250px; 
+  background-color: #000000; /* Black background */
   height: 100vh;
-  background: #0f172a;
-  color: #cbd5f5;
-  display: flex;
-  flex-direction: column;
-  padding: 20px 16px;
-  box-sizing: border-box;
+  padding: 15px;
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.05); 
+  position: fixed;
+  overflow-x: hidden; /* Hide horizontal overflow during transition */
+  transition: width 0.3s ease, margin-left 0.3s ease; /* Transition add karein */
+  font-family: sans-serif; 
 }
 
-/* LOGO */
-.sidebar-logo {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 22px;
-  font-weight: 700;
-  color: #fff;
-  margin-bottom: 30px;
+/* Collapsed State Styling (Jab menu chota hoga) */
+.sidebar.collapsed {
+  width: 70px; /* Sirf icons fit hone jitni width */
 }
 
-.logo-icon {
-  font-size: 26px;
+/* Text (span) ko hide karein jab collapsed ho (HTML mein @if se bhi kiya hai) */
+.sidebar.collapsed .nav-item span,
+.sidebar.collapsed .section-title,
+.sidebar.collapsed .sidebar-logo span {
+  display: none; 
 }
 
-/* NAV */
-.sidebar-nav {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
 
-.nav-section {
+/* Section Titles (PAGES, SYSTEM) */
+.section-title {
+  color: #b0b0b0; /* Halki grey for section titles (black background par visible) */
   font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.8px;
-  color: #64748b;
-  margin: 18px 0 6px;
   text-transform: uppercase;
+  margin-top: 25px;
+  margin-bottom: 10px;
+  padding: 0 10px;
+  font-weight: 500;
+  letter-spacing: 0.5px;
 }
 
-/* ITEMS */
+/* Individual Navigation Item Styling */
 .nav-item {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 10px 14px;
-  border-radius: 8px;
+  padding: 10px 10px;
+  color: #ffffff; /* White color for links (black background par visible) */
   text-decoration: none;
-  color: #cbd5f5;
-  font-size: 14px;
-  transition: all 0.25s ease;
+  border-radius: 6px; 
+  margin-bottom: 5px;
+  transition: background-color 0.2s, color 0.2s;
+  cursor: pointer;
 }
 
-.nav-item .icon {
-  font-size: 16px;
+.nav-item i {
+  margin-right: 12px; 
 }
 
-/* HOVER */
+/* Hover Effect */
 .nav-item:hover {
-  background: rgba(255, 255, 255, 0.06);
-  color: #fff;
+  background-color: #333333; /* Halki grey background on hover */
+  color: #fff; 
 }
 
-/* ACTIVE */
+/* Active Link Styling (routerLinkActive="active" se apply hoga) */
 .nav-item.active {
-  background: #2563eb;
-  color: #fff;
-  box-shadow: 0 6px 18px rgba(37, 99, 235, 0.35);
+  background-color: #007bff; /* Bright blue background */
+  color: #fff; 
+  font-weight: 500;
 }
 
-/* LOGOUT */
-.nav-item.logout {
-  margin-top: auto;
-  color: #f87171;
+/* Collapsed state mein links center ho jayenge */
+.sidebar.collapsed .nav-item {
+  justify-content: center;
 }
 
-.nav-item.logout:hover {
-  background: rgba(248, 113, 113, 0.15);
+.toggle-btn:focus {
+    outline: none; 
+    box-shadow: 0 0 0 3px rgba(0,123,255,0.25); /* Focus glow */
 }
-.nav-item.logout.active {
-  background: #dc2626;
-  box-shadow: 0 6px 18px rgba(220, 38, 38, 0.35);
+/* Position adjustment wahi rahega jo pehle bataya tha */
+.sidebar-logo {
+  position: relative; 
+  display: flex;
+  align-items: center;
+  justify-content: space-between; /* Yeh logo aur button ko alag rakhega */
+}
+
+.toggle-btn {
+    background: none; /* Transparent background */
+    border: none;      /* No border */
+    cursor: pointer;
+    color: #ffffff;    /* White color for the X icon */
+    padding: 0;
+    line-height: 1;
+    opacity: 0.8;
+    /* Focus outline theek kiya hai */
+    outline: none; 
+    font-size: 20px; /* Jaisa aap chahte hain */
+}
+
+.toggle-btn:hover {
+    color: #fff; /* Hover par color white */
+    opacity: 1;
+}
+.toggle-btn span {
+    display: inline-block;
+    line-height: 1;
 }
