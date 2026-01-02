@@ -1,24 +1,69 @@
-<!-- ngClass use karke 'collapsed' class add ya remove kar rahe hain -->
-<aside class="sidebar" [ngClass]="{ 'collapsed': isCollapsed }">
-  <div class="sidebar-logo"> 
-    <!-- Logo text sirf tab dikhega jab menu expand hoga -->
-    @if(!isCollapsed){
-      <span>phoenix</span>
-    }
+<div class="flex h-screen bg-gray-100">
 
-  <button class="toggle-btn" (click)="toggleCollapse()" title="Toggle Menu">
-   @if(!isCollapsed){
-        <span>&#x2715;</span> 
-    } @else {
-        <span>&#9776;</span> 
-    }
-  </button>
+  <!-- Sidebar -->
+  <aside
+    role="navigation"
+    class="sidebar bg-gray-900 text-white flex flex-col"
+    [ngClass]="isExpanded ? 'w-64' : 'w-16'"
+  >
 
-  </div>
+    <!-- Header -->
+    <header class="h-16 flex items-center justify-center border-b">
 
-  <div class="sidebar-section">
-    @if(!isCollapsed){
-    <p class="section-title">PAGES</p>
-    }
-  </div>
-</aside>
+      @if (isExpanded) {
+        <div class="flex items-center gap-2 px-4 w-full">
+          <span class="material-icons text-gray-400 text-xl">search</span>
+          <input
+            type="text"
+            placeholder="Search"
+            class="bg-transparent outline-none text-sm text-gray-300 w-full"
+          />
+        </div>
+      } @else {
+        <span class="material-icons text-gray-400 text-xl">
+          search
+        </span>
+      }
+
+    </header>
+
+    <!-- Menu -->
+    <nav class="flex-1 py-4">
+
+      @for (item of menuItems; track item.label) {
+        <button type="button" (click)="onMenuItemClick(item)">
+          <span class="material-icons text-xl">
+            {{ item.icon }}
+          </span>
+
+          @if (isExpanded) {
+            <span class="text-sm whitespace-nowrap">
+              {{ item.label }}
+            </span>
+          }
+        </button>
+      }
+
+    </nav>
+
+    <!-- Footer -->
+    <footer class="h-16 flex items-center justify-center border-t">
+
+      <button
+        type="button"
+        class="toggle-btn w-10 h-10 flex items-center justify-center bg-orange-500 rounded"
+        (click)="toggleSidebar()"
+      >
+        <span
+          class="material-icons text-xl"
+          [class.rotate-180]="isExpanded"
+        >
+          chevron_right
+        </span>
+      </button>
+
+    </footer>
+
+  </aside>
+
+</div>

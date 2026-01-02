@@ -1,106 +1,122 @@
-/* Overall Sidebar Container Styling */
+/* ---------------- Utility Classes ---------------- */
+.flex { display: flex; }
+.flex-col { flex-direction: column; }
+.flex-1 { flex: 1; }
+.flex-shrink-0 { flex-shrink: 0; }
+
+.items-center { align-items: center; }
+.justify-center { justify-content: center; }
+
+.h-screen { height: 100vh; }
+.h-16 { height: 4rem; }
+.h-10 { height: 2.5rem; }
+
+.w-full { width: 100%; }
+.w-16 { width: 4rem; }
+.w-64 { width: 16rem; }
+.w-10 { width: 2.5rem; }
+
+.bg-gray-100 { background-color: #f3f4f6; }
+.bg-gray-900 { background-color: #111827; }
+.bg-orange-500 { background-color: #f97316; }
+
+.text-white { color: #ffffff; }
+.text-gray-300 { color: #d1d5db; }
+.text-gray-400 { color: #9ca3af; }
+.text-gray-600 { color: #4b5563; }
+
+.text-xl { font-size: 1.25rem; }
+.text-2xl { font-size: 1.5rem; }
+.text-sm { font-size: 0.875rem; }
+
+.border-b { border-bottom: 1px solid #1f2937; }
+.border-t { border-top: 1px solid #1f2937; }
+
+.rounded { border-radius: 0.5rem; }
+
+.p-8 { padding: 2rem; }
+.px-4 { padding-left: 1rem; padding-right: 1rem; }
+.py-2 { padding-top: 0.5rem; padding-bottom: 0.5rem; }
+.py-4 { padding-top: 1rem; padding-bottom: 1rem; }
+
+.gap-2 { gap: 0.5rem; }
+.gap-3 { gap: 0.75rem; }
+
+.mb-4 { margin-bottom: 1rem; }
+
+.overflow-auto { overflow: auto; }
+.whitespace-nowrap { white-space: nowrap; }
+.font-bold { font-weight: 700; }
+
+/* ---------------- Sidebar ---------------- */
 .sidebar {
-  width: 250px; 
-  background-color: #000000; /* Black background */
-  height: 100vh;
-  padding: 15px;
-  box-shadow: 0 0 15px rgba(0, 0, 0, 0.05); 
-  position: fixed;
-  overflow-x: hidden; /* Hide horizontal overflow during transition */
-  transition: width 0.3s ease, margin-left 0.3s ease; /* Transition add karein */
-  font-family: sans-serif; 
+  transition: width 0.3s ease-in-out;
 }
 
-/* Collapsed State Styling (Jab menu chota hoga) */
-.sidebar.collapsed {
-  width: 70px; /* Sirf icons fit hone jitni width */
-}
-
-/* Text (span) ko hide karein jab collapsed ho (HTML mein @if se bhi kiya hai) */
-.sidebar.collapsed .nav-item span,
-.sidebar.collapsed .section-title,
-.sidebar.collapsed .sidebar-logo span {
-  display: none; 
-}
-
-
-/* Section Titles (PAGES, SYSTEM) */
-.section-title {
-  color: #b0b0b0; /* Halki grey for section titles (black background par visible) */
-  font-size: 11px;
-  text-transform: uppercase;
-  margin-top: 25px;
-  margin-bottom: 10px;
-  padding: 0 10px;
-  font-weight: 500;
-  letter-spacing: 0.5px;
-}
-
-/* Individual Navigation Item Styling */
-.nav-item {
+/* ---------------- Menu Buttons ---------------- */
+.sidebar nav button {
+  background: transparent;
+  border: none;
+  width: 100%;
+  cursor: pointer;
+  color: #d1d5db;
   display: flex;
   align-items: center;
-  padding: 10px 10px;
-  color: #ffffff; /* White color for links (black background par visible) */
-  text-decoration: none;
-  border-radius: 6px; 
-  margin-bottom: 5px;
-  transition: background-color 0.2s, color 0.2s;
-  cursor: pointer;
+  gap: 0.75rem;
+  padding: 0.6rem 1rem;
+  transition: background 0.2s ease, color 0.2s ease;
 }
 
-.nav-item i {
-  margin-right: 12px; 
+/* Hover (soft) */
+.sidebar nav button:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 0.6rem;
+  color: #ffffff;
 }
 
-/* Hover Effect */
-.nav-item:hover {
-  background-color: #333333; /* Halki grey background on hover */
-  color: #fff; 
+/* Icon hover */
+.sidebar nav button:hover .material-icons {
+  color: #ffffff;
 }
 
-/* Active Link Styling (routerLinkActive="active" se apply hoga) */
-.nav-item.active {
-  background-color: #007bff; /* Bright blue background */
-  color: #fff; 
-  font-weight: 500;
+/* Remove focus outline */
+.sidebar nav button:focus {
+  outline: none;
 }
 
-/* Collapsed state mein links center ho jayenge */
-.sidebar.collapsed .nav-item {
+/* Collapsed hover = icon centered bubble */
+.sidebar.w-16 nav button {
   justify-content: center;
 }
 
-.toggle-btn:focus {
-    outline: none; 
-    box-shadow: 0 0 0 3px rgba(0,123,255,0.25); /* Focus glow */
-}
-/* Position adjustment wahi rahega jo pehle bataya tha */
-.sidebar-logo {
-  position: relative; 
-  display: flex;
-  align-items: center;
-  justify-content: space-between; /* Yeh logo aur button ko alag rakhega */
+.sidebar.w-16 nav button:hover {
+  width: 40px;
+  height: 40px;
+  margin: auto;
+  border-radius: 0.75rem;
 }
 
+/* ---------------- Toggle Button ---------------- */
 .toggle-btn {
-    background: none; /* Transparent background */
-    border: none;      /* No border */
-    cursor: pointer;
-    color: #ffffff;    /* White color for the X icon */
-    padding: 0;
-    line-height: 1;
-    opacity: 0.8;
-    /* Focus outline theek kiya hai */
-    outline: none; 
-    font-size: 20px; /* Jaisa aap chahte hain */
+  border: none;
+  cursor: pointer;
+  transition: background 0.2s ease;
 }
 
 .toggle-btn:hover {
-    color: #fff; /* Hover par color white */
-    opacity: 1;
+  background-color: #ea580c;
 }
-.toggle-btn span {
-    display: inline-block;
-    line-height: 1;
+
+.toggle-btn:focus {
+  outline: none;
+}
+
+/* ---------------- Icons ---------------- */
+.material-icons {
+  font-family: 'Material Icons';
+  line-height: 1;
+}
+
+.rotate-180 {
+  transform: rotate(180deg);
 }
