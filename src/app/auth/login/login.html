@@ -18,6 +18,10 @@
         @if (loginForm.get('password')?.touched && loginForm.get('password')?.invalid) {
           <small class="error">Password must be at least 6 characters</small>
         }
+
+        <div class="forgot-link-container">
+          <a routerLink="/forgot-password" class="forgot-link">Forgot Password?</a>
+        </div>
       </div>
 
       <button type="submit" [disabled]="loginForm.invalid">

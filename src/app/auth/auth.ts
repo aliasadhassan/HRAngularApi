@@ -105,10 +105,18 @@ logout() {
   });
 }
 
-
   private clearLocalStorageAndRedirect() {
     localStorage.removeItem('accessToken');
     localStorage.removeItem('refreshToken');
     this.router.navigate(['/login']);
   }
+
+  forgotPassword(email: string) {
+    return this.http.post(`${this.apiUrl}/forgot-password`, { email });
+  }
+
+  resetPassword(model: any) {
+    return this.http.post(`${this.apiUrl}/reset-password`, model);
+  }
+
 }
