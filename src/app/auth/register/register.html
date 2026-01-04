@@ -4,6 +4,7 @@
 
     <form [formGroup]="registerForm" (ngSubmit)="register()" autocomplete="off">
 
+      <!-- Username -->
       <div class="form-group">
         <input type="text" placeholder="Username" formControlName="UserName" />
         @if (registerForm.get('UserName')?.touched && registerForm.get('UserName')?.invalid) {
@@ -11,6 +12,7 @@
         }
       </div>
 
+      <!-- Email -->
       <div class="form-group">
         <input type="email" placeholder="Email" formControlName="email" />
         @if (registerForm.get('email')?.touched && registerForm.get('email')?.invalid) {
@@ -18,33 +20,69 @@
         }
       </div>
 
-      <div class="form-group">
-        <input type="password" placeholder="Password" formControlName="password" />
-        @if (registerForm.get('password')?.touched && registerForm.get('password')?.invalid) {
-          <small class="error">Min 6 characters required for password</small>
-        }
-      </div>
+      <!-- Password -->
+       <div class="form-group password-group">
 
+        <!-- INPUT + EYE -->
+        <div class="password-input-wrapper">
+          <input
+            [type]="hidePassword ? 'password' : 'text'"
+            placeholder="Password"
+            formControlName="password"
+            (input)="updateStrength()" />
+
+          <button
+            type="button"
+            class="eye-btn"
+            (click)="togglePasswordVisibility()">
+            <span class="eye-icon" [class.hide]="hidePassword"></span>
+          </button>
+        </div>
+
+        @if (strengthText) {
+
+          <div class="strength-meter">
+            <div
+              class="strength-bar"
+              [ngClass]="{
+                'level-weak': strengthClass === 'weak',
+                'level-medium': strengthClass === 'medium',
+                'level-strong': strengthClass === 'strong'
+              }"
+              [style.transform]="'scaleX(' + (strengthScore / 4) + ')'">
+            </div>
+          </div>
+
+          <small
+            class="strength-text"
+            [ngClass]="{
+              'text-weak': strengthClass === 'weak',
+              'text-medium': strengthClass === 'medium',
+              'text-strong': strengthClass === 'strong'
+            }">
+            {{ strengthText }}
+          </small>
+
+        }
+
+      </div>
+      
       <button type="submit" [disabled]="registerForm.invalid">
         Register
       </button>
 
       @if (success) {
-        <div class="success-message-box">
-            {{ success }}
-        </div>
+        <div class="success-message-box">{{ success }}</div>
       }
 
       @if (error) {
-        <div class="error-message-box">
-            {{ error }}
-        </div>
-    }
+        <div class="error-message-box">{{ error }}</div>
+      }
     </form>
 
     <p class="link-text">
-        Already have an account?
-        <a routerLink="../login" class="login-link">Login</a>
+      Already have an account?
+      <a routerLink="../login" class="login-link">Login</a>
     </p>
   </div>
 </div>

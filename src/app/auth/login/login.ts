@@ -14,6 +14,7 @@ import { RouterLink,Router } from '@angular/router'; // Required for routerLink
 export class LoginComponent {
   loginForm: FormGroup;
   error = '';
+  hidePassword = true;
 
   constructor(
     private fb: FormBuilder, 
@@ -25,6 +26,10 @@ export class LoginComponent {
       email: ['', [Validators.required, Validators.email, Validators.maxLength(50)]],
       password: ['', [Validators.required, Validators.minLength(6)]]
     });
+  }
+
+   togglePasswordVisibility() {
+    this.hidePassword = !this.hidePassword;
   }
 
 login() {

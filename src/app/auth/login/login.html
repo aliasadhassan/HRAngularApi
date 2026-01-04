@@ -13,16 +13,31 @@
         }
       </div>
 
-      <div class="form-group">
-        <input type="password" placeholder="Password" formControlName="password" />
-        @if (loginForm.get('password')?.touched && loginForm.get('password')?.invalid) {
-          <small class="error">Password must be at least 6 characters</small>
-        }
+      <!-- Password -->
+       <div class="form-group password-group">
+
+        <!-- INPUT + EYE -->
+        <div class="password-input-wrapper">
+          <input
+            [type]="hidePassword ? 'password' : 'text'"
+            placeholder="Password"
+            formControlName="password" />
+
+          <button
+            type="button"
+            class="eye-btn"
+            (click)="togglePasswordVisibility()">
+            <span class="eye-icon" [class.hide]="hidePassword"></span>
+          </button>
+        </div>
 
         <div class="forgot-link-container">
           <a routerLink="/forgot-password" class="forgot-link">Forgot Password?</a>
         </div>
+
       </div>
+
+
 
       <button type="submit" [disabled]="loginForm.invalid">
         Login
