@@ -12,7 +12,20 @@ export const tokenInterceptor: HttpInterceptorFn = (req: HttpRequest<any>, next:
   const authService = inject(AuthService);
 
   // 1. URLs jo intercept nahi karni
-  if (req.url.includes('/login') || req.url.includes('/register') || req.url.includes('/refreshToken') || req.url.includes('/logout')) {
+  const bypassUrls = [
+    '/login', 
+    '/register', 
+    '/refreshToken', 
+    '/logout', 
+    '/forgot-password',
+    '/reset-password',
+    '/api/auth/reset-password', // <-- Yeh line bhi add kar dein
+    '/api/auth/forgot-password' // <-- Yeh bhi
+  ];
+
+  const shouldBypass = bypassUrls.some(url => req.url.includes(url));
+
+  if (shouldBypass) {
     return next(req);
   }
 

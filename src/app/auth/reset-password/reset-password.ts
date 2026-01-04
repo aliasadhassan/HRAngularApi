@@ -45,16 +45,18 @@ export class ResetPasswordComponent implements OnInit {
       ? null : { 'mismatch': true };
   }
 
-  onSubmit() {
+ onSubmit() {
     if (this.resetForm.invalid || !this.token) return;
 
     this.isLoading = true;
     const model = {
       token: this.token,
       email: this.email,
-      newPassword: this.resetForm.value.newPassword
+      newPassword: this.resetForm.value.newPassword,
+      confirmPassword: this.resetForm.value.confirmPassword // <-- Yeh line add ki gai hai
     };
 
+    // Ab 'model' object theek hai aur service ko bheja ja raha hai
     this.authService.resetPassword(model).subscribe({
       next: (res: any) => {
         this.message = "Password reset successfully! Redirecting to login...";
