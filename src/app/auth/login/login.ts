@@ -52,14 +52,13 @@ export class LoginComponent {
         this.router.navigate(['/app/dashboard']);
       },
       error: (err) => {
-        if (err?.error?.message) {
-          this.error = err.error.message;
-        } else if (err?.status === 401) {
+        if (err?.status === 401) {
           this.alert.error('Invalid email or password');
+        } else if (err?.error?.message) {
+          this.alert.error(err.error.message);
         } else {
           this.alert.error('An unexpected error occurred');
         }
-        console.log(err.error?.message || err);
       }
     });
   }

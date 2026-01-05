@@ -1,1 +1,9 @@
-<p>alert works!</p>
+<div
+  *ngIf="alert"
+  class="alert"
+  [class.show]="visible"
+  [class]="alert.type">
+
+  <span>{{ alert.message }}</span>
+  <button class="close" (click)="close()">×</button>
+</div>

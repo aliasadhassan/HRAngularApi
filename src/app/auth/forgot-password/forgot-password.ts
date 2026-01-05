@@ -2,11 +2,12 @@ import { Component } from '@angular/core';
 import { AuthService } from '../auth';
 import { CommonModule } from '@angular/common'; // ngIf ke liye
 import { FormsModule } from '@angular/forms'; // ngModel ke liye
+import { RouterModule } from '@angular/router';
 
 @Component({
   standalone: true,
   selector: 'app-forgot-password',
-  imports: [CommonModule, FormsModule], 
+  imports: [CommonModule, FormsModule, RouterModule], 
   templateUrl: './forgot-password.html',
   styleUrl: './forgot-password.css',
 })
