@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
-import { Observable, of, throwError } from 'rxjs';
+import { Observable, of, Subject, throwError } from 'rxjs';
 import { Router } from '@angular/router'; 
-import { tap, catchError } from 'rxjs/operators';
+import { tap, takeUntil, catchError } from 'rxjs/operators';
 import { jwtDecode, JwtPayload } from 'jwt-decode';
 import { HttpBackend, HttpClient, HttpHeaders } from '@angular/common/http';
 
@@ -12,6 +12,7 @@ export class AuthService {
   // Bina interceptor wala client taake refresh call loop mein na phanse
   private httpClientWithoutInterceptors: HttpClient;
   private apiUrl = 'https://localhost:7049/api/auth';
+  private authCancel$ = new Subject<void>();
 
   constructor(private http: HttpClient, private router: Router, private httpBackend: HttpBackend) {
     this.httpClientWithoutInterceptors = new HttpClient(this.httpBackend);
@@ -24,20 +25,25 @@ export class AuthService {
     try {
       const decoded: JwtPayload = jwtDecode(token);
       const currentTime = Math.floor(Date.now() / 1000);
+
       // Agar token expire ho chuka hai to true return karein taake 
       // interceptor isko catch karke refresh process shuru kare
-      return !!decoded; 
-    } catch (error) {
+      return !decoded.exp || decoded.exp > currentTime;
+    } catch(error) {
       return false;
     }
   }
 
   register(data: { username: string; password: string; email: string }): Observable<any> {
-    return this.http.post(`${this.apiUrl}/register`, data);
+    this.authCancel$.next(); // cancel previous requests
+    return this.http.post(`${this.apiUrl}/register`, data)
+      .pipe(takeUntil(this.authCancel$));
   }
 
   login(email: string, password: string): Observable<any> {
+    this.authCancel$.next(); // cancel previous requests
     return this.http.post(`${this.apiUrl}/login`, { email, password }).pipe(
+      takeUntil(this.authCancel$),
       tap((res: any) => {
         if (res.accessToken) {
           localStorage.setItem('accessToken', res.accessToken);
@@ -78,32 +84,32 @@ export class AuthService {
       );
   }
 
-logout() {
-  const accessToken = localStorage.getItem('accessToken');
-  const refreshToken = localStorage.getItem('refreshToken'); // Refresh token bhi uthayein
-  
-  let authHeaders = new HttpHeaders();
+ logout() {
+    const accessToken = localStorage.getItem('accessToken');
+    const refreshToken = localStorage.getItem('refreshToken'); // Refresh token bhi uthayein
+    
+    let authHeaders = new HttpHeaders();
 
-  if (accessToken) {
-    authHeaders = authHeaders.set('Authorization', `Bearer ${accessToken}`);
-  }
-  // Agar backend ko ye bhi chahiye to is line ko lazmi add karein
-  if (refreshToken) {
-      authHeaders = authHeaders.set('X-Refresh-Token', refreshToken); 
-  }
-
-  // 3. Request options mein headers pass karein
-  this.http.post(`${this.apiUrl}/logout`, {}, { headers: authHeaders }).subscribe({
-    next: () => {
-      this.clearLocalStorageAndRedirect();
-    },
-    error: (err) => {
-      console.error('Logout failed', err);
-      // API fail bhi ho jaye to user ko login screen par bhejna zaroori hai
-      this.clearLocalStorageAndRedirect();
+    if (accessToken) {
+      authHeaders = authHeaders.set('Authorization', `Bearer ${accessToken}`);
     }
-  });
-}
+    // Agar backend ko ye bhi chahiye to is line ko lazmi add karein
+    if (refreshToken) {
+        authHeaders = authHeaders.set('X-Refresh-Token', refreshToken); 
+    }
+
+    // 3. Request options mein headers pass karein
+    this.http.post(`${this.apiUrl}/logout`, {}, { headers: authHeaders }).subscribe({
+      next: () => {
+        this.clearLocalStorageAndRedirect();
+      },
+      error: (err) => {
+        console.error('Logout failed', err);
+        // API fail bhi ho jaye to user ko login screen par bhejna zaroori hai
+        this.clearLocalStorageAndRedirect();
+      }
+    });
+  }
 
   private clearLocalStorageAndRedirect() {
     localStorage.removeItem('accessToken');
@@ -112,11 +118,15 @@ logout() {
   }
 
   forgotPassword(email: string) {
-    return this.http.post(`${this.apiUrl}/forgot-password`, { email });
+    this.authCancel$.next(); // cancel previous requests
+    return this.http.post(`${this.apiUrl}/forgot-password`, { email })
+    .pipe(takeUntil(this.authCancel$));
   }
 
   resetPassword(model: any) {
+    this.authCancel$.next(); // cancel previous requests
     return this.http.post(`${this.apiUrl}/reset-password`, model);
+    this.authCancel$.next();
   }
 
 }

@@ -3,6 +3,8 @@ import { AuthService } from '../auth';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { RouterLink,Router } from '@angular/router'; // Required for routerLink
+import { LoaderService } from '../../services/loader/loader';
+import { AlertService } from '../../services/alert/alert';
 
 @Component({
   standalone: true,
@@ -15,8 +17,11 @@ export class LoginComponent {
   loginForm: FormGroup;
   error = '';
   hidePassword = true;
+  isSubmitting = false;
 
   constructor(
+    public loaderService: LoaderService,
+    private alert: AlertService,
     private fb: FormBuilder, 
     private authService: AuthService,
     private cdr: ChangeDetectorRef,
@@ -32,8 +37,8 @@ export class LoginComponent {
     this.hidePassword = !this.hidePassword;
   }
 
-login() {
-    this.error = ''; 
+  login() {
+    this.error = '';
 
     if (this.loginForm.invalid) {
       this.loginForm.markAllAsTouched();
@@ -43,27 +48,18 @@ login() {
     const { email, password } = this.loginForm.value;
 
     this.authService.login(email, password).subscribe({
-      next: (res: any) => {
-        console.log('User authenticated successfully');
-        localStorage.setItem('accessToken', res.accessToken);
-        localStorage.setItem('refreshToken', res.refreshToken);
-        
-        this.router.navigate(['/app/dashboard']).then(() => {
-          this.cdr.detectChanges(); // Navigation ke baad UI update
-        });
+      next: () => {
+        this.router.navigate(['/app/dashboard']);
       },
       error: (err) => {
-        console.error('Backend Error:', err);
-        
-        if (err.error && err.error.message) {
+        if (err?.error?.message) {
           this.error = err.error.message;
-        } else if (err.status === 401) {
-          this.error = 'Invalid email or password';
+        } else if (err?.status === 401) {
+          this.alert.error('Invalid email or password');
         } else {
-          this.error = 'An unexpected error occurred';
+          this.alert.error('An unexpected error occurred');
         }
-
-        this.cdr.detectChanges(); 
+        console.log(err.error?.message || err);
       }
     });
   }

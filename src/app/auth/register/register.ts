@@ -2,10 +2,11 @@ import { Component, ChangeDetectorRef  } from '@angular/core';
 import { AuthService } from '../auth';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { RouterLink,Router } from '@angular/router';
 import { zxcvbn, zxcvbnOptions } from '@zxcvbn-ts/core';
 import * as zxcvbnCommon from '@zxcvbn-ts/language-common';
 import * as zxcvbnEn from '@zxcvbn-ts/language-en';
+import { AlertService } from '../../services/alert/alert';
 
 // Options pehle set karein
 const options = {
@@ -37,7 +38,12 @@ export class RegisterComponent {
   // Variables define for password strength meter
   strengthScore: number = 0;
 
-  constructor(private fb: FormBuilder, private authService: AuthService,private cdr: ChangeDetectorRef) {
+  constructor(
+    private router: Router,
+    private alert: AlertService,
+    private fb: FormBuilder, 
+    private authService: AuthService,
+    private cdr: ChangeDetectorRef) {
     // Validation Logic will set here
     this.registerForm = this.fb.group({
       UserName: ['', [Validators.required, Validators.maxLength(50)]], // Username required + Max 50
@@ -62,17 +68,28 @@ export class RegisterComponent {
 
   this.authService.register(this.registerForm.value).subscribe({
     next: (res: any) => {
-      this.success = res.message || 'Registration successful!';
+      this.alert.success('User registered successfully');
       this.error = '';
 
       console.log('Registration success', res);
       this.cdr.detectChanges(); // UI update
 
-     this.registerForm.reset();
+      this.registerForm.reset();
+
+      // RESET PASSWORD STRENGTH UI
+      this.strengthText = '';
+      this.strengthScore = 0;
+      this.strengthClass = '';
+
+       // AUTO REDIRECT AFTER 2 SECONDS
+      setTimeout(() => {
+        this.router.navigate(['/login']);
+      }, 5000);
+
     },
     error: (err) => {
         console.log('Backend Error Object:', err);
-        
+        this.alert.error('Registration failed');
         // Error message set karein
         if (err.error && err.error.message) {
           this.error = err.error.message;

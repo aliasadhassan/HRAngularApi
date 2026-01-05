@@ -32,27 +32,30 @@
         </div>
 
         <div class="forgot-link-container">
-          <a routerLink="/forgot-password" class="forgot-link">Forgot Password?</a>
+          <a
+            routerLink="/forgot-password"
+            class="forgot-link"
+            [class.disabled]="loaderService.isLoading$ | async">
+            Forgot Password?
+          </a>
         </div>
 
       </div>
 
-
-
       <button type="submit" [disabled]="loginForm.invalid">
-        Login
+        {{ (loaderService.isLoading$ | async) ? 'Logging in…' : 'Login' }}
       </button>
 
-    @if (error) {
-        <div class="error-message-box">
-            {{ error }}
-        </div>
-    }
     </form>
 
     <p class="link-text">
         Don’t have an account?
-        <a routerLink="/register" class="register-link">Register</a>
+        <a
+          routerLink="/register"
+          class="register-link"
+          [class.disabled]="loaderService.isLoading$ | async">
+          Register
+        </a>
     </p>
   </div>
 </div>

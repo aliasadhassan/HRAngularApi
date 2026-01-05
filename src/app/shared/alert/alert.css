@@ -1,0 +1,14 @@
+.alert {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  padding: 12px 18px;
+  border-radius: 6px;
+  font-size: 14px;
+  z-index: 10000;
+  color: #fff;
+}
+
+.alert.success { background: #28a745; }
+.alert.error   { background: #dc3545; }
+.alert.info    { background: #007bff; }

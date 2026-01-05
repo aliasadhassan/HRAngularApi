@@ -111,6 +111,12 @@
     text-decoration: none;
 }
 
+a.disabled {
+  pointer-events: none;
+  opacity: 0.5;
+}
+
+
 .forgot-link:hover {
     text-decoration: underline;
 }

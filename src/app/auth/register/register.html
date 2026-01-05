@@ -66,18 +66,11 @@
         }
 
       </div>
-      
+
       <button type="submit" [disabled]="registerForm.invalid">
         Register
       </button>
-
-      @if (success) {
-        <div class="success-message-box">{{ success }}</div>
-      }
-
-      @if (error) {
-        <div class="error-message-box">{{ error }}</div>
-      }
+      
     </form>
 
     <p class="link-text">
