@@ -234,3 +234,6 @@ telnet sql-server 1433 pe blank screen / connected aa jaye
 
 Agar “connection refused” / “could not resolve host” aaye
 → matlab issue connection string ya docker-compose service name me hai.
+
+Krubenetes Section Starts Here
+==============================
