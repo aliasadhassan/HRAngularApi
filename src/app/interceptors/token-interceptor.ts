@@ -4,14 +4,14 @@ import { AuthService } from '../auth/auth';
 import { catchError, switchMap, filter, take } from 'rxjs/operators';
 import { Observable, throwError, BehaviorSubject } from 'rxjs';
 
-// Refreshing state manage karne ke liye variables
+// Multiple requests queue ko manage karne ke liye variables
 let isRefreshing = false;
-const refreshTokenSubject: BehaviorSubject<any> = new BehaviorSubject<any>(null);
+const refreshTokenSubject: BehaviorSubject<string | null> = new BehaviorSubject<string | null>(null);
 
 export const tokenInterceptor: HttpInterceptorFn = (req: HttpRequest<any>, next: HttpHandlerFn): Observable<HttpEvent<any>> => {
   const authService = inject(AuthService);
 
-  // 1. URLs jo intercept nahi karni
+  // 1. URLs jo intercept nahi karni (Bypass List)
   const bypassUrls = [
     '/login', 
     '/register', 
@@ -19,29 +19,31 @@ export const tokenInterceptor: HttpInterceptorFn = (req: HttpRequest<any>, next:
     '/logout', 
     '/forgot-password',
     '/reset-password',
-    '/api/auth/reset-password', // <-- Yeh line bhi add kar dein
-    '/api/auth/forgot-password' // <-- Yeh bhi
+    '/api/auth/reset-password', 
+    '/api/auth/forgot-password' 
   ];
 
   const shouldBypass = bypassUrls.some(url => req.url.includes(url));
 
   if (shouldBypass) {
-    return next(req);
+    // ✅ Auth URLs ko simple pass hone dein lekin cookies update karne ke liye withCredentials lazmi lagayein
+    return next(req.clone({ withCredentials: true }));
   }
 
   const accessToken = localStorage.getItem('accessToken');
-  const refreshToken = localStorage.getItem('refreshToken');
 
-  // 2. Agar accessToken hai to header lagayein
+  // 2. Normal requests ko clone karein, withCredentials enable karein aur header lagayein
+  let authReq = req.clone({ withCredentials: true });
   if (accessToken) {
-    req = addTokenHeader(req, accessToken);
+    authReq = addTokenHeader(authReq, accessToken);
   }
   
-  return next(req).pipe(
+  return next(authReq).pipe(
     catchError((error) => {
-      // 3. CHANGE: Sirf tab refresh karein agar 401 ho AUR dono tokens maujood hon
-      if (error instanceof HttpErrorResponse && error.status === 401 && accessToken && refreshToken) {
-        return handle401Error(req, next, authService);
+      // 3. ✅ CHANGE: Refresh Token local storage se check karne ki zaroori nahi, wo secure cookie me hai. 
+      // Sirf check karein agar error 401 hai aur access token pehle se maujood tha.
+      if (error instanceof HttpErrorResponse && error.status === 401 && accessToken) {
+        return handle401Error(authReq, next, authService);
       }
       return throwError(() => error);
     })
@@ -57,7 +59,6 @@ function handle401Error(request: HttpRequest<any>, next: HttpHandlerFn, authServ
       switchMap((tokenResponse: any) => {
         isRefreshing = false;
         
-        // 4. CHANGE: Sirf accessToken check karein
         const newToken = tokenResponse?.accessToken;
 
         if (newToken) {
@@ -76,27 +77,22 @@ function handle401Error(request: HttpRequest<any>, next: HttpHandlerFn, authServ
     );
 
   } else {
+    // Agar pehle se koi request token refresh karwa rahi hai, to baqi saari requests yahan wait kareingi
     return refreshTokenSubject.pipe(
       filter(accessToken => accessToken !== null),
       take(1),
-      switchMap(accessToken => next(addTokenHeader(request, accessToken)))
+      switchMap(accessToken => next(addTokenHeader(request, accessToken!)))
     );
   }
 }
 
-// Helper function: Dono tokens (Access aur Refresh) headers mein add karne ke liye
+// ✅ Helper function updated: Refresh Token ka saara header logic delete kar diya hai, ab sirf Access Token header me jayega
 function addTokenHeader(request: HttpRequest<any>, accessToken: string | null) {
-  const refreshToken = localStorage.getItem('refreshToken');
   if (accessToken) {
-    let updatedHeaders = request.headers.set('Authorization', `Bearer ${accessToken}`);
-    if (refreshToken) {
-      updatedHeaders = updatedHeaders.set('X-Refresh-Token', refreshToken);
-    }
     return request.clone({
-      headers: updatedHeaders
+      withCredentials: true, // Browser automatic backend ko cookie send karega
+      headers: request.headers.set('Authorization', `Bearer ${accessToken}`)
     });
   }
-  
   return request;
 }
-
