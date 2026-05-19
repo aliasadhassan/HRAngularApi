@@ -2,9 +2,9 @@ name: Angular Frontend CI/CD Pipeline
 
 on:
   push:
-    branches: [ "master" ]
+    branches: [ "HRAngularApi" ]
   pull_request:
-    branches: [ "master" ]
+    branches: [ "HRAngularApi" ]
 
 permissions:
   contents: read
