@@ -18,6 +18,7 @@ export class LoginComponent {
   error = '';
   hidePassword = true;
   isSubmitting = false;
+  today = new Date();
 
   constructor(
     public loaderService: LoaderService,

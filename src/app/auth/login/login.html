@@ -1,61 +1,103 @@
 <div class="auth-wrapper">
-  <div class="auth-card">
-    <h2>HR Portal Login</h2>
+  <!-- LEFT PANEL — ambient ledger -->
+  <div class="ledger-panel">
+    <div class="brand">
+      <div class="brand-mark">H</div>
+      <div class="brand-name">HR Cloud</div>
+    </div>
 
-    <form [formGroup]="loginForm" (ngSubmit)="login()" autocomplete="off">
-      <div class="form-group">
-        <input type="email" placeholder="Email" formControlName="email" />
-        @if (loginForm.get('email')?.touched && loginForm.get('email')?.errors?.['required']) {
-          <small class="error">Email is required</small>
-        }
-        @if (loginForm.get('email')?.touched && loginForm.get('email')?.errors?.['email']) {
-          <small class="error">Please enter a valid email address</small>
-        }
+    <div class="thesis">
+      <div class="eyebrow">Every entry, accounted for</div>
+      <h1>The ledger never stops moving.</h1>
+      <p>Attendance, payroll, and approvals flow through one record — live, auditable, and always in balance.</p>
+    </div>
+
+    <div class="ledger-strip">
+      <div class="ledger-track">
+        <div class="ledger-row"><span class="tag">IN</span><span class="id">EMP-0417</span><span class="action">clocked in — Warehouse Floor 2</span><span class="time">1:12 AM</span></div>
+        <div class="ledger-row"><span class="tag">OUT</span><span class="id">EMP-0298</span><span class="action">shift closed — Distribution B</span><span class="time">5:02 PM</span></div>
+        <div class="ledger-row"><span class="tag">RUN</span><span class="id">PR-2026-07</span><span class="action">payroll batch processed</span><span class="time">8:24 PM</span></div>
+        <div class="ledger-row"><span class="tag">IN</span><span class="id">EMP-0552</span><span class="action">clocked in — Ops Center</span><span class="time">12:06 AM</span></div>
+        <div class="ledger-row"><span class="tag">APR</span><span class="id">LV-1183</span><span class="action">leave request approved</span><span class="time">7:54 PM</span></div>
+        <div class="ledger-row"><span class="tag">OUT</span><span class="id">EMP-0114</span><span class="action">shift closed — Warehouse Floor 1</span><span class="time">11:20 AM</span></div>
+        <div class="ledger-row"><span class="tag">IN</span><span class="id">EMP-0339</span><span class="action">clocked in — Logistics</span><span class="time">7:41 AM</span></div>
+        <div class="ledger-row"><span class="tag">RUN</span><span class="id">PR-2026-07</span><span class="action">tax withholding verified</span><span class="time">5:53 PM</span></div>
+        <div class="ledger-row"><span class="tag">APR</span><span class="id">EX-0902</span><span class="action">expense claim approved</span><span class="time">4:11 PM</span></div>
+        <div class="ledger-row"><span class="tag">IN</span><span class="id">EMP-0071</span><span class="action">clocked in — Admin</span><span class="time">5:09 AM</span></div>
+        <!-- duplicate for seamless loop -->
+        <div class="ledger-row"><span class="tag">IN</span><span class="id">EMP-0417</span><span class="action">clocked in — Warehouse Floor 2</span><span class="time">1:12 AM</span></div>
+        <div class="ledger-row"><span class="tag">OUT</span><span class="id">EMP-0298</span><span class="action">shift closed — Distribution B</span><span class="time">5:02 PM</span></div>
+        <div class="ledger-row"><span class="tag">RUN</span><span class="id">PR-2026-07</span><span class="action">payroll batch processed</span><span class="time">8:24 PM</span></div>
+        <div class="ledger-row"><span class="tag">IN</span><span class="id">EMP-0552</span><span class="action">clocked in — Ops Center</span><span class="time">12:06 AM</span></div>
+        <div class="ledger-row"><span class="tag">APR</span><span class="id">LV-1183</span><span class="action">leave request approved</span><span class="time">7:54 PM</span></div>
+        <div class="ledger-row"><span class="tag">OUT</span><span class="id">EMP-0114</span><span class="action">shift closed — Warehouse Floor 1</span><span class="time">11:20 AM</span></div>
+        <div class="ledger-row"><span class="tag">IN</span><span class="id">EMP-0339</span><span class="action">clocked in — Logistics</span><span class="time">7:41 AM</span></div>
+        <div class="ledger-row"><span class="tag">RUN</span><span class="id">PR-2026-07</span><span class="action">tax withholding verified</span><span class="time">5:53 PM</span></div>
+        <div class="ledger-row"><span class="tag">APR</span><span class="id">EX-0902</span><span class="action">expense claim approved</span><span class="time">4:11 PM</span></div>
+        <div class="ledger-row"><span class="tag">IN</span><span class="id">EMP-0071</span><span class="action">clocked in — Admin</span><span class="time">5:09 AM</span></div>
       </div>
+    </div>
 
-      <!-- Password -->
-       <div class="form-group password-group">
+    <div class="panel-footer">© 2026 HR Cloud — hr-cloud.online</div>
+  </div>
 
-        <!-- INPUT + EYE -->
-        <div class="password-input-wrapper">
-          <input
-            [type]="hidePassword ? 'password' : 'text'"
-            placeholder="Password"
-            formControlName="password" />
+  <!-- RIGHT PANEL — form -->
+  <div class="form-panel">
+    <div class="auth-card">
+      <div class="stamp-date">{{ today | date:'EEE, MMM d, y' }}</div>
+      <h2>Sign in</h2>
+      <p class="auth-sub">Enter your workspace credentials to continue.</p>
 
-          <button
-            type="button"
-            class="eye-btn"
-            (click)="togglePasswordVisibility()">
-            <span class="eye-icon" [class.hide]="hidePassword"></span>
-          </button>
+      <form [formGroup]="loginForm" (ngSubmit)="login()" autocomplete="off">
+        <div class="form-group">
+          <label>Work email</label>
+          <input type="email" placeholder="you@company.com" formControlName="email" />
+          @if (loginForm.get('email')?.touched && loginForm.get('email')?.errors?.['required']) {
+            <small class="error">Email is required</small>
+          }
+          @if (loginForm.get('email')?.touched && loginForm.get('email')?.errors?.['email']) {
+            <small class="error">Please enter a valid email address</small>
+          }
         </div>
 
-        <div class="forgot-link-container">
-          <a
-            routerLink="/forgot-password"
-            class="forgot-link"
-            [class.disabled]="loaderService.isLoading$ | async">
-            Forgot Password?
-          </a>
+        <!-- Password -->
+        <div class="form-group password-group">
+          <label>Password</label>
+
+          <div class="password-input-wrapper">
+            <input
+              [type]="hidePassword ? 'password' : 'text'"
+              placeholder="••••••••"
+              formControlName="password" />
+
+            <button
+              type="button"
+              class="eye-btn"
+              (click)="togglePasswordVisibility()">
+              <span class="eye-icon" [class.hide]="hidePassword"></span>
+            </button>
+          </div>
         </div>
 
-      </div>
+        <div class="row-between">
+          <label class="checkbox-wrap">
+            <input type="checkbox" /> Keep me signed in
+          </label>
+          <a routerLink="/forgot-password" class="forgot-link" [class.disabled]="loaderService.isLoading$ | async">Forgot password?</a>
+        </div>
 
-      <button type="submit" [disabled]="loginForm.invalid">
-        {{ (loaderService.isLoading$ | async) ? 'Logging in…' : 'Login' }}
-      </button>
+        <button type="submit" [disabled]="loginForm.invalid">
+          {{ (loaderService.isLoading$ | async) ? 'Logging in…' : 'Sign in' }}
+        </button>
+      </form>
 
-    </form>
+      <div class="divider">or continue with</div>
+      <button type="button" class="sso-btn">Single sign-on (SSO)</button>
 
-    <p class="link-text">
-        Don’t have an account?
-        <a
-          routerLink="/register"
-          class="register-link"
-          [class.disabled]="loaderService.isLoading$ | async">
-          Register
-        </a>
-    </p>
+      <p class="link-text">
+        Don't have an account?
+        <a routerLink="/register" class="register-link" [class.disabled]="loaderService.isLoading$ | async">Register</a>
+      </p>
+    </div>
   </div>
 </div>

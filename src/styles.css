@@ -1,11 +1,11 @@
 /* You can add global styles to this file, and also import other style files */
 * {
   box-sizing: border-box;
-  font-family: "Segoe UI", Roboto, sans-serif;
 }
 
-body {
+html, body {
   margin: 0;
-  height: 100vh;
-  background: linear-gradient(135deg, #667eea, #764ba2);
+  height: 100%;
+  font-family: 'Inter', "Segoe UI", Roboto, sans-serif;
+  background: #F6F1E7;
 }
