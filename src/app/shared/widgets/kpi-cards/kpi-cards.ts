@@ -10,9 +10,9 @@ import { CommonModule } from '@angular/common';
 })
 export class KpiCardsComponent {
   cards = [
-    { title: 'Total Employees', value: 128, icon: '👥' },
-    { title: 'Present Today', value: 94, icon: '✅' },
-    { title: 'On Leave', value: 12, icon: '🌴' },
-    { title: 'Departments', value: 6, icon: '🏢' }
+    { title: 'Total Employees', value: 128, icon: 'group' },
+    { title: 'Present Today', value: 94, icon: 'check_circle' },
+    { title: 'On Leave', value: 12, icon: 'beach_access' },
+    { title: 'Departments', value: 6, icon: 'apartment' }
   ];
 }

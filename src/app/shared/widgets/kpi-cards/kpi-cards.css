@@ -1,58 +1,51 @@
-.kpi-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 20px;
+.ledger-summary {
+  display: flex;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 10px;
   margin-bottom: 24px;
+  overflow: hidden;
 }
 
-.kpi-card {
-  background: #ffffff;
-  border-radius: 14px;
-  padding: 22px;
+.ledger-summary-item {
+  flex: 1;
   display: flex;
   align-items: center;
-  gap: 16px;
-  box-shadow: 0 10px 25px rgba(0,0,0,0.06);
-  transition: all 0.2s ease;
+  gap: 14px;
+  padding: 22px 24px;
+  position: relative;
 }
 
-.kpi-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 16px 30px rgba(0,0,0,0.08);
+.ledger-summary-item + .ledger-summary-item {
+  border-left: 1px solid var(--line);
 }
 
-.kpi-icon {
-  width: 46px;
-  height: 46px;
-  border-radius: 12px;
-  background: #f1f5f9;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 22px;
+.item-index {
+  position: absolute;
+  top: 10px;
+  left: 14px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10.5px;
+  color: var(--gold);
+  letter-spacing: 0.05em;
 }
 
-.kpi-title {
-  font-size: 14px;
-  color: #64748b;
-  margin-bottom: 4px;
+.item-icon {
+  width: 42px; height: 42px;
+  border-radius: 8px;
+  background: var(--paper);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  margin-top: 6px;
 }
+.item-icon .material-icons { font-size: 20px; color: var(--moss); }
 
-.kpi-value {
-  font-size: 26px;
-  font-weight: 700;
-  color: #0f172a;
-}
+.item-title { font-size: 12px; color: var(--text-muted); margin: 0 0 4px; }
+.item-value { font-family: 'IBM Plex Mono', monospace; font-size: 22px; font-weight: 500; color: var(--ink); margin: 0; }
 
-/* Responsive */
-@media (max-width: 1200px) {
-  .kpi-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-@media (max-width: 640px) {
-  .kpi-grid {
-    grid-template-columns: 1fr;
-  }
+@media (max-width: 900px) {
+  .ledger-summary { flex-wrap: wrap; }
+  .ledger-summary-item { flex: 1 1 50%; }
+  .ledger-summary-item:nth-child(2n+1) { border-left: none; }
+  .ledger-summary-item:nth-child(n+3) { border-top: 1px solid var(--line); }
 }

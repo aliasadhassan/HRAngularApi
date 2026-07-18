@@ -1,21 +1,23 @@
 <header class="topbar">
 
-  <!-- SEARCH -->
-  <div class="search-box">
-    <span class="search-icon">🔍</span>
-    <input type="text" placeholder="Search..." />
-  </div>
+  <!-- CENTER: date stamp -->
+  <div class="topbar-date">{{ today | date:'EEE, MMM d, y' }}</div>
 
   <!-- RIGHT -->
   <div class="topbar-right">
 
-    <button class="icon-btn">🔔</button>
-    <button class="icon-btn">⚙️</button>
+    <button class="icon-btn">
+      <span class="material-icons text-xl">notifications</span>
+    </button>
+    <button class="icon-btn">
+      <span class="material-icons text-xl">settings</span>
+    </button>
 
     <!-- PROFILE -->
     <div class="profile" (click)="toggleProfile()">
       <img src="https://i.pravatar.cc/40" alt="User" />
       <span class="name">Ali</span>
+      <span class="material-icons text-base chevron">expand_more</span>
 
       @if (showProfileMenu) {
         <div class="profile-menu">

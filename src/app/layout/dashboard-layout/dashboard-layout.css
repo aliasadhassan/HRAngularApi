@@ -1,16 +1,29 @@
 .layout {
+  --ink: #14231C;
+  --paper: #F6F1E7;
+  --moss: #4C6B4F;
+  --moss-dark: #3A5540;
+  --gold: #C9A24B;
+  --rust: #B4552F;
+  --text-dark: #2A2A26;
+  --text-muted: #6B6A5F;
+  --line: #DCD3BE;
+
   display: flex;
   height: 100vh;
+  background: var(--paper);
+  font-family: 'Fraunces', serif;
 }
 
 .main {
   flex: 1;
-  background: #f8fafc;
   display: flex;
   flex-direction: column;
+  min-width: 0;
 }
 
 .content {
-  padding: 24px;
+  flex: 1;
   overflow-y: auto;
+  padding: 28px;
 }

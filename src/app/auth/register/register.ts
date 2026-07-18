@@ -31,6 +31,7 @@ export class RegisterComponent {
   registerForm: FormGroup; // Form Group defined here
   success = '';
   error = '';
+  today = new Date();
 
   hidePassword = true;
   passwordSuggestions: string[] = []; 

@@ -1,69 +1,27 @@
-<div class="flex h-screen bg-gray-100">
-
-  <!-- Sidebar -->
   <aside
-    role="navigation"
-    class="sidebar bg-gray-900 text-white flex flex-col"
-    [ngClass]="isExpanded ? 'w-64' : 'w-16'"
-  >
+  role="navigation"
+  class="sidebar flex flex-col"
+  [class.sidebar-expanded]="isExpanded"
+  [class.sidebar-collapsed]="!isExpanded">
 
-    <!-- Header -->
-    <header class="h-16 flex items-center justify-center border-b">
-
-      @if (isExpanded) {
-        <div class="flex items-center gap-2 px-4 w-full">
-          <span class="material-icons text-gray-400 text-xl">search</span>
-          <input
-            type="text"
-            placeholder="Search"
-            class="bg-transparent outline-none text-sm text-gray-300 w-full"
-          />
-        </div>
-      } @else {
-        <span class="material-icons text-gray-400 text-xl">
-          search
-        </span>
-      }
-
-    </header>
-
-    <!-- Menu -->
-    <nav class="flex-1 py-4">
-
-      @for (item of menuItems; track item.label) {
-        <button type="button" (click)="onMenuItemClick(item)">
-          <span class="material-icons text-xl">
-            {{ item.icon }}
-          </span>
-
-          @if (isExpanded) {
-            <span class="text-sm whitespace-nowrap">
-              {{ item.label }}
-            </span>
-          }
-        </button>
-      }
-
-    </nav>
-
-    <!-- Footer -->
-    <footer class="h-16 flex items-center justify-center border-t">
-
-      <button
-        type="button"
-        class="toggle-btn w-10 h-10 flex items-center justify-center bg-orange-500 rounded"
-        (click)="toggleSidebar()"
-      >
-        <span
-          class="material-icons text-xl"
-          [class.rotate-180]="isExpanded"
-        >
-          chevron_right
-        </span>
-      </button>
-
-    </footer>
-
-  </aside>
-
+<div class="sidebar-brand">
+  <div class="brand-mark">H</div>
+  <span class="brand-name" [class.hidden-label]="!isExpanded">HR CLOUD</span>
 </div>
+
+  <nav class="flex-1 py-2">
+    @for (item of menuItems; track item.label) {
+      <button type="button" class="menu-item" [class.active]="item.active" (click)="onMenuItemClick(item)">
+       <span class="menu-icon material-icons">{{ item.icon }}</span>
+       <span class="menu-label" [class.hidden-label]="!isExpanded">{{ item.label }}</span>
+      </button>
+    }
+  </nav>
+
+  <footer class="sidebar-footer">
+    <button type="button" class="toggle-btn" (click)="toggleSidebar()">
+      <span class="material-icons" [class.rotate-180]="isExpanded">chevron_right</span>
+    </button>
+  </footer>
+
+</aside>

@@ -1,9 +1,12 @@
-<div class="kpi-grid">
-  <div class="kpi-card" *ngFor="let card of cards">
-    <div class="kpi-icon">{{ card.icon }}</div>
-    <div class="kpi-content">
-      <p class="kpi-title">{{ card.title }}</p>
-      <h3 class="kpi-value">{{ card.value }}</h3>
+<div class="ledger-summary">
+  <div class="ledger-summary-item" *ngFor="let card of cards; let i = index">
+    <span class="item-index">{{ (i+1) | number:'2.0-0' }}</span>
+    <div class="item-icon">
+      <span class="material-icons">{{ card.icon }}</span>
+    </div>
+    <div class="item-body">
+      <p class="item-title">{{ card.title }}</p>
+      <h3 class="item-value">{{ card.value }}</h3>
     </div>
   </div>
 </div>

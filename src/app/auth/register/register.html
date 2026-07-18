@@ -1,81 +1,99 @@
 <div class="auth-wrapper">
-  <div class="auth-card">
-    <h2>HR Portal Registration</h2>
+  <div class="ledger-panel">
+    <div class="brand">
+      <div class="brand-mark">H</div>
+      <div class="brand-name">HR Cloud</div>
+    </div>
 
-    <form [formGroup]="registerForm" (ngSubmit)="register()" autocomplete="off">
+    <div class="thesis">
+      <div class="eyebrow">Every entry, accounted for</div>
+      <h1>The ledger never stops moving.</h1>
+      <p>Attendance, payroll, and approvals flow through one record — live, auditable, and always in balance.</p>
+    </div>
 
-      <!-- Username -->
-      <div class="form-group">
-        <input type="text" placeholder="Username" formControlName="UserName" />
-        @if (registerForm.get('UserName')?.touched && registerForm.get('UserName')?.invalid) {
-          <small class="error">Username is required</small>
-        }
-      </div>
+    <div class="panel-footer">© 2026 HR Cloud — hr-cloud.online</div>
+  </div>
 
-      <!-- Email -->
-      <div class="form-group">
-        <input type="email" placeholder="Email" formControlName="email" />
-        @if (registerForm.get('email')?.touched && registerForm.get('email')?.invalid) {
-          <small class="error">Valid email required</small>
-        }
-      </div>
+  <div class="form-panel">
+    <div class="auth-card">
+      <div class="stamp-date">{{ today | date:'EEE, MMM d, y' }}</div>
+      <h2>Create account</h2>
+      <p class="auth-sub">Set up your workspace credentials.</p>
 
-      <!-- Password -->
-       <div class="form-group password-group">
+      <form [formGroup]="registerForm" (ngSubmit)="register()" autocomplete="off">
 
-        <!-- INPUT + EYE -->
-        <div class="password-input-wrapper">
-          <input
-            [type]="hidePassword ? 'password' : 'text'"
-            placeholder="Password"
-            formControlName="password"
-            (input)="updateStrength()" />
-
-          <button
-            type="button"
-            class="eye-btn"
-            (click)="togglePasswordVisibility()">
-            <span class="eye-icon" [class.hide]="hidePassword"></span>
-          </button>
+        <!-- Username -->
+        <div class="form-group">
+          <label>Username</label>
+          <input type="text" placeholder="yourname" formControlName="UserName" />
+          @if (registerForm.get('UserName')?.touched && registerForm.get('UserName')?.invalid) {
+            <small class="error">Username is required</small>
+          }
         </div>
 
-        @if (strengthText) {
+        <!-- Email -->
+        <div class="form-group">
+          <label>Work email</label>
+          <input type="email" placeholder="you@company.com" formControlName="email" />
+          @if (registerForm.get('email')?.touched && registerForm.get('email')?.invalid) {
+            <small class="error">Valid email required</small>
+          }
+        </div>
 
-          <div class="strength-meter">
-            <div
-              class="strength-bar"
-              [ngClass]="{
-                'level-weak': strengthClass === 'weak',
-                'level-medium': strengthClass === 'medium',
-                'level-strong': strengthClass === 'strong'
-              }"
-              [style.transform]="'scaleX(' + (strengthScore / 4) + ')'">
-            </div>
+        <!-- Password -->
+        <div class="form-group password-group">
+          <label>Password</label>
+
+          <div class="password-input-wrapper">
+            <input
+              [type]="hidePassword ? 'password' : 'text'"
+              placeholder="••••••••"
+              formControlName="password"
+              (input)="updateStrength()" />
+
+            <button
+              type="button"
+              class="eye-btn"
+              (click)="togglePasswordVisibility()">
+              <span class="eye-icon" [class.hide]="hidePassword"></span>
+            </button>
           </div>
 
-          <small
-            class="strength-text"
-            [ngClass]="{
-              'text-weak': strengthClass === 'weak',
-              'text-medium': strengthClass === 'medium',
-              'text-strong': strengthClass === 'strong'
-            }">
-            {{ strengthText }}
-          </small>
+          @if (strengthText) {
+            <div class="strength-meter">
+              <div
+                class="strength-bar"
+                [ngClass]="{
+                  'level-weak': strengthClass === 'weak',
+                  'level-medium': strengthClass === 'medium',
+                  'level-strong': strengthClass === 'strong'
+                }"
+                [style.transform]="'scaleX(' + (strengthScore / 4) + ')'">
+              </div>
+            </div>
 
-        }
+            <small
+              class="strength-text"
+              [ngClass]="{
+                'text-weak': strengthClass === 'weak',
+                'text-medium': strengthClass === 'medium',
+                'text-strong': strengthClass === 'strong'
+              }">
+              {{ strengthText }}
+            </small>
+          }
+        </div>
 
-      </div>
+        <button type="submit" [disabled]="registerForm.invalid">
+          Create account
+        </button>
 
-      <button type="submit" [disabled]="registerForm.invalid">
-        Register
-      </button>
-      
-    </form>
+      </form>
 
-    <p class="link-text">
-      Already have an account?
-      <a routerLink="../login" class="login-link">Login</a>
-    </p>
+      <p class="link-text">
+        Already have an account?
+        <a routerLink="../login" class="login-link">Sign in</a>
+      </p>
+    </div>
   </div>
 </div>

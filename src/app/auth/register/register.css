@@ -1,91 +1,221 @@
-/* Layout */
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
+
 .auth-wrapper {
+  --ink: #14231C;
+  --paper: #F6F1E7;
+  --moss: #4C6B4F;
+  --moss-dark: #3A5540;
+  --gold: #C9A24B;
+  --rust: #B4552F;
+  --text-dark: #2A2A26;
+  --text-muted: #6B6A5F;
+  --line: #DCD3BE;
+
   min-height: 100vh;
   display: flex;
-  justify-content: center;
-  align-items: center;
-  background: #f4f6fb;
+  background: var(--paper);
+  font-family: 'Fraunces', serif;
+  overflow: hidden;
 }
 
-.auth-card {
-  background: white;
-  width: 380px;
-  padding: 32px;
-  border-radius: 14px;
-  box-shadow: 0 25px 60px rgba(0,0,0,0.25);
+/* LEFT PANEL */
+.ledger-panel {
+  flex: 1.1;
+  background: var(--ink);
+  color: var(--paper);
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 56px 52px;
+  min-width: 0;
+}
+
+.brand { display: flex; align-items: center; gap: 12px; z-index: 2; }
+
+.brand-mark {
+  width: 34px; height: 34px;
+  border: 1.5px solid var(--gold);
+  border-radius: 3px;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Fraunces', serif;
+  font-size: 17px;
+  color: var(--gold);
+}
+
+.brand-name {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 13px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--paper);
+  opacity: 0.85;
+}
+
+.thesis { z-index: 2; max-width: 460px; position: relative; }
+
+.thesis .eyebrow {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--gold);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.thesis .eyebrow::before {
+  content: '';
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: var(--gold);
+  box-shadow: 0 0 0 3px rgba(201,162,75,0.18);
+}
+
+.thesis h1 {
+  font-family: 'Fraunces', serif;
+  font-weight: 500;
+  font-size: 40px;
+  line-height: 1.18;
+  letter-spacing: -0.01em;
+  margin-bottom: 18px;
+}
+
+.thesis p {
+  font-size: 15px;
+  line-height: 1.65;
+  color: rgba(246,241,231,0.68);
+  max-width: 380px;
+}
+
+.panel-footer {
+  z-index: 2;
+  position: relative;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11.5px;
+  color: rgba(246,241,231,0.4);
+  letter-spacing: 0.04em;
+}
+
+/* RIGHT PANEL — form */
+.form-panel {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+  min-width: 0;
+  overflow-y: auto;
+}
+
+.auth-card { width: 100%; max-width: 380px; }
+
+.stamp-date {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  border: 1px solid var(--line);
+  display: inline-block;
+  padding: 5px 11px;
+  border-radius: 3px;
+  margin-bottom: 28px;
 }
 
 .auth-card h2 {
-  text-align: center;
-  margin-bottom: 25px;
+  font-family: 'Fraunces', serif;
+  font-weight: 500;
+  font-size: 28px;
+  margin-bottom: 8px;
+  color: var(--ink);
 }
 
-/* Inputs */
+.auth-sub { font-size: 14px; color: var(--text-muted); margin-bottom: 28px; }
+
+.form-group { margin-bottom: 16px; }
+
+.form-group label {
+  display: block;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--text-dark);
+  margin-bottom: 7px;
+}
+
 .auth-card input {
   width: 100%;
-  padding: 12px;
-  border-radius: 8px;
-  border: 1px solid #ccc;
-  font-size: 14px;
-  margin-bottom: 6px;
+  padding: 12px 14px;
+  border: 1.5px solid var(--line);
+  border-radius: 6px;
+  background: #fff;
+  font-family: 'Fraunces', serif;
+  font-size: 14.5px;
+  color: var(--text-dark);
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
+
+.auth-card input::placeholder { color: #B7B09E; }
 
 .auth-card input:focus {
-  border-color: #6b7cff;
-  box-shadow: 0 0 0 2px rgba(107,124,255,0.15);
+  border-color: var(--moss);
+  box-shadow: 0 0 0 3px rgba(76,107,79,0.14);
 }
 
-/* Button */
 .auth-card button[type="submit"] {
   width: 100%;
-  padding: 12px;
-  background: #667eea;
+  padding: 13px;
+  background: var(--ink);
+  color: var(--paper);
   border: none;
-  border-radius: 8px;
-  color: white;
+  border-radius: 6px;
+  font-family: 'Fraunces', serif;
+  font-size: 14.5px;
+  font-weight: 600;
   cursor: pointer;
-  margin-top: 10px;
+  margin-top: 6px;
+  transition: background 0.15s ease, transform 0.08s ease;
 }
 
-/* Errors */
+.auth-card button[type="submit"]:hover:not(:disabled) { background: var(--moss-dark); }
+.auth-card button[type="submit"]:active:not(:disabled) { transform: scale(0.985); }
+.auth-card button[type="submit"]:disabled { opacity: 0.5; cursor: not-allowed; }
+
 .error {
-  color: red;
+  display: block;
+  margin-top: 4px;
+  margin-bottom: 6px;
+  color: var(--rust);
   font-size: 12px;
 }
 
-/* Links */
 .link-text {
-  margin-top: 18px;
+  margin-top: 22px;
   text-align: center;
-  font-size: 14px;
+  font-size: 13.5px;
+  color: var(--text-muted);
 }
 
 .login-link {
-  color: #5a6dfc;
+  color: var(--moss-dark);
   font-weight: 600;
   margin-left: 5px;
   text-decoration: none;
 }
-/* ===== Password Input with Eye Button ===== */
+.login-link:hover { text-decoration: underline; }
 
-/* Wrapper jo height control karega */
-.password-input-wrapper {
-  position: relative;
-  width: 100%;
-}
+/* Password eye toggle */
+.password-input-wrapper { position: relative; width: 100%; }
+.password-input-wrapper input { padding-right: 44px; }
 
-/* Input */
-.password-input-wrapper input {
-  width: 100%;
-  padding-right: 44px;
-}
-
-/* Eye button – sirf input ke andar */
 .eye-btn {
   position: absolute;
   right: 10px;
-  top: 50%;
-  transform: translateY(-50%);
+  top: 12px;
   background: transparent;
   border: none;
   padding: 0;
@@ -94,7 +224,6 @@
   width: 20px;
 }
 
-/* Eye icon */
 .eye-icon {
   display: block;
   width: 20px;
@@ -105,28 +234,23 @@
   background-size: contain;
 }
 
-/* Eye OFF */
 .eye-icon.hide {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' stroke='%23666' stroke-width='2' viewBox='0 0 24 24'%3E%3Cpath d='M17.94 17.94A10.94 10.94 0 0 1 12 20c-5 0-9.27-3.11-11-8 1.21-3.05 3.5-5.45 6.36-6.62M1 1l22 22'/%3E%3Cpath d='M9.88 9.88A3 3 0 0 0 12 15a3 3 0 0 0 2.12-.88'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' stroke='%236B7B6B' stroke-width='2' viewBox='0 0 24 24'%3E%3Cpath d='M17.94 17.94A10.94 10.94 0 0 1 12 20c-5 0-9.27-3.11-11-8 1.21-3.05 3.5-5.45 6.36-6.62M1 1l22 22'/%3E%3Cpath d='M9.88 9.88A3 3 0 0 0 12 15a3 3 0 0 0 2.12-.88'/%3E%3C/svg%3E");
 }
 
-/* Eye ON */
 .eye-icon:not(.hide) {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' stroke='%23666' stroke-width='2' viewBox='0 0 24 24'%3E%3Cpath d='M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z'/%3E%3Ccircle cx='12' cy='12' r='3'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' stroke='%236B7B6B' stroke-width='2' viewBox='0 0 24 24'%3E%3Cpath d='M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z'/%3E%3Ccircle cx='12' cy='12' r='3'/%3E%3C/svg%3E");
 }
 
-/* ===== Strength Meter ===== */
-
-/* Base meter */
+/* Strength meter */
 .strength-meter {
   height: 3px;
-  background: #eaeaea;
+  background: var(--line);
   border-radius: 3px;
   margin-top: 8px;
   overflow: hidden;
 }
 
-/* Moving bar */
 .strength-bar {
   height: 100%;
   width: 100%;
@@ -135,20 +259,23 @@
   transition: transform 0.3s ease;
 }
 
-/* Bar colors */
-.level-weak { background-color: #ff4d4d; }
-.level-medium { background-color: #ffa500; }
-.level-strong { background-color: #2ecc71; }
+.level-weak { background-color: var(--rust); }
+.level-medium { background-color: var(--gold); }
+.level-strong { background-color: var(--moss); }
 
-/* Text */
 .strength-text {
   display: block;
   margin-top: 4px;
   font-size: 11px;
   font-weight: 600;
+  font-family: 'IBM Plex Mono', monospace;
 }
 
-/* Text colors only */
-.text-weak { color: #ff4d4d; }
-.text-medium { color: #ffa500; }
-.text-strong { color: #2ecc71; }
+.text-weak { color: var(--rust); }
+.text-medium { color: var(--gold); }
+.text-strong { color: var(--moss-dark); }
+
+@media (max-width: 860px) {
+  .ledger-panel { display: none; }
+  .form-panel { flex: 1; }
+}

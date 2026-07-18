@@ -1,10 +1,24 @@
-<h2>Dashboard</h2>
+<div class="page-header">
+  <div class="page-eyebrow"><span class="live-dot"></span>Overview</div>
+  <h2>Dashboard</h2>
+</div>
 
 <app-kpi-cards></app-kpi-cards>
 
-<!-- Charts next -->
 <div class="charts-grid">
-  <div class="chart-card">Attendance Chart</div>
-  <div class="chart-card">Employee Growth</div>
+  <div class="chart-card">
+    <div class="chart-card-header">
+      <h3>Attendance</h3>
+      <span class="chart-tag">Last 30 days</span>
+    </div>
+    <div class="chart-placeholder">Attendance Chart</div>
+  </div>
+
+  <div class="chart-card">
+    <div class="chart-card-header">
+      <h3>Employee Growth</h3>
+      <span class="chart-tag">YTD</span>
+    </div>
+    <div class="chart-placeholder">Employee Growth</div>
+  </div>
 </div>
-<!-- End of Dashboard Content -->
