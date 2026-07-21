@@ -33,8 +33,10 @@
     "@zxcvbn-ts/language-common": "^3.0.4",
     "@zxcvbn-ts/language-en": "^3.0.2",
     "bootstrap-icons": "^1.13.1",
+    "chart.js": "^4.5.1",
     "jwt-decode": "^4.0.0",
     "lucide-angular": "^0.562.0",
+    "motion": "^12.42.2",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0"
   },

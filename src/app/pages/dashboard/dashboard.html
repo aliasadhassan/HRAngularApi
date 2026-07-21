@@ -5,13 +5,16 @@
 
 <app-kpi-cards></app-kpi-cards>
 
+<!-- Charts row -->
 <div class="charts-grid">
   <div class="chart-card">
     <div class="chart-card-header">
       <h3>Attendance</h3>
       <span class="chart-tag">Last 30 days</span>
     </div>
-    <div class="chart-placeholder">Attendance Chart</div>
+    <div class="chart-canvas-wrap">
+      <app-chart type="bar" [labels]="attendanceLabels" [datasets]="attendanceDatasets"></app-chart>
+    </div>
   </div>
 
   <div class="chart-card">
@@ -19,6 +22,178 @@
       <h3>Employee Growth</h3>
       <span class="chart-tag">YTD</span>
     </div>
-    <div class="chart-placeholder">Employee Growth</div>
+    <div class="chart-canvas-wrap">
+      <app-chart type="line" [labels]="growthLabels" [datasets]="growthDatasets"></app-chart>
+    </div>
+  </div>
+</div>
+
+<!-- Insights row: donut + availability + payroll -->
+<div class="insights-grid">
+  <div class="chart-card">
+    <div class="chart-card-header">
+      <h3>Department Distribution</h3>
+      <span class="chart-tag">This Month</span>
+    </div>
+    <div class="donut-wrap">
+      <div class="donut-canvas">
+        <app-chart type="doughnut" [labels]="deptLabels" [datasets]="deptDatasets"></app-chart>
+        <div class="donut-center">
+          <span class="donut-value">{{ totalStaff }}</span>
+          <span class="donut-label">Total Staff</span>
+        </div>
+      </div>
+      <ul class="donut-legend">
+        <li *ngFor="let d of departments">
+          <span class="dot" [style.background]="d.color"></span>
+          {{ d.count }} {{ d.name }}
+        </li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="chart-card">
+    <div class="chart-card-header">
+      <h3>Employee Availability</h3>
+      <span class="chart-tag">View All</span>
+    </div>
+    <div class="availability-stats">
+      <div class="stat-block">
+        <span class="stat-num">{{ availabilityStats.available }}</span>
+        <span class="stat-label">Available</span>
+      </div>
+      <div class="stat-block">
+        <span class="stat-num">{{ availabilityStats.unavailable }}</span>
+        <span class="stat-label">Unavailable</span>
+      </div>
+      <div class="stat-block">
+        <span class="stat-num">{{ availabilityStats.onLeave }}</span>
+        <span class="stat-label">On Leave</span>
+      </div>
+    </div>
+    <ul class="people-list">
+      <li *ngFor="let e of quickView">
+        <div class="person">
+          <span class="avatar">{{ e.initials }}</span>
+          <div>
+            <p class="person-name">{{ e.name }}</p>
+            <p class="person-role">{{ e.role }}</p>
+          </div>
+        </div>
+        <button class="btn-ghost">View</button>
+      </li>
+    </ul>
+  </div>
+
+  <div class="chart-card">
+    <div class="chart-card-header">
+      <h3>Payroll By Department</h3>
+      <span class="chart-tag">Monthly</span>
+    </div>
+    <ul class="payroll-list">
+      <li *ngFor="let p of payroll">
+        <div>
+          <p class="payroll-dept">{{ p.name }}</p>
+          <p class="payroll-count">{{ p.count }} Employees</p>
+        </div>
+        <span class="payroll-amount">{{ p.amount }}</span>
+      </li>
+    </ul>
+  </div>
+</div>
+<!-- All Meetings (full width) -->
+<div class="table-card full-width-card">
+  <div class="chart-card-header">
+    <h3>All Meetings</h3>
+    <span class="chart-tag">View All</span>
+  </div>
+  <table class="ledger-table wide-table">
+    <thead>
+      <tr>
+        <th>Employee</th>
+        <th>Meeting With</th>
+        <th>Date &amp; Time</th>
+        <th>Mode</th>
+        <th>Status</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let m of meetings">
+        <td>
+          <div class="person">
+            <span class="avatar">{{ m.empInitials }}</span>
+            <div>
+              <p class="person-name">{{ m.empName }}</p>
+              <p class="person-role">{{ m.empRole }}</p>
+            </div>
+          </div>
+        </td>
+        <td>
+          <div class="person">
+            <span class="avatar">{{ m.withInitials }}</span>
+            <div>
+              <p class="person-name">{{ m.withName }}</p>
+              <p class="person-role">{{ m.withPhone }}</p>
+            </div>
+          </div>
+        </td>
+        <td>{{ m.date }}</td>
+        <td>{{ m.mode }}</td>
+        <td>
+          <span class="status-badge" [ngClass]="m.status.toLowerCase().split(' ').join('-')">{{ m.status }}</span>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+<!-- Tables row: recent employees + leave requests -->
+<div class="tables-grid">
+  <div class="table-card">
+    <div class="chart-card-header">
+      <h3>Recent Employees</h3>
+      <span class="chart-tag">View All</span>
+    </div>
+    <table class="ledger-table">
+      <thead>
+        <tr><th>Name</th><th>Department</th><th>Joined</th><th>Status</th></tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let emp of recentEmployees">
+          <td>{{ emp.name }}</td>
+          <td>{{ emp.department }}</td>
+          <td>{{ emp.joinDate }}</td>
+          <td><span class="status-badge" [ngClass]="emp.status.toLowerCase()">{{ emp.status }}</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="table-card">
+    <div class="chart-card-header">
+      <h3>Leave Requests</h3>
+      <span class="chart-tag">Today</span>
+    </div>
+    <ul class="request-list" *ngIf="leaveRequests.length; else noRequests">
+      <li *ngFor="let r of leaveRequests">
+        <div class="person">
+          <span class="avatar">{{ r.initials }}</span>
+          <div>
+            <p class="person-name">{{ r.name }}</p>
+            <p class="person-role">{{ r.reason }}</p>
+          </div>
+        </div>
+        <div class="request-actions">
+          <button class="icon-btn reject" (click)="rejectLeave(r)">
+            <span class="material-icons">close</span>
+          </button>
+          <button class="icon-btn accept" (click)="approveLeave(r)">
+            <span class="material-icons">check</span>
+          </button>
+        </div>
+      </li>
+    </ul>
+    <ng-template #noRequests>
+      <p class="empty-state">No pending leave requests 🎉</p>
+    </ng-template>
   </div>
 </div>

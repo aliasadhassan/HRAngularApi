@@ -1,21 +1,50 @@
-  <aside
+<aside
+  #sidebarEl
   role="navigation"
   class="sidebar flex flex-col"
   [class.sidebar-expanded]="isExpanded"
-  [class.sidebar-collapsed]="!isExpanded">
+  [class.sidebar-collapsed]="!isExpanded"
+>
 
-<div class="sidebar-brand">
-  <div class="brand-mark">H</div>
-  <span class="brand-name" [class.hidden-label]="!isExpanded">HR CLOUD</span>
-</div>
+  <div class="sidebar-brand">
+    <div class="brand-mark">H</div>
+    <span class="brand-name" [class.hidden-label]="!isExpanded">HR CLOUD</span>
+  </div>
 
   <nav class="flex-1 py-2">
-    @for (item of menuItems; track item.label) {
-      <button type="button" class="menu-item" [class.active]="item.active" (click)="onMenuItemClick(item)">
-       <span class="menu-icon material-icons">{{ item.icon }}</span>
-       <span class="menu-label" [class.hidden-label]="!isExpanded">{{ item.label }}</span>
-      </button>
+   @for (item of menuItems; track item.label) {
+  <button
+    type="button"
+    class="menu-item"
+    [class.active]="item.active && !item.children"
+    [class.has-children]="item.children"
+    (click)="onParentClick(item)"
+  >
+    <span class="menu-icon material-icons">{{ item.icon }}</span>
+    <span class="menu-label" [class.hidden-label]="!isExpanded">{{ item.label }}</span>
+    @if (item.children && isExpanded) {
+      <span class="menu-chevron material-icons" [class.rotate-90]="item.expanded">chevron_right</span>
     }
+  </button>
+
+  @if (item.children) {
+    <div class="submenu" [class.submenu-open]="item.expanded && isExpanded">
+      <div class="submenu-inner">
+        @for (child of item.children; track child.label) {
+          <button
+            type="button"
+            class="submenu-item"
+            [class.active]="child.active"
+            (click)="onChildClick(item, child)"
+          >
+            <span class="submenu-dot"></span>
+            <span class="submenu-label">{{ child.label }}</span>
+          </button>
+        }
+      </div>
+    </div>
+  }
+}
   </nav>
 
   <footer class="sidebar-footer">

@@ -186,7 +186,7 @@
   margin-bottom: 7px;
 }
 
-.auth-card input {
+.auth-card input:not([type="checkbox"]) {
   width: 100%;
   padding: 12px 14px;
   border: 1.5px solid var(--line);
@@ -196,6 +196,7 @@
   font-size: 14.5px;
   color: var(--text-dark);
   outline: none;
+  box-sizing: border-box;
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
@@ -210,12 +211,31 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 12px;
   margin-bottom: 26px;
   font-size: 13px;
 }
 
-.checkbox-wrap { display: flex; align-items: center; gap: 8px; color: var(--text-muted); }
-.checkbox-wrap input { accent-color: var(--moss); }
+.checkbox-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-muted);
+  white-space: nowrap;   /* 👈 text ko 2 lines mein wrap hone se rokta hai */
+  flex-shrink: 0;         /* 👈 checkbox-wrap ko squish hone se rokta hai */
+}
+.checkbox-wrap input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  margin: 0;
+  accent-color: var(--moss);
+}
+
+.forgot-link {
+  white-space: nowrap;
+  flex-shrink: 0;
+}
 
 .forgot-link, .row-between a { color: var(--moss-dark); text-decoration: none; font-weight: 500; }
 .forgot-link:hover, .row-between a:hover { text-decoration: underline; }

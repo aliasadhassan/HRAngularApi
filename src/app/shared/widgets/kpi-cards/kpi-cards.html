@@ -7,6 +7,11 @@
     <div class="item-body">
       <p class="item-title">{{ card.title }}</p>
       <h3 class="item-value">{{ card.value }}</h3>
+      <span class="item-trend" [class.up]="card.direction === 'up'" [class.down]="card.direction === 'down'">
+        <span class="material-icons trend-icon" *ngIf="card.direction === 'up'">arrow_upward</span>
+        <span class="material-icons trend-icon" *ngIf="card.direction === 'down'">arrow_downward</span>
+        {{ card.trend }}
+      </span>
     </div>
   </div>
 </div>
