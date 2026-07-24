@@ -235,5 +235,11 @@ telnet sql-server 1433 pe blank screen / connected aa jaye
 Agar “connection refused” / “could not resolve host” aaye
 → matlab issue connection string ya docker-compose service name me hai.
 
-Krubenetes Section Starts Here
-==============================
+install these packages for better ui in vscode
+==============================================
+1. Material Icon Theme
+2. Peacock
+3. Error Lens
+4. Better Comments
+5. Prettier - Code Formatter
+Open the command palette (Ctrl+Shift+P or Cmd+Shift+P on macOS), type Material Icons: Activate Icon Theme, and select it.
