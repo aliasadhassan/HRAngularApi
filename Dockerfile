@@ -12,10 +12,9 @@ RUN npm run build --configuration=production
 
 # Stage 2: Serve (Sirf compiled files ko Nginx par chalane ke liye)
 # Stage 2: Serve
-FROM nginx:stable-alpine
+FROM nginx:alpine
 COPY nginx.conf /etc/nginx/conf.d/default.conf
-COPY --from=build /app/dist/hr-ui /usr/share/nginx/html
-
+COPY --from=build /app/dist/hr-ui/browser /usr/share/nginx/html
 
 # Port 80 ko expose karen
 EXPOSE 80

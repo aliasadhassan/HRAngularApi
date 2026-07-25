@@ -1,23 +1,44 @@
-import { provideAppInitializer, ApplicationConfig } from '@angular/core';
+import { provideAppInitializer, ApplicationConfig, importProvidersFrom } from '@angular/core';
 import { provideRouter } from '@angular/router';
 import { routes } from './app.routes';
 import { provideHttpClient, withInterceptors, withXsrfConfiguration } from '@angular/common/http';
-import { tokenInterceptor } from './interceptors/token-interceptor'; // Apna token interceptor import karein
-import { AuthService } from './auth/auth'; 
-import { inject } from '@angular/core'; 
-import { catchError, of } from 'rxjs'; 
-import { loaderInterceptor } from './interceptors/loader-interceptor'; // Loader interceptor import karein
+import { tokenInterceptor } from './interceptors/token-interceptor';
+import { AuthService } from './auth/auth';
+import { inject } from '@angular/core';
+import { catchError, of } from 'rxjs';
+import { loaderInterceptor } from './interceptors/loader-interceptor';
+import {
+  MsalModule,
+  MsalService,
+  MsalGuard,
+  MsalBroadcastService,
+  MSAL_INSTANCE,
+  MSAL_GUARD_CONFIG,
+  MSAL_INTERCEPTOR_CONFIG,
+  MsalGuardConfiguration,
+  MsalInterceptorConfiguration
+} from '@azure/msal-angular';
+import { InteractionType } from '@azure/msal-browser';
+import { MSALInstanceFactory } from './auth/msal-config';
 
-// Application start hotay hi check karega ke session valid hai ya nahi
 const initializeApp = () => {
   const authService = inject(AuthService);
   return authService.tryRefreshToken().pipe(
     catchError(err => {
       console.error('Auth initialization failed:', err);
-      // 'of(null)' return karne se initialization process rukega nahi
-      return of(null); 
+      return of(null);
     })
   );
+};
+
+const guardConfig: MsalGuardConfiguration = {
+  interactionType: InteractionType.Popup,
+  authRequest: { scopes: ['user.read'] }
+};
+
+const interceptorConfig: MsalInterceptorConfiguration = {
+  interactionType: InteractionType.Popup,
+  protectedResourceMap: new Map()
 };
 
 export const appConfig: ApplicationConfig = {
@@ -25,14 +46,25 @@ export const appConfig: ApplicationConfig = {
     provideRouter(routes),
     provideHttpClient(
       withInterceptors([tokenInterceptor, loaderInterceptor]),
-      // *** YEH WALA CODE ZAROORI THA ***
-      // Ye setting ensure karti hai ke har cross-origin request ke sath
-      // browser automatically 'refreshToken' cookie bhejega.
-      withXsrfConfiguration({}) 
-      // withXsrfConfiguration use karne se automatically `withCredentials: true` enable ho jata hai 
-      // aur browser cookie bhej deta hai.
+      withXsrfConfiguration({})
     ),
-    // Naya tareeqa: provideAppInitializer function ko call karein
-    provideAppInitializer(initializeApp) 
+    provideAppInitializer(initializeApp),
+
+    importProvidersFrom(MsalModule),
+    {
+      provide: MSAL_INSTANCE,
+      useFactory: MSALInstanceFactory,
+    },
+    {
+      provide: MSAL_GUARD_CONFIG,
+      useValue: guardConfig,
+    },
+    {
+      provide: MSAL_INTERCEPTOR_CONFIG,
+      useValue: interceptorConfig,
+    },
+    MsalService,
+    MsalGuard,
+    MsalBroadcastService,
   ]
 };

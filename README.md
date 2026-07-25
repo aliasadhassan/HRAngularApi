@@ -243,3 +243,13 @@ install these packages for better ui in vscode
 4. Better Comments
 5. Prettier - Code Formatter
 Open the command palette (Ctrl+Shift+P or Cmd+Shift+P on macOS), type Material Icons: Activate Icon Theme, and select it.
+
+How to remove nginx landing page from angular landing web page localhost:4200
+=============================================================================
+Go to Dockerfile and make the lines as showed under
+FROM nginx:alpine
+COPY --from=build /app/dist/hr-ui/browser /usr/share/nginx/html
+
+Go to the folder where you have placed the docker-composed.yml and open the terminal there
+and run this command 
+docker compose up -d --build --force-recreate

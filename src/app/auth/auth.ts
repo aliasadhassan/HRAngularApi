@@ -51,7 +51,9 @@ export class AuthService {
       })
     );
   }
-
+ssoLogin(accessToken: string): Observable<any> {
+  return this.http.post(`${this.apiUrl}/auth/sso/callback`, { accessToken });
+}
   // 🔄 Token Rotation Handler
   tryRefreshToken(): Observable<any> {
     const accessToken = localStorage.getItem('accessToken');

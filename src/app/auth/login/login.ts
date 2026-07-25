@@ -5,6 +5,7 @@ import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angula
 import { RouterLink,Router } from '@angular/router'; // Required for routerLink
 import { LoaderService } from '../../services/loader/loader';
 import { AlertService } from '../../services/alert/alert';
+import { MsalService } from '@azure/msal-angular';
 
 @Component({
   standalone: true,
@@ -26,13 +27,41 @@ export class LoginComponent {
     private fb: FormBuilder, 
     private authService: AuthService,
     private cdr: ChangeDetectorRef,
-    private router: Router 
+    private router: Router,
+    private msalService: MsalService
   ) {
     this.loginForm = this.fb.group({
       email: ['', [Validators.required, Validators.email, Validators.maxLength(50)]],
       password: ['', [Validators.required, Validators.minLength(6)]]
     });
   }
+  signInWithSSO(): void {
+    this.msalService.loginPopup({
+      scopes: ['user.read']
+    }).subscribe({
+      next: (result) => {
+        console.log('Microsoft login successful:', result);
+        // Yahan se access token backend (hr-identity-api) ko bhejenge
+        this.sendTokenToBackend(result.accessToken);
+      },
+      error: (error) => {
+        console.error('SSO login failed:', error);
+      }
+    });
+  }
+private sendTokenToBackend(microsoftToken: string): void {
+  this.authService.ssoLogin(microsoftToken).subscribe({
+    next: (response) => {
+      // Jaisa normal login response handle karte ho waisa hi
+      localStorage.setItem('token', response.token);
+      localStorage.setItem('refreshToken', response.refreshToken);
+      this.router.navigate(['/dashboard']);
+    },
+    error: (error) => {
+      console.error('SSO backend exchange failed:', error);
+    }
+  });
+}
 
    togglePasswordVisibility() {
     this.hidePassword = !this.hidePassword;
