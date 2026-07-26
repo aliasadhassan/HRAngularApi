@@ -13,17 +13,22 @@ import { AlertComponent } from './shared/alert/alert';
 import { LoaderService } from './services/loader/loader';
 import { AlertService } from './services/alert/alert';
 import { Subscription } from 'rxjs';
+import { filter } from 'rxjs';
+
+import { MsalService, MsalBroadcastService } from '@azure/msal-angular';
+import { InteractionStatus } from '@azure/msal-browser';
+import { AuthService } from './auth/auth';
 
 @Component({
   selector: 'app-root',
-  standalone: true, // 🔥 REQUIRED for standalone apps
+  standalone: true,
   imports: [
     RouterOutlet,
     LoaderComponent,
     AlertComponent
   ],
   templateUrl: './app.html',
-  styleUrls: ['./app.css'] // 🔥 FIXED
+  styleUrls: ['./app.css']
 })
 export class AppComponent implements OnInit, OnDestroy {
 
@@ -34,7 +39,10 @@ export class AppComponent implements OnInit, OnDestroy {
   constructor(
     private alert: AlertService,
     private router: Router,
-    private loader: LoaderService
+    private loader: LoaderService,
+    private msalService: MsalService,
+    private msalBroadcastService: MsalBroadcastService,
+    private authService: AuthService
   ) {}
 
   ngOnInit() {
@@ -50,12 +58,12 @@ export class AppComponent implements OnInit, OnDestroy {
         event instanceof NavigationCancel ||
         event instanceof NavigationError
       ) {
-        this.loader.hide();     // 🔥 loader stop
+        this.loader.hide();
       }
     });
   }
 
   ngOnDestroy() {
-    this.routerSub?.unsubscribe(); // 🟢 best practice
+    this.routerSub?.unsubscribe();
   }
 }

@@ -10,6 +10,7 @@ import { SettingsComponent } from './pages/settings/settings';
 import { authGuardGuard } from './auth/auth.guard-guard';
 import { ForgotPasswordComponent } from './auth/forgot-password/forgot-password';
 import { ResetPasswordComponent } from './auth/reset-password/reset-password';
+import { AuthCallbackComponent } from './auth-callback/auth-callback';
 
 export const routes: Routes = [
   { path: '', redirectTo: 'login', pathMatch: 'full' },
@@ -17,6 +18,7 @@ export const routes: Routes = [
   { path: 'register', component: RegisterComponent },
   { path: 'forgot-password', component: ForgotPasswordComponent },
   { path: 'reset-password', component: ResetPasswordComponent },
+  { path: 'auth-callback', component: AuthCallbackComponent },
   {
     path: 'app',
     component: DashboardLayoutComponent,

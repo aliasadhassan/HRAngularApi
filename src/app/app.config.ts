@@ -1,10 +1,9 @@
-import { provideAppInitializer, ApplicationConfig, importProvidersFrom } from '@angular/core';
+import { provideAppInitializer, ApplicationConfig, importProvidersFrom, inject } from '@angular/core';
 import { provideRouter } from '@angular/router';
 import { routes } from './app.routes';
 import { provideHttpClient, withInterceptors, withXsrfConfiguration } from '@angular/common/http';
 import { tokenInterceptor } from './interceptors/token-interceptor';
 import { AuthService } from './auth/auth';
-import { inject } from '@angular/core';
 import { catchError, of } from 'rxjs';
 import { loaderInterceptor } from './interceptors/loader-interceptor';
 import {
@@ -18,7 +17,7 @@ import {
   MsalGuardConfiguration,
   MsalInterceptorConfiguration
 } from '@azure/msal-angular';
-import { InteractionType } from '@azure/msal-browser';
+import { InteractionType, IPublicClientApplication } from '@azure/msal-browser';
 import { MSALInstanceFactory } from './auth/msal-config';
 
 const initializeApp = () => {
@@ -32,12 +31,12 @@ const initializeApp = () => {
 };
 
 const guardConfig: MsalGuardConfiguration = {
-  interactionType: InteractionType.Popup,
+  interactionType: InteractionType.Redirect,
   authRequest: { scopes: ['user.read'] }
 };
 
 const interceptorConfig: MsalInterceptorConfiguration = {
-  interactionType: InteractionType.Popup,
+  interactionType: InteractionType.Redirect,
   protectedResourceMap: new Map()
 };
 
@@ -48,7 +47,6 @@ export const appConfig: ApplicationConfig = {
       withInterceptors([tokenInterceptor, loaderInterceptor]),
       withXsrfConfiguration({})
     ),
-    provideAppInitializer(initializeApp),
 
     importProvidersFrom(MsalModule),
     {
@@ -66,5 +64,14 @@ export const appConfig: ApplicationConfig = {
     MsalService,
     MsalGuard,
     MsalBroadcastService,
+
+    // 🔥 MSAL ko initialize karna zaroori hai (v3+ requirement) —
+    // baaki app initializers se PEHLE, taake redirect response process ho sake
+    provideAppInitializer(() => {
+      const msalInstance = inject(MSAL_INSTANCE) as IPublicClientApplication;
+      return msalInstance.initialize();
+    }),
+
+    provideAppInitializer(initializeApp),
   ]
 };

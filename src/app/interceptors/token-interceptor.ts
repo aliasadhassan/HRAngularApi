@@ -20,7 +20,8 @@ export const tokenInterceptor: HttpInterceptorFn = (req: HttpRequest<any>, next:
     '/forgot-password',
     '/reset-password',
     '/api/auth/reset-password', 
-    '/api/auth/forgot-password' 
+    '/api/auth/forgot-password',
+    '/sso/callback'
   ];
 
   const shouldBypass = bypassUrls.some(url => req.url.includes(url));
