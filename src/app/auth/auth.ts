@@ -10,7 +10,7 @@ import { HttpBackend, HttpClient, HttpHeaders } from '@angular/common/http';
 })
 export class AuthService {
   private httpClientWithoutInterceptors: HttpClient;
-  private apiUrl = 'https://localhost:7164/identity';
+  private apiUrl = 'https://localhost:7164/identity/auth';   // '/auth' yahan permanently add kar do
   private authCancel$ = new Subject<void>();
 
   constructor(private http: HttpClient, private router: Router, private httpBackend: HttpBackend) {
@@ -52,7 +52,7 @@ export class AuthService {
     );
   }
 ssoLogin(accessToken: string): Observable<any> {
-  return this.http.post(`${this.apiUrl}/auth/sso/callback`, { accessToken });
+  return this.http.post(`${this.apiUrl}/sso/callback`, { accessToken });
 }
   // 🔄 Token Rotation Handler
   tryRefreshToken(): Observable<any> {
