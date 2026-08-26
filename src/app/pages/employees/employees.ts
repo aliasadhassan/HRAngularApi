@@ -152,7 +152,7 @@ save(): void {
   this.saving.set(true);
   this.errorMsg.set(null);
 
-  const request$: Observable<number | Employee> =
+  const request$: Observable<any> =
     id !== null
       ? this.employeesService.update(id, payload)
       : this.employeesService.create(payload);
