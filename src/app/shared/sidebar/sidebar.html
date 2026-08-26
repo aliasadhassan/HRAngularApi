@@ -5,51 +5,96 @@
   [class.sidebar-expanded]="isExpanded"
   [class.sidebar-collapsed]="!isExpanded"
 >
-
+  <!-- Brand -->
   <div class="sidebar-brand">
     <div class="brand-mark">H</div>
-    <span class="brand-name" [class.hidden-label]="!isExpanded">HR CLOUD</span>
+
+    @if (isExpanded) {
+      <span class="brand-name">HR CLOUD</span>
+    }
   </div>
 
+  <!-- Navigation -->
   <nav class="flex-1 py-2">
-   @for (item of menuItems; track item.label) {
-  <button
-    type="button"
-    class="menu-item"
-    [class.active]="item.active && !item.children"
-    [class.has-children]="item.children"
-    (click)="onParentClick(item)"
-  >
-    <span class="menu-icon material-icons">{{ item.icon }}</span>
-    <span class="menu-label" [class.hidden-label]="!isExpanded">{{ item.label }}</span>
-    @if (item.children && isExpanded) {
-      <span class="menu-chevron material-icons" [class.rotate-90]="item.expanded">chevron_right</span>
-    }
-  </button>
+    @for (item of menuItems; track item.label) {
 
-  @if (item.children) {
-    <div class="submenu" [class.submenu-open]="item.expanded && isExpanded">
-      <div class="submenu-inner">
-        @for (child of item.children; track child.label) {
-          <button
-            type="button"
-            class="submenu-item"
-            [class.active]="child.active"
-            (click)="onChildClick(item, child)"
-          >
-            <span class="submenu-dot"></span>
-            <span class="submenu-label">{{ child.label }}</span>
-          </button>
+      <!-- Parent Menu Item -->
+      <button
+        type="button"
+        class="menu-item"
+        [class.active]="item.active && !item.children?.length"
+        [class.has-children]="!!item.children?.length"
+        (click)="onParentClick(item)"
+      >
+        <!-- Icon -->
+        <span class="menu-icon material-icons">
+          {{ item.icon }}
+        </span>
+
+        <!-- Label -->
+        @if (isExpanded) {
+          <span class="menu-label">
+            {{ item.label }}
+          </span>
         }
-      </div>
-    </div>
-  }
-}
+
+        <!-- Chevron -->
+        @if (item.children?.length && isExpanded) {
+          <span
+            class="menu-chevron material-icons"
+            [class.rotate-90]="item.expanded"
+          >
+            chevron_right
+          </span>
+        }
+      </button>
+
+      <!-- Submenu -->
+      @if (item.children?.length) {
+        <div
+          class="submenu"
+          [class.submenu-open]="item.expanded && isExpanded"
+        >
+          <div class="submenu-inner">
+
+            @for (child of item.children; track child.label) {
+
+              <button
+                type="button"
+                class="submenu-item"
+                [class.active]="child.active"
+                (click)="onChildClick(item, child)"
+              >
+                <span class="submenu-dot"></span>
+
+                <span class="submenu-label">
+                  {{ child.label }}
+                </span>
+              </button>
+
+            }
+
+          </div>
+        </div>
+      }
+
+    }
   </nav>
 
+  <!-- Footer -->
   <footer class="sidebar-footer">
-    <button type="button" class="toggle-btn" (click)="toggleSidebar()">
-      <span class="material-icons" [class.rotate-180]="isExpanded">chevron_right</span>
+    <button
+      type="button"
+      class="toggle-btn"
+      (click)="toggleSidebar()"
+      aria-label="Toggle sidebar"
+    >
+      <span
+        class="material-icons"
+        [class.rotate-180]="isExpanded"
+      >
+        chevron_right
+      </span>
     </button>
   </footer>
 

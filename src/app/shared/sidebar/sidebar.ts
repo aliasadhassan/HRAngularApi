@@ -1,100 +1,157 @@
-import { Component, ElementRef, ViewChild, AfterViewInit } from '@angular/core';
-import { RouterModule, Router } from '@angular/router';
-import { AuthService } from '../../auth/auth';
+import {
+AfterViewInit,
+Component,
+ElementRef,
+ViewChild
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { animate } from 'motion';
+import { Router, RouterModule } from '@angular/router';
+import { animate } from 'motion'; 
 
 interface MenuItem {
-  icon?: string;
-  label: string;
-  route?: string;
-  active?: boolean;
-  expanded?: boolean;
-  children?: MenuItem[];
-}
+icon?: string;
+label: string;
+route?: string;
+active?: boolean;
+expanded?: boolean;
+children?: MenuItem[];
+} 
 
 @Component({
-  standalone: true,
-  selector: 'app-sidebar',
-  imports: [RouterModule, CommonModule],
-  templateUrl: './sidebar.html',
-  styleUrls: ['./sidebar.css']
+standalone: true,
+selector: 'app-sidebar',
+imports: [CommonModule, RouterModule],
+templateUrl: './sidebar.html',
+styleUrls: ['./sidebar.css']
 })
 export class SidebarComponent implements AfterViewInit {
-  @ViewChild('sidebarEl') sidebarEl!: ElementRef<HTMLElement>;
-  isExpanded = false;
+@ViewChild('sidebarEl')
+sidebarEl!: ElementRef; 
 
-  ngAfterViewInit(): void {
-    animate(
-      this.sidebarEl.nativeElement,
-      { width: this.isExpanded ? '256px' : '64px' } as Record<string, any>,
-      { duration: 0 }
-    );
-  }
+isExpanded = false; 
 
-  menuItems: MenuItem[] = [
-    {
-      icon: 'dashboard',
-      label: 'Dashboard',
-      expanded: true,
-      children: [
-        { label: 'Overview', route: '/dashboard', active: true },
-        { label: 'Analytics', route: '/dashboard/analytics' }
-      ]
-    },
-    {
-      icon: 'groups',
-      label: 'Employees',
-      children: [
-        { label: 'All Employees', route: '/employees' },
-        { label: 'Add Employee', route: '/employees/add' },
-        { label: 'Departments', route: '/employees/departments' }
-      ]
-    },
-    {
-      icon: 'event_available',
-      label: 'Leaves',
-      children: [
-        { label: 'Leave Requests', route: '/leaves' },
-        { label: 'Leave Calendar', route: '/leaves/calendar' }
-      ]
-    },
-    { icon: 'settings', label: 'Settings', route: '/settings' }
-  ];
+menuItems: MenuItem[] = [
+{
+icon: 'dashboard',
+label: 'Dashboard',
+expanded: true,
+children: [
+{
+label: 'Overview',
+route: '/app/dashboard',
+active: true
+},
+{
+label: 'Analytics',
+route: '/app/dashboard/analytics'
+}
+]
+},
+{
+icon: 'groups',
+label: 'Employees',
+children: [
+{
+label: 'All Employees',
+route: '/app/employees'
+},
+{
+label: 'Departments',
+route: '/app/employees/departments'
+}
+]
+},
+{
+icon: 'event_available',
+label: 'Leaves',
+children: [
+{
+label: 'Leave Requests',
+route: '/app/leaves'
+},
+{
+label: 'Leave Calendar',
+route: '/app/leaves/calendar'
+}
+]
+},
+{
+icon: 'settings',
+label: 'Settings',
+route: '/app/settings'
+}
+]; 
 
-  constructor(private router: Router) {}
+constructor(private router: Router) {} 
 
-  toggleSidebar(): void {
-    this.isExpanded = !this.isExpanded;
-    animate(
-      this.sidebarEl.nativeElement,
-      { width: this.isExpanded ? '256px' : '64px' } as Record<string, any>,
-      { duration: 0.35, ease: [0.4, 0, 0.2, 1] }
-    );
+ngAfterViewInit(): void {
+this.sidebarEl.nativeElement.style.width = '64px';
+} 
 
-    // Sidebar collapse hote waqt saare submenus band kar dein
-    if (!this.isExpanded) {
-      this.menuItems.forEach(item => (item.expanded = false));
-    }
-  }
+toggleSidebar(): void {
+const fromWidth = this.isExpanded ? '256px' : '64px';
+const toWidth = this.isExpanded ? '64px' : '256px'; 
 
-  onParentClick(item: MenuItem): void {
-    if (item.children?.length) {
-      if (!this.isExpanded) {
-        // Sidebar collapsed hai to pehle expand karo, phir submenu kholo
-        this.toggleSidebar();
-      }
-      item.expanded = !item.expanded;
-    } else if (item.route) {
-      this.router.navigate([item.route]);
-    }
-  }
+this.isExpanded = !this.isExpanded;
 
-  onChildClick(parent: MenuItem, child: MenuItem): void {
-    this.menuItems.forEach(i => (i.active = false));
-    parent.active = true;
-    this.menuItems.forEach(i => i.children?.forEach(c => (c.active = false)));
-    child.active = true;
-    if (child.route) this.router.navigate([child.route]);
-  }
+animate(
+this.sidebarEl.nativeElement,
+{
+width: [fromWidth, toWidth]
+},
+{
+duration: 0.35,
+ease: 'easeInOut'
+}
+);
+
+if (!this.isExpanded) {
+this.menuItems.forEach(item => {
+item.expanded = false;
+});
+}
+
+} 
+
+onParentClick(item: MenuItem): void {
+if (item.children && item.children.length > 0) {
+if (!this.isExpanded) {
+this.toggleSidebar();
+}
+item.expanded = !item.expanded;
+return;
+} 
+
+if (item.route) {
+this.navigate(item.route);
+}
+} 
+
+onChildClick(parent: MenuItem, child: MenuItem): void {
+this.menuItems.forEach(item => {
+item.active = false;
+item.children?.forEach(childItem => {
+childItem.active = false;
+});
+}); 
+
+parent.active = true;
+child.active = true;
+
+if (child.route) {
+this.navigate(child.route);
+}
+
+} 
+
+private navigate(route: string): void {
+// Standard angular routing tree command sequence matching microservices boundaries
+this.router.navigate([route]).then(success => {
+if (success) {
+console.log(`Successfully navigated to: ${route}`);
+} else {
+console.error(`Routing module refused transition to layout: ${route}`);
+}
+});
+}
 }

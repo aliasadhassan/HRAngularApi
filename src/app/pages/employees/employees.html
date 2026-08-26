@@ -1,1 +1,125 @@
-<p>employees works!</p>
+<section class="ledger-page">
+  <header class="ledger-page__header">
+    <div>
+      <h1>Employees</h1>
+      <p class="subtitle">Manage your employees</p>
+    </div>
+    <button class="btn btn--gold" (click)="openAddModal()">+ New Employee</button>
+  </header>
+
+  @if (errorMsg()) {
+    <div class="alert alert--error">{{ errorMsg() }}</div>
+  }
+
+  <div class="ledger-card">
+    @if (loading()) {
+      <p class="state-msg">Loading employees…</p>
+    } @else if (employees().length === 0) {
+      <p class="state-msg">No employees found.</p>
+    } @else {
+      <table class="ledger-table">
+        <thead>
+          <tr>
+            <th>Username</th>
+            <th>Email</th>
+            <th>CNIC</th>
+            <th>City / Country</th>
+            <th>Contact No</th>
+            <th>Created</th>
+            <th class="actions-col">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (emp of employees(); track emp.id) {
+            <tr>
+              <td>{{ emp.username }}</td>
+              <td>{{ emp.email }}</td>
+              <td>{{ emp.cnic }}</td>
+              <td>{{ emp.city }}, {{ emp.country }}</td>
+              <td>{{ emp.contactNo }}</td>
+              <td>{{ emp.createdDate | date: 'dd MMM yyyy' }}</td>
+              <td class="actions-col">
+                <button class="btn-link" (click)="openEditModal(emp)">Edit</button>
+                <button class="btn-link btn-link--danger" (click)="remove(emp)">Delete</button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    }
+  </div>
+
+  @if (isModalOpen()) {
+    <div class="modal-backdrop" (click)="closeModal()">
+      <div class="modal-panel" (click)="$event.stopPropagation()">
+        <h2>{{ editingId() ? 'Edit Employee' : 'New Employee' }}</h2>
+
+        <form [formGroup]="form" (ngSubmit)="save()" class="ledger-form">
+          <div class="form-row">
+            <label for="username">Username</label>
+            <input id="username" type="text" formControlName="username" />
+            @if (isInvalid('username')) {
+              <span class="field-error">Username required hai (max 100 chars).</span>
+            }
+          </div>
+
+          <div class="form-row">
+            <label for="email">Email</label>
+            <input id="email" type="email" formControlName="email" />
+            @if (isInvalid('email')) {
+              <span class="field-error">Valid email required hai (max 50 chars).</span>
+            }
+          </div>
+
+          <div class="form-row">
+            <label for="cnic">CNIC</label>
+            <input id="cnic" type="text" formControlName="cnic" placeholder="xxxxx-xxxxxxx-x" />
+            @if (isInvalid('cnic')) {
+              <span class="field-error">CNIC required hai.</span>
+            }
+          </div>
+
+          <div class="form-row form-row--split">
+            <div>
+              <label for="country">Country</label>
+              <input id="country" type="text" formControlName="country" />
+              @if (isInvalid('country')) {
+                <span class="field-error">Required.</span>
+              }
+            </div>
+            <div>
+              <label for="city">City</label>
+              <input id="city" type="text" formControlName="city" />
+              @if (isInvalid('city')) {
+                <span class="field-error">Required.</span>
+              }
+            </div>
+          </div>
+
+          <div class="form-row">
+            <label for="address">Address</label>
+            <textarea id="address" rows="2" formControlName="address"></textarea>
+            @if (isInvalid('address')) {
+              <span class="field-error">Address required hai (max 250 chars).</span>
+            }
+          </div>
+
+          <div class="form-row">
+            <label for="contactNo">Contact No</label>
+            <input id="contactNo" type="text" formControlName="contactNo" />
+            @if (isInvalid('contactNo')) {
+              <span class="field-error">Contact number required hai.</span>
+            }
+          </div>
+
+          <div class="modal-actions">
+            <button type="button" class="btn btn--ghost" (click)="closeModal()">Cancel</button>
+            <button type="submit" class="btn btn--gold" [disabled]="saving()">
+              {{ saving() ? 'Saving…' : 'Save' }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  }
+</section>
