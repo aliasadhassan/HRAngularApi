@@ -1,20 +1,28 @@
 import { Injectable } from '@angular/core';
-import { Observable, of, Subject, throwError } from 'rxjs';
-import { Router } from '@angular/router'; 
-import { tap, takeUntil, catchError } from 'rxjs/operators';
+import { Router } from '@angular/router';
+import { HttpBackend, HttpClient, HttpErrorResponse } from '@angular/common/http';
+import { Observable, Subject, throwError, timer } from 'rxjs';
+import { tap, takeUntil, map, retry, finalize, shareReplay } from 'rxjs/operators';
 import { jwtDecode, JwtPayload } from 'jwt-decode';
-import { HttpBackend, HttpClient, HttpHeaders } from '@angular/common/http';
+
+interface TokenResponse {
+  accessToken: string;
+}
 
 @Injectable({
   providedIn: 'root'
 })
 export class AuthService {
-  private httpClientWithoutInterceptors: HttpClient;
-  private apiUrl = 'https://localhost:7164/identity/auth';   // '/auth' yahan permanently add kar do
+  private readonly apiUrl = 'https://localhost:7164/identity/auth';
+  private readonly httpClientWithoutInterceptors: HttpClient;
   private authCancel$ = new Subject<void>();
 
-  constructor(private http: HttpClient, private router: Router, private httpBackend: HttpBackend) {
-    this.httpClientWithoutInterceptors = new HttpClient(this.httpBackend);
+  // Single-flight: ek waqt mein sirf EK refresh call. Guard + interceptor + parallel
+  // requests sab isi observable ko share karte hain (rotation ke saath ye zaroori hai).
+  private refreshInFlight$: Observable<string> | null = null;
+
+  constructor(private http: HttpClient, private router: Router, httpBackend: HttpBackend) {
+    this.httpClientWithoutInterceptors = new HttpClient(httpBackend);
   }
 
   isAuthenticated(): boolean {
@@ -23,108 +31,84 @@ export class AuthService {
 
     try {
       const decoded: JwtPayload = jwtDecode(token);
-      const currentTime = Math.floor(Date.now() / 1000);
-
-      // Simple check: Agar expiry time se pehle ka time hai to valid hai
-      return !!decoded.exp && decoded.exp > currentTime;
-    } catch(error) {
+      return !!decoded.exp && decoded.exp > Math.floor(Date.now() / 1000);
+    } catch {
       return false;
     }
   }
 
   register(data: { username: string; password: string; email: string }): Observable<any> {
-    this.authCancel$.next(); 
-    return this.http.post(`${this.apiUrl}/register`, data)
-      .pipe(takeUntil(this.authCancel$));
+    this.authCancel$.next();
+    return this.http.post(`${this.apiUrl}/register`, data).pipe(takeUntil(this.authCancel$));
   }
 
-  login(email: string, password: string): Observable<any> {
-    this.authCancel$.next(); 
-    return this.http.post(`${this.apiUrl}/login`, { email, password }, {
-      withCredentials: true // ✅ FIX 1: Taake backend login response me cookie set kar sake
-    }).pipe(
-      takeUntil(this.authCancel$),
-      tap((res: any) => {
-        if (res.accessToken) {
-          localStorage.setItem('accessToken', res.accessToken); // ✅ Sirf access token save hoga
-        }
-      })
-    );
-  }
-ssoLogin(accessToken: string): Observable<any> {
-  return this.http.post(`${this.apiUrl}/sso/callback`, { accessToken });
-}
-  // 🔄 Token Rotation Handler
-  tryRefreshToken(): Observable<any> {
-    const accessToken = localStorage.getItem('accessToken');
-
-    if (!accessToken) {
-      return of(null);
-    }
-
-    // ✅ FIX 2: Purana access token headers me jayega pehchan ke liye
-    const headers = new HttpHeaders({
-      'Authorization': `Bearer ${accessToken}`
-    });
-
-    return this.httpClientWithoutInterceptors
-      .post<any>(`${this.apiUrl}/refreshToken`, {}, { 
-        headers, 
-        withCredentials: true // ✅ FIX 3: Yeh line browser ko majboor karegi cookie sath bhejne par
-      })
+  login(email: string, password: string): Observable<TokenResponse> {
+    this.authCancel$.next();
+    return this.http
+      .post<TokenResponse>(`${this.apiUrl}/login`, { email, password }, { withCredentials: true })
       .pipe(
-       tap(res => {
-          if (res && res.accessToken) {
-            localStorage.setItem('accessToken', res.accessToken); // Naya token update
-          }
-        }),
-        catchError((error) => {
-          this.logoutOnFailure(); // Refresh fail ho to local state clear karein
-          return throwError(() => error);
-        })
+        takeUntil(this.authCancel$),
+        tap(res => this.storeAccessToken(res?.accessToken))
       );
   }
 
- logout() {
-    const accessToken = localStorage.getItem('accessToken');
-    let authHeaders = new HttpHeaders();
+  ssoLogin(accessToken: string): Observable<TokenResponse> {
+    return this.http
+      .post<TokenResponse>(`${this.apiUrl}/sso/callback`, { accessToken }, { withCredentials: true })
+      .pipe(tap(res => this.storeAccessToken(res?.accessToken)));
+  }
 
-    if (accessToken) {
-      authHeaders = authHeaders.set('Authorization', `Bearer ${accessToken}`);
+  /**
+   * Naya access token laata hai (HttpOnly cookie ke through).
+   * - 409 = doosre tab ne abhi rotate kiya; browser mein nayi cookie aa chuki -> ek dafa dobara try
+   * - 403 / koi aur error = session khatam -> caller logout kare
+   */
+  refreshAccessToken(): Observable<string> {
+    if (!this.refreshInFlight$) {
+      this.refreshInFlight$ = this.httpClientWithoutInterceptors
+        .post<TokenResponse>(`${this.apiUrl}/refreshToken`, {}, { withCredentials: true })
+        .pipe(
+          retry({
+            count: 1,
+            delay: (err: HttpErrorResponse) => (err.status === 409 ? timer(300) : throwError(() => err))
+          }),
+          map(res => {
+            if (!res?.accessToken) throw new Error('Refresh response did not contain an access token');
+            return res.accessToken;
+          }),
+          tap(token => this.storeAccessToken(token)),
+          finalize(() => (this.refreshInFlight$ = null)),
+          shareReplay({ bufferSize: 1, refCount: false })
+        );
     }
-
-    // ✅ FIX 4: Request options me headers aur withCredentials dono bheinjein gey
-    this.http.post(`${this.apiUrl}/logout`, {}, { 
-      headers: authHeaders,
-      withCredentials: true // Browser ko cookie sath bhejne dega taake backend cookie delete kar sake
-    }).subscribe({
-      next: () => {
-        this.clearLocalStorageAndRedirect();
-      },
-      error: (err) => {
-        console.error('Logout failed', err);
-        this.clearLocalStorageAndRedirect();
-      }
-    });
+    return this.refreshInFlight$;
   }
 
-  private logoutOnFailure() {
-    this.clearLocalStorageAndRedirect();
+  /** User ne khud logout kiya: backend session revoke + local cleanup. */
+  logout(): void {
+    this.http
+      .post(`${this.apiUrl}/logout`, {}, { withCredentials: true })
+      .pipe(finalize(() => this.endSession()))
+      .subscribe({ error: err => console.error('Logout failed', err) });
   }
 
-  private clearLocalStorageAndRedirect() {
-    localStorage.removeItem('accessToken'); // ✅ Code fully cleaned from LocalStorage RefreshToken leaks
+  /** Session pehle hi invalid hai (refresh fail): sirf local cleanup, API call nahi. */
+  endSession(): void {
+    localStorage.removeItem('accessToken');
     this.router.navigate(['/login']);
   }
 
   forgotPassword(email: string) {
-    this.authCancel$.next(); 
-    return this.http.post(`${this.apiUrl}/forgot-password`, { email })
-    .pipe(takeUntil(this.authCancel$));
+    this.authCancel$.next();
+    return this.http.post(`${this.apiUrl}/forgot-password`, { email }).pipe(takeUntil(this.authCancel$));
   }
 
   resetPassword(model: any) {
-    this.authCancel$.next(); 
+    this.authCancel$.next();
     return this.http.post(`${this.apiUrl}/reset-password`, model);
+  }
+
+  private storeAccessToken(token?: string): void {
+    if (token) localStorage.setItem('accessToken', token);
   }
 }
