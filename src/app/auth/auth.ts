@@ -105,7 +105,7 @@ export class AuthService {
 
   resetPassword(model: any) {
     this.authCancel$.next();
-    return this.http.post(`${this.apiUrl}/reset-password`, model);
+    return this.http.post(`${this.apiUrl}/reset-password`, model).pipe(takeUntil(this.authCancel$));
   }
 
   private storeAccessToken(token?: string): void {
