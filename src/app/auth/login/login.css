@@ -343,3 +343,36 @@ a.disabled { pointer-events: none; opacity: 0.5; }
   .ledger-panel { display: none; }
   .form-panel { flex: 1; }
 }
+.login-error {
+  margin: 0.75rem 0 1rem;
+  padding: 0.75rem 1rem;
+  border-left: 3px solid #b5452a;
+  background: rgba(181, 69, 42, 0.08);
+  color: #8a3320;
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+.login-error--locked {
+  border-left-color: #c9a24a;
+  background: rgba(201, 162, 74, 0.12);
+  color: #6b5320;
+}
+
+.login-error__timer {
+  display: block;
+  margin-top: 0.25rem;
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+
+.sso-highlight {
+  outline: 2px solid #c9a24a;
+  outline-offset: 2px;
+  animation: sso-pulse 1.6s ease-in-out 2;
+}
+
+@keyframes sso-pulse {
+  50% { outline-offset: 5px; }
+}

@@ -22,7 +22,7 @@ import { MSALInstanceFactory } from './auth/msal-config';
 
 const initializeApp = () => {
   const authService = inject(AuthService);
-  return authService.tryRefreshToken().pipe(
+  return authService.refreshAccessToken().pipe(
     catchError(err => {
       console.error('Auth initialization failed:', err);
       return of(null);
