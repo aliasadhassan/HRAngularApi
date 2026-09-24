@@ -48,10 +48,16 @@
       <h2>Sign in</h2>
       <p class="auth-sub">Enter your workspace credentials to continue.</p>
 
-      <form [formGroup]="loginForm" (ngSubmit)="login()" autocomplete="off">
+      <form [formGroup]="loginForm" (ngSubmit)="login()" autocomplete="off" novalidate>
+        <!-- Email -->
         <div class="form-group">
-          <label>Work email</label>
-          <input type="email" placeholder="you@company.com" formControlName="email" />
+          <label for="login-email">Work email</label>
+          <input
+            id="login-email"
+            type="email"
+            placeholder="you@company.com"
+            formControlName="email"
+            autocomplete="username" />
           @if (loginForm.get('email')?.touched && loginForm.get('email')?.errors?.['required']) {
             <small class="error">Email is required</small>
           }
@@ -62,41 +68,74 @@
 
         <!-- Password -->
         <div class="form-group password-group">
-          <label>Password</label>
+          <label for="login-password">Password</label>
 
           <div class="password-input-wrapper">
             <input
+              id="login-password"
               [type]="hidePassword ? 'password' : 'text'"
               placeholder="••••••••"
-              formControlName="password" />
+              formControlName="password"
+              autocomplete="current-password" />
 
             <button
               type="button"
               class="eye-btn"
+              [attr.aria-label]="hidePassword ? 'Show password' : 'Hide password'"
               (click)="togglePasswordVisibility()">
               <span class="eye-icon" [class.hide]="hidePassword"></span>
             </button>
           </div>
+
+          @if (loginForm.get('password')?.touched && loginForm.get('password')?.errors?.['required']) {
+            <small class="error">Password is required</small>
+          }
+          @if (loginForm.get('password')?.touched && loginForm.get('password')?.errors?.['minlength']) {
+            <small class="error">Password must be at least 6 characters</small>
+          }
         </div>
 
         <div class="row-between">
           <label class="checkbox-wrap">
             <input type="checkbox" /> Keep me signed in
           </label>
-          <a routerLink="/forgot-password" class="forgot-link" [class.disabled]="loaderService.isLoading$ | async">Forgot password?</a>
+          <a routerLink="/forgot-password" class="forgot-link" [class.disabled]="isSubmitting">Forgot password?</a>
         </div>
 
-        <button type="submit" [disabled]="loginForm.invalid">
-          {{ (loaderService.isLoading$ | async) ? 'Logging in…' : 'Sign in' }}
+        <!-- Server error (invalid credentials / lockout / SSO-only / disabled) -->
+        @if (error) {
+          <div class="login-error" [class.login-error--locked]="isLockedOut" role="alert">
+            {{ error }}
+            @if (isLockedOut) {
+              <span class="login-error__timer">Try again in {{ lockoutDisplay }}</span>
+            }
+          </div>
+        }
+
+        <button type="submit" [disabled]="isSubmitting || isLockedOut">
+          @if (isLockedOut) {
+            Locked · {{ lockoutDisplay }}
+          } @else if (isSubmitting) {
+            Signing in…
+          } @else {
+            Sign in
+          }
         </button>
       </form>
 
       <div class="divider">or continue with</div>
-      <button type="button" class="sso-btn" (click)="signInWithSSO()">Single sign-on (SSO)</button>
+      <button
+        type="button"
+        class="sso-btn"
+        [class.sso-highlight]="ssoOnly"
+        [disabled]="isSubmitting"
+        (click)="signInWithSSO()">
+        Sign in with Microsoft
+      </button>
 
       <p class="link-text">
         Don't have an account?
-        <a routerLink="/register" class="register-link" [class.disabled]="loaderService.isLoading$ | async">Register</a>
+        <a routerLink="/register" class="register-link" [class.disabled]="isSubmitting">Register</a>
       </p>
     </div>
   </div>
