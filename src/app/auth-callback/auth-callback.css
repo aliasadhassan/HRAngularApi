@@ -5,7 +5,7 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  background-color: #0f1f18; /* ink/moss dark background — apne theme ke exact variable se replace kar dena */
+  background-color: #0f1f18;
   font-family: 'Fraunces', serif;
   gap: 1.25rem;
 }
@@ -16,7 +16,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 1px solid #c9a86a; /* gold accent */
+  border: 1px solid #c9a86a;
   color: #c9a86a;
   font-size: 1.25rem;
   letter-spacing: 0.05em;
@@ -32,7 +32,7 @@
 }
 
 .auth-callback__text {
-  color: #f5f1e6; /* paper/cream tone */
+  color: #f5f1e6;
   font-size: 1.1rem;
   margin: 0;
 }

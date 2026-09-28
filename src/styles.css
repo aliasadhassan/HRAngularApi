@@ -1,11 +1,5 @@
-/* 1. Saare @import hamesha sabse ooper aane chahiye */
 @import "material-icons/iconfont/material-icons.css";
 
-/* ==========================================================================
-   SELF-HOSTED FONTS (Hamesha selectors se pehle define karein)
-   ========================================================================== */
-
-/* 1. INTER FONT */
 @font-face {
   font-family: 'Inter';
   font-style: normal;
@@ -28,7 +22,6 @@
   src: url('assests/fonts/inter-v20-latin-600.woff2') format('woff2');
 }
 
-/* 2. FRAUNCES FONT */
 @font-face {
   font-family: 'Fraunces';
   font-style: normal;
@@ -44,7 +37,6 @@
   src: url('assests/fonts/fraunces-v38-latin-600.woff2') format('woff2');
 }
 
-/* 3. IBM PLEX MONO FONT */
 @font-face {
   font-family: 'IBM Plex Mono';
   font-style: normal;
@@ -60,9 +52,6 @@
   src: url('assests/fonts/ibm-plex-mono-v20-latin-500.woff2') format('woff2');
 }
 
-/* ==========================================================================
-   GLOBAL STYLES (Hamesha fonts define hone ke baad niche aate hain)
-   ========================================================================== */
 *{
   font-family: 'Fraunces', serif;
 }

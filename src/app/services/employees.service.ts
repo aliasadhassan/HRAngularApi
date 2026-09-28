@@ -15,11 +15,9 @@ export class EmployeesService {
 
   private http = inject(HttpClient);
 
-  // Goes through Ocelot Gateway -> HR Employee API
   private readonly baseUrl =
     environment.apiGatewayUrl + '/employees';
 
-  // Dynamic backend endpoint targeting presentation controller integration channel
   private readonly testAsbUrl =
     environment.apiGatewayUrl + '/api/test-asb';
 

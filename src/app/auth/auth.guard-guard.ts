@@ -8,12 +8,10 @@ export const authGuardGuard: CanActivateFn = () => {
   const authService = inject(AuthService);
   const router = inject(Router);
 
-  // 1. Access token abhi valid hai
   if (authService.isAuthenticated()) {
     return true;
   }
 
-  // 2. Expire ho chuka / maujood nahi -> cookie se refresh try karo
   return authService.refreshAccessToken().pipe(
     map(() => true),
     catchError(() => {

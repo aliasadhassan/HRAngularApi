@@ -1,9 +1,7 @@
 <header class="topbar">
 
-  <!-- CENTER: date stamp -->
   <div class="topbar-date">{{ today | date:'EEE, MMM d, y' }}</div>
 
-  <!-- RIGHT -->
   <div class="topbar-right">
 
     <button class="icon-btn">
@@ -13,7 +11,6 @@
       <span class="material-icons text-xl">settings</span>
     </button>
 
-    <!-- PROFILE -->
     <div class="profile" (click)="toggleProfile()">
       <img src="https://i.pravatar.cc/40" alt="User" />
       <span class="name">Ali</span>

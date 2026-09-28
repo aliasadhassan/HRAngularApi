@@ -17,8 +17,6 @@ export class AuthService {
   private readonly httpClientWithoutInterceptors: HttpClient;
   private authCancel$ = new Subject<void>();
 
-  // Single-flight: ek waqt mein sirf EK refresh call. Guard + interceptor + parallel
-  // requests sab isi observable ko share karte hain (rotation ke saath ye zaroori hai).
   private refreshInFlight$: Observable<string> | null = null;
 
   constructor(private http: HttpClient, private router: Router, httpBackend: HttpBackend) {
@@ -58,11 +56,6 @@ export class AuthService {
       .pipe(tap(res => this.storeAccessToken(res?.accessToken)));
   }
 
-  /**
-   * Naya access token laata hai (HttpOnly cookie ke through).
-   * - 409 = doosre tab ne abhi rotate kiya; browser mein nayi cookie aa chuki -> ek dafa dobara try
-   * - 403 / koi aur error = session khatam -> caller logout kare
-   */
   refreshAccessToken(): Observable<string> {
     if (!this.refreshInFlight$) {
       this.refreshInFlight$ = this.httpClientWithoutInterceptors
@@ -84,7 +77,6 @@ export class AuthService {
     return this.refreshInFlight$;
   }
 
-  /** User ne khud logout kiya: backend session revoke + local cleanup. */
   logout(): void {
     this.http
       .post(`${this.apiUrl}/logout`, {}, { withCredentials: true })
@@ -92,7 +84,6 @@ export class AuthService {
       .subscribe({ error: err => console.error('Logout failed', err) });
   }
 
-  /** Session pehle hi invalid hai (refresh fail): sirf local cleanup, API call nahi. */
   endSession(): void {
     localStorage.removeItem('accessToken');
     this.router.navigate(['/login']);

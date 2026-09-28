@@ -115,7 +115,6 @@ export class LoginComponent implements OnDestroy {
         break;
 
       default:
-        // Network / 500 / gateway errors — toast
         this.alert.error(
           err.status === 0 ? 'Server is unreachable. Please try again.' : body.message ?? 'An unexpected error occurred'
         );

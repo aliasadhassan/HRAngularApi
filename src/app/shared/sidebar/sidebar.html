@@ -5,7 +5,6 @@
   [class.sidebar-expanded]="isExpanded"
   [class.sidebar-collapsed]="!isExpanded"
 >
-  <!-- Brand -->
   <div class="sidebar-brand">
     <div class="brand-mark">H</div>
 
@@ -14,11 +13,9 @@
     }
   </div>
 
-  <!-- Navigation -->
   <nav class="flex-1 py-2">
     @for (item of menuItems; track item.label) {
 
-      <!-- Parent Menu Item -->
       <button
         type="button"
         class="menu-item"
@@ -26,19 +23,16 @@
         [class.has-children]="!!item.children?.length"
         (click)="onParentClick(item)"
       >
-        <!-- Icon -->
         <span class="menu-icon material-icons">
           {{ item.icon }}
         </span>
 
-        <!-- Label -->
         @if (isExpanded) {
           <span class="menu-label">
             {{ item.label }}
           </span>
         }
 
-        <!-- Chevron -->
         @if (item.children?.length && isExpanded) {
           <span
             class="menu-chevron material-icons"
@@ -49,7 +43,6 @@
         }
       </button>
 
-      <!-- Submenu -->
       @if (item.children?.length) {
         <div
           class="submenu"
@@ -81,7 +74,6 @@
     }
   </nav>
 
-  <!-- Footer -->
   <footer class="sidebar-footer">
     <button
       type="button"

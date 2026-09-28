@@ -65,8 +65,6 @@ export const appConfig: ApplicationConfig = {
     MsalGuard,
     MsalBroadcastService,
 
-    // 🔥 MSAL ko initialize karna zaroori hai (v3+ requirement) —
-    // baaki app initializers se PEHLE, taake redirect response process ho sake
     provideAppInitializer(() => {
       const msalInstance = inject(MSAL_INSTANCE) as IPublicClientApplication;
       return msalInstance.initialize();

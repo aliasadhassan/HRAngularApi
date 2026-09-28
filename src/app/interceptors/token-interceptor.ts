@@ -3,7 +3,6 @@ import { inject } from '@angular/core';
 import { catchError, switchMap, throwError } from 'rxjs';
 import { AuthService } from '../auth/auth';
 
-// Ye URLs refresh logic se bahar hain
 const BYPASS_URLS = [
   '/login',
   '/register',
@@ -29,9 +28,7 @@ export const tokenInterceptor: HttpInterceptorFn = (req, next) => {
         return throwError(() => error);
       }
 
-      // Single-flight refresh (AuthService handle karta hai) -> original request dobara
       return authService.refreshAccessToken().pipe(
-        // Sirf REFRESH fail hone pe logout — retried request ka error (403, 500) logout nahi karta
         catchError(refreshError => {
           authService.endSession();
           return throwError(() => refreshError);

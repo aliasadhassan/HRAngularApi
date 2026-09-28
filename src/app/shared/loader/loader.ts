@@ -1,11 +1,11 @@
 import { Component, inject } from '@angular/core';
-import { CommonModule } from '@angular/common'; // Import CommonModule
-import { LoaderService } from '../../services/loader/loader'; // Import LoaderService
+import { CommonModule } from '@angular/common';
+import { LoaderService } from '../../services/loader/loader';
 
 @Component({
   standalone:true,
   selector: 'app-loader',
-  imports: [CommonModule], // Add imports array for standalone components
+  imports: [CommonModule],
   templateUrl: './loader.html',
   styleUrls: ['./loader.css']
 })

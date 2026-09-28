@@ -145,7 +145,6 @@ this.navigate(child.route);
 } 
 
 private navigate(route: string): void {
-// Standard angular routing tree command sequence matching microservices boundaries
 this.router.navigate([route]).then(success => {
 if (success) {
 console.log(`Successfully navigated to: ${route}`);
