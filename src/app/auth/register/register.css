@@ -17,7 +17,6 @@
   overflow: hidden;
 }
 
-/* LEFT PANEL */
 .ledger-panel {
   flex: 1.1;
   background: var(--ink);
@@ -138,7 +137,6 @@
   letter-spacing: 0.04em;
 }
 
-/* RIGHT PANEL — form */
 .form-panel {
   flex: 1;
   display: flex;
@@ -194,7 +192,7 @@
   font-size: 14.5px;
   color: var(--text-dark);
   outline: none;
-  box-sizing: border-box;   /* 👈 add karein */
+  box-sizing: border-box;
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
@@ -247,7 +245,6 @@
 }
 .login-link:hover { text-decoration: underline; }
 
-/* Password eye toggle */
 .password-input-wrapper { position: relative; width: 100%; }
 .password-input-wrapper input { padding-right: 44px; }
 
@@ -281,7 +278,6 @@
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' stroke='%236B7B6B' stroke-width='2' viewBox='0 0 24 24'%3E%3Cpath d='M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z'/%3E%3Ccircle cx='12' cy='12' r='3'/%3E%3C/svg%3E");
 }
 
-/* Strength meter */
 .strength-meter {
   height: 3px;
   background: var(--line);

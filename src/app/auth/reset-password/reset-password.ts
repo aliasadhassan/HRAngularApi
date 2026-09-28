@@ -31,7 +31,6 @@ export class ResetPasswordComponent implements OnInit {
   }
 
   ngOnInit() {
-    // URL se token aur email nikaalna: ?token=abc&email=test@test.com
     this.token = this.route.snapshot.queryParamMap.get('token') || '';
     this.email = this.route.snapshot.queryParamMap.get('email') || '';
 
@@ -53,10 +52,9 @@ export class ResetPasswordComponent implements OnInit {
       token: this.token,
       email: this.email,
       newPassword: this.resetForm.value.newPassword,
-      confirmPassword: this.resetForm.value.confirmPassword // <-- Yeh line add ki gai hai
+      confirmPassword: this.resetForm.value.confirmPassword
     };
 
-    // Ab 'model' object theek hai aur service ko bheja ja raha hai
     this.authService.resetPassword(model).subscribe({
       next: (res: any) => {
         this.message = "Password reset successfully! Redirecting to login...";

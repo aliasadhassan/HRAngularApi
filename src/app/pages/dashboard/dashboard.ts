@@ -13,7 +13,6 @@ import { ChartComponent } from '../../shared/widgets/chart/chart';
 export class DashboardComponent {
   today = new Date();
 
-  // Attendance & Growth charts
   attendanceLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
   attendanceDatasets = [
     { label: 'Attendance %', data: [92, 95, 90, 96, 94, 70, 65], backgroundColor: '#4C6B4F', borderRadius: 4, maxBarThickness: 28 }
@@ -24,7 +23,6 @@ export class DashboardComponent {
     { label: 'Employees', data: [98, 102, 108, 115, 122, 128], borderColor: '#C9A24B', backgroundColor: 'rgba(201,162,75,0.12)', fill: true, tension: 0.35, pointRadius: 3, pointBackgroundColor: '#C9A24B' }
   ];
 
-  // Department donut
   departments = [
     { name: 'Development', count: 58, color: '#4C6B4F' },
     { name: 'Design', count: 34, color: '#C9A24B' },
@@ -36,7 +34,6 @@ export class DashboardComponent {
     { data: this.departments.map(d => d.count), backgroundColor: this.departments.map(d => d.color), borderWidth: 0 }
   ];
 
-  // Availability panel
   availabilityStats = { available: 104, unavailable: 18, onLeave: 6 };
   quickView = [
     { initials: 'SJ', name: 'Sarah Johnson', role: 'Senior Developer' },
@@ -45,7 +42,6 @@ export class DashboardComponent {
     { initials: 'MS', name: 'Michael Smith', role: 'HR Executive' }
   ];
 
-  // Payroll panel
   payroll = [
     { name: 'Development', count: 58, amount: '$12,400' },
     { name: 'Design', count: 34, amount: '$8,200' },
@@ -53,7 +49,6 @@ export class DashboardComponent {
     { name: 'HR', count: 6, amount: '$5,300' }
   ];
 
-  // Recent Employees table
   recentEmployees = [
     { name: 'Andrew James', department: 'Development', joinDate: '12 Jul 2026', status: 'Active' },
     { name: 'Sophia White', department: 'Design', joinDate: '05 Jul 2026', status: 'Active' },
@@ -61,7 +56,6 @@ export class DashboardComponent {
     { name: 'Amelia Robinson', department: 'HR', joinDate: '20 Jun 2026', status: 'Active' }
   ];
 
-  // Leave Requests (with accept/reject actions)
   leaveRequests = [
     { initials: 'JA', name: 'James Allaire', reason: '4 Days · Personal Reason' },
     { initials: 'ES', name: 'Esther Schmidt', reason: '2 Days · Going to Hospital' },
@@ -77,7 +71,6 @@ export class DashboardComponent {
   rejectLeave(req: any) {
     this.leaveRequests = this.leaveRequests.filter(r => r !== req);
   }
-  // All Meetings (full-width table)
   meetings = [
     { empInitials: 'AJ', empName: 'Andrew James', empRole: 'Developer',
       withInitials: 'SJ', withName: 'Sarah Johnson', withPhone: '1:1 Sync',

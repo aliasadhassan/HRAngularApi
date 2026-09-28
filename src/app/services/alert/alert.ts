@@ -29,7 +29,7 @@ export class AlertService {
   }
 
   private show(alert: Alert, autoClose: boolean) {
-    this.clearTimer();              // 🔥 reset old timer
+    this.clearTimer();
     this.alertSubject.next(alert);
 
     if (autoClose) {

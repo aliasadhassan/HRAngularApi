@@ -12,7 +12,7 @@ import { AlertService, Alert } from '../../services/alert/alert';
 export class AlertComponent {
 
   alert: Alert | null = null;
-  private shownAt = 0; // 🔥 timestamp
+  private shownAt = 0;
   visible = false;
 
  constructor(private alertService: AlertService) {
@@ -20,10 +20,9 @@ export class AlertComponent {
       this.alert = alert;
 
       if (alert) {
-        this.visible = false;      // 🔥 start hidden
+        this.visible = false;
         this.shownAt = Date.now();
 
-        // next tick → show (no flicker)
         setTimeout(() => {
           this.visible = true;
         }, 10);
@@ -37,12 +36,10 @@ export class AlertComponent {
     this.alertService.clear();
   }
 
-  // 🔥 CLICK ANYWHERE → ALERT CLOSE (after grace time)
   @HostListener('document:click', ['$event'])
   onDocumentClick(event: MouseEvent) {
     if (!this.alert) return;
 
-    // 🔥 ignore first click (same click that triggered alert)
     if (Date.now() - this.shownAt < 300) {
       return;
     }

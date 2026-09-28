@@ -9,7 +9,6 @@ export class LoaderService {
   private loadingCount = 0;
   private loadingSubject = new BehaviorSubject<boolean>(false);
 
-  // Component isko subscribe karega
   isLoading$ = this.loadingSubject.asObservable();
 
   show() {

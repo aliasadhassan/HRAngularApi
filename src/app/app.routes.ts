@@ -31,6 +31,5 @@ export const routes: Routes = [
       { path: 'settings', component: SettingsComponent }
     ]
   },
-  // fallback
   { path: '**', redirectTo: 'login' }
 ];

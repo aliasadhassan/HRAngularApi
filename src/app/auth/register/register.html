@@ -21,7 +21,6 @@
         <div class="ledger-row"><span class="tag">APR</span><span class="id">LV-1183</span><span class="action">leave request approved</span><span class="time">7:54 PM</span></div>
         <div class="ledger-row"><span class="tag">OUT</span><span class="id">EMP-0114</span><span class="action">shift closed — Warehouse Floor 1</span><span class="time">11:20 AM</span></div>
         <div class="ledger-row"><span class="tag">NEW</span><span class="id">EMP-0642</span><span class="action">profile created — Marketing</span><span class="time">10:47 AM</span></div>
-        <!-- duplicate for seamless loop -->
         <div class="ledger-row"><span class="tag">NEW</span><span class="id">EMP-0641</span><span class="action">profile created — Design</span><span class="time">9:14 AM</span></div>
         <div class="ledger-row"><span class="tag">IN</span><span class="id">EMP-0417</span><span class="action">clocked in — Warehouse Floor 2</span><span class="time">1:12 AM</span></div>
         <div class="ledger-row"><span class="tag">OUT</span><span class="id">EMP-0298</span><span class="action">shift closed — Distribution B</span><span class="time">5:02 PM</span></div>
@@ -44,7 +43,6 @@
 
       <form [formGroup]="registerForm" (ngSubmit)="register()" autocomplete="off">
 
-        <!-- Username -->
         <div class="form-group">
           <label>Username</label>
           <input type="text" placeholder="yourname" formControlName="UserName" />
@@ -53,7 +51,6 @@
           }
         </div>
 
-        <!-- Email -->
         <div class="form-group">
           <label>Work email</label>
           <input type="email" placeholder="you@company.com" formControlName="email" />
@@ -62,7 +59,6 @@
           }
         </div>
 
-        <!-- Password -->
         <div class="form-group password-group">
           <label>Password</label>
 

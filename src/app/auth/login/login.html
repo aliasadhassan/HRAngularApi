@@ -1,5 +1,4 @@
 <div class="auth-wrapper">
-  <!-- LEFT PANEL — ambient ledger -->
   <div class="ledger-panel">
     <div class="brand">
       <div class="brand-mark">H</div>
@@ -24,7 +23,6 @@
         <div class="ledger-row"><span class="tag">RUN</span><span class="id">PR-2026-07</span><span class="action">tax withholding verified</span><span class="time">5:53 PM</span></div>
         <div class="ledger-row"><span class="tag">APR</span><span class="id">EX-0902</span><span class="action">expense claim approved</span><span class="time">4:11 PM</span></div>
         <div class="ledger-row"><span class="tag">IN</span><span class="id">EMP-0071</span><span class="action">clocked in — Admin</span><span class="time">5:09 AM</span></div>
-        <!-- duplicate for seamless loop -->
         <div class="ledger-row"><span class="tag">IN</span><span class="id">EMP-0417</span><span class="action">clocked in — Warehouse Floor 2</span><span class="time">1:12 AM</span></div>
         <div class="ledger-row"><span class="tag">OUT</span><span class="id">EMP-0298</span><span class="action">shift closed — Distribution B</span><span class="time">5:02 PM</span></div>
         <div class="ledger-row"><span class="tag">RUN</span><span class="id">PR-2026-07</span><span class="action">payroll batch processed</span><span class="time">8:24 PM</span></div>
@@ -41,7 +39,6 @@
     <div class="panel-footer">© 2026 HR Cloud — hr-cloud.online</div>
   </div>
 
-  <!-- RIGHT PANEL — form -->
   <div class="form-panel">
     <div class="auth-card">
       <div class="stamp-date">{{ today | date:'EEE, MMM d, y' }}</div>
@@ -49,7 +46,6 @@
       <p class="auth-sub">Enter your workspace credentials to continue.</p>
 
       <form [formGroup]="loginForm" (ngSubmit)="login()" autocomplete="off" novalidate>
-        <!-- Email -->
         <div class="form-group">
           <label for="login-email">Work email</label>
           <input
@@ -66,7 +62,6 @@
           }
         </div>
 
-        <!-- Password -->
         <div class="form-group password-group">
           <label for="login-password">Password</label>
 
@@ -102,7 +97,6 @@
           <a routerLink="/forgot-password" class="forgot-link" [class.disabled]="isSubmitting">Forgot password?</a>
         </div>
 
-        <!-- Server error (invalid credentials / lockout / SSO-only / disabled) -->
         @if (error) {
           <div class="login-error" [class.login-error--locked]="isLockedOut" role="alert">
             {{ error }}
