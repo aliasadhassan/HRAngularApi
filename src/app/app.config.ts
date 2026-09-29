@@ -1,5 +1,5 @@
 import { provideAppInitializer, ApplicationConfig, importProvidersFrom, inject } from '@angular/core';
-import { provideRouter } from '@angular/router';
+import { provideRouter, withComponentInputBinding } from '@angular/router';
 import { routes } from './app.routes';
 import { provideHttpClient, withInterceptors, withXsrfConfiguration } from '@angular/common/http';
 import { tokenInterceptor } from './interceptors/token-interceptor';
@@ -19,6 +19,14 @@ import {
 } from '@azure/msal-angular';
 import { InteractionType, IPublicClientApplication } from '@azure/msal-browser';
 import { MSALInstanceFactory } from './auth/msal-config';
+import { provideTranslateService } from '@ngx-translate/core';
+import { provideTranslateHttpLoader } from '@ngx-translate/http-loader';
+import { LanguageService } from './core/i18n/language.service';
+import { registerLocaleData } from '@angular/common';
+import localeAr from '@angular/common/locales/ar';
+
+// Date/number pipes ke liye Arabic locale data (warna 'ar' pe pipe error deta hai)
+registerLocaleData(localeAr);
 
 const initializeApp = () => {
   const authService = inject(AuthService);
@@ -42,11 +50,23 @@ const interceptorConfig: MsalInterceptorConfiguration = {
 
 export const appConfig: ApplicationConfig = {
   providers: [
-    provideRouter(routes),
+    provideRouter(routes, withComponentInputBinding()),
     provideHttpClient(
       withInterceptors([tokenInterceptor, loaderInterceptor]),
       withXsrfConfiguration({})
     ),
+
+    provideTranslateService({
+      fallbackLang: 'en',
+        loader: provideTranslateHttpLoader({
+        prefix: './i18n/',
+        suffix: '.json',
+        useHttpBackend: true
+      })
+    }),
+
+    // Pehla screen draw hone se pehle translations load — English/Arabic ka flash nahi
+    provideAppInitializer(() => inject(LanguageService).init()),
 
     importProvidersFrom(MsalModule),
     {

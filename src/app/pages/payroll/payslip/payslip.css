@@ -1,0 +1,226 @@
+.toolbar {
+  max-width: 860px;
+  margin: 0 auto 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.doc {
+  max-width: 860px;
+  margin: 0 auto;
+  background: var(--sheet);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-panel);
+  padding: 40px 44px;
+  position: relative;
+}
+/* Engraved border — kaghazi document ka ehsaas */
+.doc::before {
+  content: '';
+  position: absolute;
+  inset: 8px;
+  border: 1px solid var(--brass-soft);
+  border-radius: 6px;
+  pointer-events: none;
+}
+
+.doc-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 24px;
+  padding-bottom: 24px;
+  border-bottom: 2px solid var(--ink);
+}
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.seal {
+  width: 44px;
+  height: 44px;
+}
+.seal circle {
+  fill: none;
+  stroke: var(--brass);
+  stroke-width: 1.2;
+}
+.seal circle.inner {
+  stroke-width: 0.6;
+  stroke-dasharray: 1.2 1.6;
+}
+.seal text {
+  font-family: 'Fraunces', serif;
+  font-size: 19px;
+  font-weight: 600;
+  fill: var(--brass);
+}
+.brand h2 {
+  font-size: var(--fs-28);
+}
+.brand p {
+  margin: 2px 0 0;
+  color: var(--text-muted);
+}
+
+dl {
+  margin: 0;
+}
+dt {
+  font-size: var(--fs-12);
+  color: var(--text-muted);
+}
+dd {
+  margin: 2px 0 0;
+}
+
+.doc-ref {
+  display: flex;
+  gap: 28px;
+  text-align: end;
+}
+.serial {
+  font-family: var(--font-serial);
+  letter-spacing: 0.06em;
+}
+
+.parties {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 32px;
+  padding: 24px 0;
+  border-bottom: 1px solid var(--rule);
+}
+.parties dl {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px 20px;
+}
+
+.columns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 32px;
+  padding: 24px 0;
+}
+.column h3,
+.employer h3 {
+  font-size: var(--fs-16);
+  margin-bottom: 10px;
+}
+
+.lines {
+  width: 100%;
+  border-collapse: collapse;
+  font-variant-numeric: tabular-nums lining-nums;
+}
+.lines td {
+  padding: 8px 0;
+  border-bottom: 1px dashed var(--rule);
+}
+.lines .end {
+  text-align: end;
+}
+.lines tfoot td {
+  padding-top: 12px;
+  border-bottom: none;
+  border-top: 1px solid var(--rule-strong);
+  font-weight: 600;
+}
+.muted {
+  color: var(--text-faint);
+}
+.tag {
+  margin-inline-start: 6px;
+  font-size: 11px;
+  color: var(--amber);
+}
+
+/* Net pay — document ka asal jawab */
+.net {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 20px 24px;
+  border-radius: var(--radius-control);
+  background: var(--ink);
+  color: var(--text-on-ink);
+}
+.net-label {
+  display: block;
+  font-family: var(--font-display);
+  font-size: var(--fs-20);
+}
+.net-note {
+  font-size: var(--fs-12);
+  color: rgba(236, 238, 230, 0.6);
+}
+.net-figure {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+.net-currency {
+  color: var(--brass);
+  font-family: var(--font-display);
+}
+.net-amount {
+  font-family: var(--font-display);
+  font-size: var(--fs-40);
+  font-weight: 500;
+  color: #f7f1dd;
+  line-height: 1;
+}
+
+.employer {
+  padding-top: 24px;
+}
+
+.hold {
+  margin: 20px 0 0;
+  color: var(--oxblood);
+}
+
+.doc-foot {
+  margin-top: 28px;
+  padding-top: 16px;
+  border-top: 1px solid var(--rule);
+  font-size: var(--fs-12);
+  color: var(--text-faint);
+}
+
+@media (max-width: 767px) {
+  .doc {
+    padding: 28px 22px;
+  }
+  .doc-head,
+  .parties,
+  .columns {
+    grid-template-columns: 1fr;
+    flex-direction: column;
+  }
+  .doc-ref {
+    text-align: start;
+  }
+  .net {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+@media print {
+  .doc {
+    border: none;
+    padding: 0;
+    max-width: none;
+  }
+  .doc::before {
+    display: none;
+  }
+  .net {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}

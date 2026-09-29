@@ -11,6 +11,10 @@ import { authGuardGuard } from './auth/auth.guard-guard';
 import { ForgotPasswordComponent } from './auth/forgot-password/forgot-password';
 import { ResetPasswordComponent } from './auth/reset-password/reset-password';
 import { AuthCallbackComponent } from './auth-callback/auth-callback';
+import { ComingSoonComponent } from './pages/coming-soon/coming-soon';
+import { PayrollRunsComponent } from './pages/payroll/runs/payroll-runs';
+import { PayrollRunDetailComponent } from './pages/payroll/run-detail/payroll-run-detail';
+import { PayslipComponent } from './pages/payroll/payslip/payslip';
 
 export const routes: Routes = [
   { path: '', redirectTo: 'login', pathMatch: 'full' },
@@ -24,11 +28,25 @@ export const routes: Routes = [
     component: DashboardLayoutComponent,
     canActivate: [authGuardGuard],
     children: [
-      { path: 'dashboard', component: DashboardComponent },
-      { path: 'employees', component: EmployeesComponent },
-      { path: 'attendance', component: AttendanceComponent },
-      { path: 'leaves', component: LeavesComponent },
-      { path: 'settings', component: SettingsComponent }
+      { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
+      { path: 'dashboard', component: DashboardComponent, data: { titleKey: 'nav.dashboard' } },
+      { path: 'employees', component: EmployeesComponent, data: { titleKey: 'nav.employees' } },
+      { path: 'attendance', component: AttendanceComponent, data: { titleKey: 'nav.attendance' } },
+      { path: 'leaves', component: LeavesComponent, data: { titleKey: 'nav.leaves' } },
+      { path: 'settings', component: SettingsComponent, data: { titleKey: 'nav.settings' } },
+      {
+        path: 'payroll',
+        children: [
+          { path: '', pathMatch: 'full', redirectTo: 'runs' },
+          { path: 'runs', component: PayrollRunsComponent, data: { titleKey: 'nav.payrollRuns' } },
+          { path: 'runs/:id', component: PayrollRunDetailComponent, data: { titleKey: 'nav.payrollRuns' } },
+          { path: 'runs/:runId/payslips/:id', component: PayslipComponent, data: { titleKey: 'payroll.payslip.title' } },
+          { path: 'salaries', component: ComingSoonComponent, data: { titleKey: 'nav.employeeSalaries' } },
+          { path: 'structure', component: ComingSoonComponent, data: { titleKey: 'nav.salaryStructure' } },
+          { path: 'setup', component: ComingSoonComponent, data: { titleKey: 'nav.payrollSetup' } }
+        ]
+      },
+      { path: '**', redirectTo: 'dashboard' }
     ]
   },
   { path: '**', redirectTo: 'login' }

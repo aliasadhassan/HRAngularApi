@@ -1,0 +1,148 @@
+<div class="page">
+  <header class="page-intro">
+    <p>{{ 'payroll.runs.intro' | translate }}</p>
+    <button type="button" class="btn btn-ink" (click)="openDrawer()">
+      <span class="material-icons-outlined" aria-hidden="true">add</span>
+      {{ 'payroll.runs.new' | translate }}
+    </button>
+  </header>
+
+  @if (loadError()) {
+    <div class="notice notice-error" role="alert">
+      <span class="material-icons-outlined" aria-hidden="true">error</span>
+      <div>
+        {{ loadError() }}
+        <button type="button" class="btn-link retry" (click)="load()">{{ 'common.retry' | translate }}</button>
+      </div>
+    </div>
+  }
+
+  <section class="panel panel-flush">
+    <div class="table-wrap">
+      <table class="ledger-table">
+        <thead>
+          <tr>
+            <th>{{ 'payroll.runs.period' | translate }}</th>
+            <th>{{ 'payroll.runs.payGroup' | translate }}</th>
+            <th>{{ 'payroll.runs.status' | translate }}</th>
+            <th class="end">{{ 'payroll.runs.employees' | translate }}</th>
+            <th class="end">{{ 'payroll.runs.gross' | translate }}</th>
+            <th class="end">{{ 'payroll.runs.net' | translate }}</th>
+            <th>{{ 'payroll.runs.payDate' | translate }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          @if (loading()) {
+            @for (i of [1, 2, 3]; track i) {
+              <tr>
+                @for (c of [1, 2, 3, 4, 5, 6, 7]; track c) {
+                  <td><span class="skeleton"></span></td>
+                }
+              </tr>
+            }
+          } @else {
+            @for (run of runs(); track run.id) {
+              <tr class="is-link" tabindex="0" (click)="open(run)" (keydown.enter)="open(run)">
+                <td>
+                  <span class="cell-main period">{{ run.periodStart | date: 'MMMM y' : undefined : lang() }}</span>
+                  <span class="cell-sub num">
+                    {{ run.periodStart | date: 'd MMM' : undefined : lang() }} – {{ run.periodEnd | date: 'd MMM' : undefined : lang() }}
+                  </span>
+                </td>
+                <td>
+                  {{ run.payGroupName }}
+                  @if (run.runType !== 'Regular') {
+                    <span class="cell-sub">{{ 'payroll.runType.' + run.runType | translate }}</span>
+                  }
+                </td>
+                <td><span [class]="statusChip[run.status]">{{ 'payroll.status.' + run.status | translate }}</span></td>
+                @if (run.calculatedAt) {
+                  <td class="end">{{ run.totalEmployees }}</td>
+                  <td class="end">{{ run.totalGross | amount: lang() }}</td>
+                  <td class="end net">
+                    <span class="currency">{{ run.currencyCode }}</span>
+                    {{ run.totalNet | amount: lang() : 'full' : 2 }}
+                  </td>
+                } @else {
+                  <td class="end dim">—</td>
+                  <td class="end dim">—</td>
+                  <td class="end dim">{{ 'payroll.runs.notCalculated' | translate }}</td>
+                }
+                <td class="num">{{ run.payDate | date: 'd MMM y' : undefined : lang() }}</td>
+              </tr>
+            }
+          }
+        </tbody>
+      </table>
+    </div>
+
+    @if (!loading() && !loadError() && runs().length === 0) {
+      <div class="empty-state">
+        <span class="material-icons-outlined" aria-hidden="true">receipt_long</span>
+        <h3>{{ 'payroll.runs.emptyTitle' | translate }}</h3>
+        <p>{{ 'payroll.runs.emptyBody' | translate }}</p>
+        <button type="button" class="btn btn-ink" (click)="openDrawer()">{{ 'payroll.runs.new' | translate }}</button>
+      </div>
+    }
+  </section>
+</div>
+
+@if (drawerOpen()) {
+  <div class="overlay" (click)="closeDrawer()">
+    <aside class="drawer" role="dialog" aria-modal="true" aria-labelledby="new-run-title" (click)="$event.stopPropagation()">
+      <header class="drawer-head">
+        <h3 id="new-run-title">{{ 'payroll.runs.new' | translate }}</h3>
+        <button type="button" class="btn-link" (click)="closeDrawer()" [attr.aria-label]="'common.close' | translate">
+          <span class="material-icons-outlined" aria-hidden="true">close</span>
+        </button>
+      </header>
+
+      <div class="drawer-body">
+        <div class="field">
+          <label for="pay-group">{{ 'payroll.runs.payGroup' | translate }}</label>
+          <select id="pay-group" [(ngModel)]="selectedGroupId" (ngModelChange)="onGroupChange()">
+            <option value="" disabled>{{ 'payroll.runs.chooseGroup' | translate }}</option>
+            @for (g of payGroups(); track g.id) {
+              <option [value]="g.id">{{ g.name }} ({{ g.employeeCount }})</option>
+            }
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="pay-period">{{ 'payroll.runs.period' | translate }}</label>
+          <select id="pay-period" [(ngModel)]="selectedPeriodId" [disabled]="!selectedGroupId || periodsLoading()">
+            @if (periodsLoading()) {
+              <option value="">{{ 'common.loading' | translate }}</option>
+            } @else if (selectedGroupId && availablePeriods().length === 0) {
+              <option value="">{{ 'payroll.runs.noPeriods' | translate }}</option>
+            }
+            @for (p of availablePeriods(); track p.id) {
+              <option [value]="p.id">
+                {{ p.periodStart | date: 'MMMM y' : undefined : lang() }}
+                ({{ p.periodStart | date: 'd MMM' : undefined : lang() }} – {{ p.periodEnd | date: 'd MMM' : undefined : lang() }})
+              </option>
+            }
+          </select>
+          <span class="field-hint">{{ 'payroll.runs.periodHint' | translate }}</span>
+        </div>
+
+        <div class="notice notice-info">
+          <span class="material-icons-outlined" aria-hidden="true">info</span>
+          <span>{{ 'payroll.runs.newHelp' | translate }}</span>
+        </div>
+      </div>
+
+      <footer class="drawer-foot">
+        <button type="button" class="btn btn-quiet" (click)="closeDrawer()">{{ 'common.cancel' | translate }}</button>
+        <button
+          type="button"
+          class="btn btn-ink"
+          [disabled]="!selectedGroupId || !selectedPeriodId || creating()"
+          (click)="create()"
+        >
+          {{ (creating() ? 'payroll.runs.creating' : 'payroll.runs.create') | translate }}
+        </button>
+      </footer>
+    </aside>
+  </div>
+}

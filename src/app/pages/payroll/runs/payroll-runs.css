@@ -1,0 +1,49 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.page-intro {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.page-intro p {
+  margin: 0;
+  max-width: 60ch;
+  color: var(--text-muted);
+  font-size: var(--fs-16);
+}
+
+.period {
+  font-family: var(--font-display);
+  font-size: var(--fs-16);
+}
+
+.net {
+  font-weight: 600;
+  white-space: nowrap;
+}
+.currency {
+  font-size: var(--fs-12);
+  font-weight: 500;
+  color: var(--text-faint);
+  margin-inline-end: 4px;
+}
+
+.retry {
+  margin-inline-start: 8px;
+  color: var(--oxblood);
+  text-decoration: underline;
+}
+
+.skeleton {
+  width: 70%;
+}
+
+.dim {
+  color: var(--text-faint);
+}

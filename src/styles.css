@@ -1,25 +1,27 @@
 @import "material-icons/iconfont/material-icons.css";
+@import "./styles/tokens.css";
+@import "./styles/ledger.css";
 
 @font-face {
   font-family: 'Inter';
   font-style: normal;
   font-weight: 400;
   font-display: swap;
-  src: url('assests/fonts/inter-v20-latin-regular.woff2') format('woff2');
+  src: url('assets/fonts/inter-v20-latin-regular.woff2') format('woff2');
 }
 @font-face {
   font-family: 'Inter';
   font-style: normal;
   font-weight: 500;
   font-display: swap;
-  src: url('assests/fonts/inter-v20-latin-500.woff2') format('woff2');
+  src: url('assets/fonts/inter-v20-latin-500.woff2') format('woff2');
 }
 @font-face {
   font-family: 'Inter';
   font-style: normal;
   font-weight: 600;
   font-display: swap;
-  src: url('assests/fonts/inter-v20-latin-600.woff2') format('woff2');
+  src: url('assets/fonts/inter-v20-latin-600.woff2') format('woff2');
 }
 
 @font-face {
@@ -27,14 +29,14 @@
   font-style: normal;
   font-weight: 500;
   font-display: swap;
-  src: url('assests/fonts/fraunces-v38-latin-500.woff2') format('woff2');
+  src: url('assets/fonts/fraunces-v38-latin-500.woff2') format('woff2');
 }
 @font-face {
   font-family: 'Fraunces';
   font-style: normal;
   font-weight: 600;
   font-display: swap;
-  src: url('assests/fonts/fraunces-v38-latin-600.woff2') format('woff2');
+  src: url('assets/fonts/fraunces-v38-latin-600.woff2') format('woff2');
 }
 
 @font-face {
@@ -42,26 +44,75 @@
   font-style: normal;
   font-weight: 400;
   font-display: swap;
-  src: url('assests/fonts/ibm-plex-mono-v20-latin-regular.woff2') format('woff2');
+  src: url('assets/fonts/ibm-plex-mono-v20-latin-regular.woff2') format('woff2');
 }
 @font-face {
   font-family: 'IBM Plex Mono';
   font-style: normal;
   font-weight: 500;
   font-display: swap;
-  src: url('assests/fonts/ibm-plex-mono-v20-latin-500.woff2') format('woff2');
+  src: url('assets/fonts/ibm-plex-mono-v20-latin-500.woff2') format('woff2');
 }
 
-*{
-  font-family: 'Fraunces', serif;
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
 }
 
-html, body {
+html,
+body {
   height: 100%;
   margin: 0;
+}
+
+body {
+  font-family: var(--font-ui);
+  font-size: var(--fs-14);
+  line-height: 1.5;
+  color: var(--text);
+  background: var(--vellum);
+  -webkit-font-smoothing: antialiased;
+  font-feature-settings: 'cv11', 'ss01';
+}
+
+h1, h2, h3, h4 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  line-height: 1.2;
+  color: var(--text);
+  margin: 0;
+}
+
+button, input, select, textarea {
+  font: inherit;
+  color: inherit;
+}
+
+:focus-visible {
+  outline: none;
+  box-shadow: var(--focus);
+}
+
+.num {
+  font-variant-numeric: tabular-nums lining-nums;
 }
 
 app-root {
   display: block;
   height: 100%;
 }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* RTL Support */
+
+/* ==========================================
+   ARABIC STYLING VIA RTL DIRECTION
+   ========================================== */

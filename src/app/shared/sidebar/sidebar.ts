@@ -1,156 +1,64 @@
-import {
-AfterViewInit,
-Component,
-ElementRef,
-ViewChild
-} from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { Router, RouterModule } from '@angular/router';
-import { animate } from 'motion'; 
+import { Component, inject } from '@angular/core';
+import { RouterLink, RouterLinkActive } from '@angular/router';
+import { TranslatePipe } from '@ngx-translate/core';
+import { LayoutService } from '../../core/layout/layout.service';
+import { CurrentUserService } from '../../core/auth/current-user';
 
-interface MenuItem {
-icon?: string;
-label: string;
-route?: string;
-active?: boolean;
-expanded?: boolean;
-children?: MenuItem[];
-} 
+interface NavItem {
+  icon: string;
+  label: string;
+  route: string;
+}
+
+interface NavSection {
+  title?: string;
+  items: NavItem[];
+}
 
 @Component({
-standalone: true,
-selector: 'app-sidebar',
-imports: [CommonModule, RouterModule],
-templateUrl: './sidebar.html',
-styleUrls: ['./sidebar.css']
+  selector: 'app-sidebar',
+  imports: [RouterLink, RouterLinkActive, TranslatePipe],
+  templateUrl: './sidebar.html',
+  styleUrl: './sidebar.css',
+  host: {
+    '[class.is-collapsed]': 'layout.collapsed()',
+    '[class.is-mobile-open]': 'layout.mobileOpen()'
+  }
 })
-export class SidebarComponent implements AfterViewInit {
-@ViewChild('sidebarEl')
-sidebarEl!: ElementRef; 
+export class SidebarComponent {
+  readonly layout = inject(LayoutService);
+  readonly user = inject(CurrentUserService).get();
 
-isExpanded = false; 
+  /**
+   * Order: jo kaam roz hota hai woh upar, jo ek dafa set hota hai woh neeche.
+   * Payroll: har mahine Runs → jab salary badle Employee Salaries → kabhi kabhi Structure → shuru mein Setup.
+   */
+  readonly sections: NavSection[] = [
+    {
+      items: [{ icon: 'space_dashboard', label: 'nav.dashboard', route: '/app/dashboard' }]
+    },
+    {
+      title: 'nav.people',
+      items: [
+        { icon: 'groups', label: 'nav.employees', route: '/app/employees' },
+        { icon: 'event_available', label: 'nav.leaves', route: '/app/leaves' },
+        { icon: 'schedule', label: 'nav.attendance', route: '/app/attendance' }
+      ]
+    },
+    {
+      title: 'nav.payroll',
+      items: [
+        { icon: 'receipt_long', label: 'nav.payrollRuns', route: '/app/payroll/runs' },
+        { icon: 'request_quote', label: 'nav.employeeSalaries', route: '/app/payroll/salaries' },
+        { icon: 'account_tree', label: 'nav.salaryStructure', route: '/app/payroll/structure' },
+        { icon: 'tune', label: 'nav.payrollSetup', route: '/app/payroll/setup' }
+      ]
+    }
+  ];
 
-menuItems: MenuItem[] = [
-{
-icon: 'dashboard',
-label: 'Dashboard',
-expanded: true,
-children: [
-{
-label: 'Overview',
-route: '/app/dashboard',
-active: true
-},
-{
-label: 'Analytics',
-route: '/app/dashboard/analytics'
-}
-]
-},
-{
-icon: 'groups',
-label: 'Employees',
-children: [
-{
-label: 'All Employees',
-route: '/app/employees'
-},
-{
-label: 'Departments',
-route: '/app/employees/departments'
-}
-]
-},
-{
-icon: 'event_available',
-label: 'Leaves',
-children: [
-{
-label: 'Leave Requests',
-route: '/app/leaves'
-},
-{
-label: 'Leave Calendar',
-route: '/app/leaves/calendar'
-}
-]
-},
-{
-icon: 'settings',
-label: 'Settings',
-route: '/app/settings'
-}
-]; 
+  readonly settings: NavItem = { icon: 'settings', label: 'nav.settings', route: '/app/settings' };
 
-constructor(private router: Router) {} 
-
-ngAfterViewInit(): void {
-this.sidebarEl.nativeElement.style.width = '64px';
-} 
-
-toggleSidebar(): void {
-const fromWidth = this.isExpanded ? '256px' : '64px';
-const toWidth = this.isExpanded ? '64px' : '256px'; 
-
-this.isExpanded = !this.isExpanded;
-
-animate(
-this.sidebarEl.nativeElement,
-{
-width: [fromWidth, toWidth]
-},
-{
-duration: 0.35,
-ease: 'easeInOut'
-}
-);
-
-if (!this.isExpanded) {
-this.menuItems.forEach(item => {
-item.expanded = false;
-});
-}
-
-} 
-
-onParentClick(item: MenuItem): void {
-if (item.children && item.children.length > 0) {
-if (!this.isExpanded) {
-this.toggleSidebar();
-}
-item.expanded = !item.expanded;
-return;
-} 
-
-if (item.route) {
-this.navigate(item.route);
-}
-} 
-
-onChildClick(parent: MenuItem, child: MenuItem): void {
-this.menuItems.forEach(item => {
-item.active = false;
-item.children?.forEach(childItem => {
-childItem.active = false;
-});
-}); 
-
-parent.active = true;
-child.active = true;
-
-if (child.route) {
-this.navigate(child.route);
-}
-
-} 
-
-private navigate(route: string): void {
-this.router.navigate([route]).then(success => {
-if (success) {
-console.log(`Successfully navigated to: ${route}`);
-} else {
-console.error(`Routing module refused transition to layout: ${route}`);
-}
-});
-}
+  onNavigate(): void {
+    this.layout.closeMobile();
+  }
 }
