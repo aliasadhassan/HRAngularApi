@@ -1,0 +1,254 @@
+{
+  "common": {
+    "save": "Save",
+    "saving": "Saving…",
+    "cancel": "Cancel",
+    "edit": "Edit",
+    "delete": "Delete",
+    "add": "Add",
+    "loading": "Loading…",
+    "noData": "No records found.",
+    "actions": "Actions",
+    "required": "Required.",
+    "yes": "Yes",
+    "no": "No",
+    "retry": "Try again",
+    "close": "Close"
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "overview": "Overview",
+    "analytics": "Analytics",
+    "employees": "Employees",
+    "allEmployees": "All Employees",
+    "departments": "Departments",
+    "leaves": "Leaves",
+    "leaveRequests": "Leave Requests",
+    "leaveCalendar": "Leave Calendar",
+    "payroll": "Payroll",
+    "payrollSetup": "Payroll Setup",
+    "salaryStructure": "Salary Structure",
+    "employeeSalaries": "Employee Salaries",
+    "payrollRuns": "Payroll Runs",
+    "settings": "Settings",
+    "main": "Main navigation",
+    "tagline": "People and payroll",
+    "people": "People",
+    "attendance": "Attendance",
+    "expand": "Expand sidebar",
+    "collapse": "Collapse sidebar"
+  },
+  "topbar": {
+    "switchLanguage": "العربية",
+    "notifications": "Notifications",
+    "myProfile": "My Profile",
+    "settings": "Settings",
+    "logout": "Logout",
+    "openMenu": "Open menu"
+  },
+  "comingSoon": {
+    "body": "This section is being built and will be available soon.",
+    "back": "Back to dashboard"
+  },
+  "dashboard": {
+    "greeting": {
+      "morning": "Good morning, {{name}}",
+      "afternoon": "Good afternoon, {{name}}",
+      "evening": "Good evening, {{name}}"
+    },
+    "intro": {
+      "pending": "{{count}} items need your attention."
+    },
+    "actions": {
+      "addEmployee": "Add employee",
+      "reviewPayroll": "Review payroll"
+    },
+    "note": {
+      "label": "Current payroll run",
+      "title": "{{period}} payroll",
+      "status": {
+        "draft": "Draft",
+        "calculated": "Awaiting approval",
+        "approved": "Approved",
+        "paid": "Paid"
+      },
+      "caption": "Net pay to {{count}} employees on {{date}}",
+      "gross": "Gross pay",
+      "deductions": "Deductions",
+      "tax": "Tax withheld",
+      "employerCost": "Employer cost",
+      "reference": "Run reference",
+      "review": "Review and approve"
+    },
+    "today": {
+      "title": "Today",
+      "open": "Open attendance",
+      "ofTotal": "of {{total}} at work",
+      "barLabel": "{{present}} in office, {{remote}} remote, {{leave}} on leave, {{absent}} absent",
+      "present": "In office",
+      "remote": "Remote",
+      "onLeave": "On leave",
+      "absent": "Absent",
+      "away": "Away today",
+      "until": "until {{date}}"
+    },
+    "away": {
+      "annual": "Annual leave",
+      "sick": "Sick leave",
+      "training": "Training",
+      "unplanned": "Not checked in"
+    },
+    "ledger": {
+      "label": "Workforce summary",
+      "headcount": "Headcount",
+      "headcountChange": "+{{count}} this quarter",
+      "joined": "Joined this month",
+      "attrition": "Attrition",
+      "last12": "Last 12 months",
+      "tenure": "Average tenure",
+      "years": "Years"
+    },
+    "attendance": {
+      "title": "Attendance",
+      "sub": "Share of employees at work, last 14 working days",
+      "rate": "Attendance %"
+    },
+    "cost": {
+      "title": "Payroll by department",
+      "sub": "Gross monthly cost"
+    },
+    "dept": {
+      "engineering": "Engineering",
+      "sales": "Sales",
+      "operations": "Operations",
+      "finance": "Finance",
+      "design": "Design",
+      "people": "People"
+    },
+    "tasks": {
+      "title": "Needs your attention",
+      "empty": "Nothing waiting on you. New requests will appear here.",
+      "approve": "Approve",
+      "decline": "Decline",
+      "review": "Review",
+      "payrollReady": "This month's payroll for {{count}} employees is calculated and ready for approval",
+      "annualLeave": "Annual leave, {{days}} days",
+      "sickLeave": "Sick leave, {{days}} day",
+      "increment": "Increment to PKR {{amount}} from next month",
+      "contractEnds": "Contract ends in {{days}} days"
+    },
+    "upcoming": {
+      "title": "Coming up",
+      "payday": "Salaries paid",
+      "leave": "{{name}} starts leave",
+      "anniversary": "{{name}}, {{years}} years with the company",
+      "contract": "{{name}}'s contract ends",
+      "joiner": "{{name}} joins Engineering",
+      "today": "Today",
+      "tomorrow": "Tomorrow",
+      "inDays": "In {{days}} days"
+    }
+  },
+  "payroll": {
+    "runs": {
+      "intro": "Each run pays one pay group for one period. Calculate it, check the payslips, then approve.",
+      "new": "New payroll run",
+      "create": "Create run",
+      "creating": "Creating…",
+      "period": "Period",
+      "payGroup": "Pay group",
+      "status": "Status",
+      "employees": "Employees",
+      "gross": "Gross",
+      "net": "Net pay",
+      "payDate": "Pay date",
+      "emptyTitle": "No payroll runs yet",
+      "emptyBody": "Create the first run for a pay group and period. Nothing is paid until you approve it.",
+      "chooseGroup": "Choose a pay group",
+      "noPeriods": "No open periods without a run",
+      "periodHint": "Only open periods that don't have a run yet are listed.",
+      "newHelp": "The run starts as a draft. You can calculate it as many times as you need before approving.",
+      "notCalculated": "Not calculated"
+    },
+    "runType": {
+      "Regular": "Regular",
+      "OffCycle": "Off-cycle",
+      "FinalSettlement": "Final settlement"
+    },
+    "status": {
+      "Draft": "Draft",
+      "Processing": "Calculating",
+      "Calculated": "Awaiting approval",
+      "Approved": "Approved",
+      "Paid": "Paid",
+      "Cancelled": "Cancelled",
+      "Failed": "Needs attention"
+    },
+    "slipStatus": {
+      "Calculated": "Calculated",
+      "OnHold": "On hold",
+      "Paid": "Paid"
+    },
+    "detail": {
+      "back": "Back",
+      "netCaption": "Net pay to {{count}} employees on {{date}}",
+      "progress": "Run progress",
+      "stepCalculate": "Calculate",
+      "stepApprove": "Approve",
+      "stepPay": "Pay",
+      "calculate": "Calculate",
+      "recalculate": "Recalculate",
+      "approve": "Approve run",
+      "cancel": "Cancel run",
+      "working": "Working…",
+      "locked": "Approved runs are locked and can't be changed.",
+      "calculated": "Payroll calculated.",
+      "calculationFailed": "Some employees couldn't be calculated. See the details below.",
+      "approved": "Payroll approved. The period is now locked.",
+      "cancelled": "Payroll run cancelled.",
+      "failedTitle": "Fix these and calculate again:",
+      "onHold": "{{count}} payslips are on hold because net pay is below zero.",
+      "payslips": "Payslips",
+      "employee": "Employee",
+      "days": "Days",
+      "noPayslipsTitle": "Not calculated yet",
+      "noPayslipsBody": "Calculate the run to create a payslip for every employee in this pay group.",
+      "notCalculatedCaption": "Calculate the run to see totals. Pay date {{date}}."
+    },
+    "confirm": {
+      "approveTitle": "Approve this payroll?",
+      "approveBody": "Loan installments will be deducted and the period will be locked. Approved payroll can't be recalculated.",
+      "approveConfirm": "Approve payroll",
+      "cancelTitle": "Cancel this run?",
+      "cancelBody": "The run and its payslips will be discarded. You can create a new run for this period afterwards.",
+      "cancelConfirm": "Cancel run"
+    },
+    "payslip": {
+      "title": "Payslip",
+      "print": "Print",
+      "number": "Payslip no.",
+      "code": "Employee code",
+      "department": "Department",
+      "designation": "Designation",
+      "period": "Pay period",
+      "payableDays": "Paid days",
+      "unpaidLeave": "Unpaid leave days",
+      "bank": "Bank account",
+      "earnings": "Earnings",
+      "deductions": "Deductions",
+      "totalEarnings": "Total earnings",
+      "totalDeductions": "Total deductions",
+      "noDeductions": "No deductions",
+      "adjusted": "Adjusted",
+      "netPay": "Net pay",
+      "taxableIncome": "Taxable income",
+      "employerContributions": "Paid by employer",
+      "footer": "Computer-generated payslip, calculated on {{date}}. No signature required."
+    },
+    "errors": {
+      "load": "Couldn't load payroll data. Check your connection and try again.",
+      "create": "Couldn't create the run.",
+      "action": "That didn't work. Refresh the page and try again."
+    }
+  }
+}

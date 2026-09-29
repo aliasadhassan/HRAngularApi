@@ -1,0 +1,216 @@
+<div class="page">
+  <a class="btn-link back" routerLink="/app/payroll/runs">
+    <span class="material-icons-outlined flip" aria-hidden="true">arrow_back</span>
+    {{ 'payroll.detail.back' | translate }}
+  </a>
+
+  @if (run(); as r) {
+    <!-- Banknote header -->
+    <section class="note">
+      <svg class="note-art" viewBox="0 0 640 400" preserveAspectRatio="xMaxYMid slice" aria-hidden="true">
+        @for (d of guilloche.rosettes; track $index) {
+          <path class="rosette" [attr.d]="d" />
+        }
+      </svg>
+      <div class="note-frame" aria-hidden="true"></div>
+
+      <div class="note-body">
+        <div class="note-top">
+          <div>
+            <h2 class="note-title">
+              {{ 'dashboard.note.title' | translate: { period: (r.periodStart | date: 'MMMM y' : undefined : lang()) } }}
+            </h2>
+            <p class="note-meta">
+              {{ r.payGroupName }},
+              {{ r.periodStart | date: 'd MMM' : undefined : lang() }} – {{ r.periodEnd | date: 'd MMM y' : undefined : lang() }}
+            </p>
+          </div>
+          <span [class]="runChip[r.status]">{{ 'payroll.status.' + r.status | translate }}</span>
+        </div>
+
+        <div class="note-figure num">
+          <span class="note-currency">{{ r.currencyCode }}</span>
+          <span class="note-amount">{{ hasTotals() ? (r.totalNet | amount: lang() : 'full' : 2) : '—' }}</span>
+        </div>
+        <p class="note-caption">
+          @if (hasTotals()) {
+            {{ 'payroll.detail.netCaption' | translate: { count: r.totalEmployees, date: (r.payDate | date: 'EEEE, d MMMM' : undefined : lang()) } }}
+          } @else {
+            {{ 'payroll.detail.notCalculatedCaption' | translate: { date: (r.payDate | date: 'EEEE, d MMMM' : undefined : lang()) } }}
+          }
+        </p>
+
+        <dl class="note-lines num">
+          <div>
+            <dt>{{ 'dashboard.note.gross' | translate }}</dt>
+            <dd>{{ hasTotals() ? (r.totalGross | amount: lang() : 'full' : 2) : '—' }}</dd>
+          </div>
+          <div>
+            <dt>{{ 'dashboard.note.deductions' | translate }}</dt>
+            <dd>{{ hasTotals() ? (r.totalDeductions | amount: lang() : 'full' : 2) : '—' }}</dd>
+          </div>
+          <div>
+            <dt>{{ 'dashboard.note.tax' | translate }}</dt>
+            <dd>{{ hasTotals() ? (totalTax() | amount: lang() : 'full' : 2) : '—' }}</dd>
+          </div>
+          <div>
+            <dt>{{ 'dashboard.note.employerCost' | translate }}</dt>
+            <dd>{{ hasTotals() ? (r.totalEmployerCost | amount: lang() : 'full' : 2) : '—' }}</dd>
+          </div>
+        </dl>
+      </div>
+    </section>
+
+    <!-- Actions + timeline -->
+    <section class="panel actions-panel">
+      <ol class="steps" [attr.aria-label]="'payroll.detail.progress' | translate">
+        <li [class.done]="!!r.calculatedAt" [class.current]="r.status === 'Draft' || r.status === 'Failed'">
+          <span class="step-dot" aria-hidden="true"></span>
+          <span class="step-text">
+            <b>{{ 'payroll.detail.stepCalculate' | translate }}</b>
+            @if (r.calculatedAt) {
+              <span class="num">{{ r.calculatedAt + 'Z' | date: 'd MMM, h:mm a' : undefined : lang() }}</span>
+            }
+          </span>
+        </li>
+        <li [class.done]="!!r.approvedAt" [class.current]="r.status === 'Calculated'">
+          <span class="step-dot" aria-hidden="true"></span>
+          <span class="step-text">
+            <b>{{ 'payroll.detail.stepApprove' | translate }}</b>
+            @if (r.approvedAt) {
+              <span class="num">{{ r.approvedAt + 'Z' | date: 'd MMM, h:mm a' : undefined : lang() }}</span>
+            }
+          </span>
+        </li>
+        <li [class.done]="r.status === 'Paid'" [class.current]="r.status === 'Approved'">
+          <span class="step-dot" aria-hidden="true"></span>
+          <span class="step-text">
+            <b>{{ 'payroll.detail.stepPay' | translate }}</b>
+            <span class="num">{{ r.payDate | date: 'd MMM y' : undefined : lang() }}</span>
+          </span>
+        </li>
+      </ol>
+
+      <div class="action-buttons">
+        @if (canCancel()) {
+          <button type="button" class="btn btn-danger" [disabled]="busy()" (click)="ask('cancel')">
+            {{ 'payroll.detail.cancel' | translate }}
+          </button>
+        }
+        @if (canCalculate()) {
+          <button type="button" class="btn" [class.btn-ink]="!canApprove()" [class.btn-quiet]="canApprove()" [disabled]="busy()" (click)="calculate()">
+            <span class="material-icons-outlined" aria-hidden="true">calculate</span>
+            {{ (busy() ? 'payroll.detail.working' : (r.calculatedAt ? 'payroll.detail.recalculate' : 'payroll.detail.calculate')) | translate }}
+          </button>
+        }
+        @if (canApprove()) {
+          <button type="button" class="btn btn-ink" [disabled]="busy()" (click)="ask('approve')">
+            <span class="material-icons-outlined" aria-hidden="true">verified</span>
+            {{ 'payroll.detail.approve' | translate }}
+          </button>
+        }
+        @if (isLocked()) {
+          <span class="locked-note">
+            <span class="material-icons-outlined" aria-hidden="true">lock</span>
+            {{ 'payroll.detail.locked' | translate }}
+          </span>
+        }
+      </div>
+    </section>
+
+    @if (r.status === 'Failed' && failureLines().length) {
+      <div class="notice notice-error" role="alert">
+        <span class="material-icons-outlined" aria-hidden="true">error</span>
+        <div>
+          <b>{{ 'payroll.detail.failedTitle' | translate }}</b>
+          <ul class="failure-list">
+            @for (line of failureLines(); track $index) {
+              <li>{{ line }}</li>
+            }
+          </ul>
+        </div>
+      </div>
+    }
+
+    @if (onHold() > 0) {
+      <div class="notice notice-error">
+        <span class="material-icons-outlined" aria-hidden="true">pause_circle</span>
+        <span>{{ 'payroll.detail.onHold' | translate: { count: onHold() } }}</span>
+      </div>
+    }
+
+    <!-- Payslips -->
+    <section class="panel panel-flush">
+      <header class="panel-head table-head">
+        <h3>{{ 'payroll.detail.payslips' | translate }}</h3>
+        @if (payslips().length) {
+          <span class="count num">{{ payslips().length }}</span>
+        }
+      </header>
+
+      @if (payslips().length) {
+        <div class="table-wrap">
+          <table class="ledger-table">
+            <thead>
+              <tr>
+                <th>{{ 'payroll.detail.employee' | translate }}</th>
+                <th class="end">{{ 'payroll.detail.days' | translate }}</th>
+                <th class="end">{{ 'payroll.runs.gross' | translate }}</th>
+                <th class="end">{{ 'dashboard.note.tax' | translate }}</th>
+                <th class="end">{{ 'dashboard.note.deductions' | translate }}</th>
+                <th class="end">{{ 'payroll.runs.net' | translate }}</th>
+                <th>{{ 'payroll.runs.status' | translate }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (p of payslips(); track p.id) {
+                <tr class="is-link" tabindex="0" (click)="openPayslip(p)" (keydown.enter)="openPayslip(p)">
+                  <td>
+                    <span class="cell-main">{{ p.employeeName }}</span>
+                    <span class="cell-sub">{{ p.employeeCode }}@if (p.departmentName) {, {{ p.departmentName }}}</span>
+                  </td>
+                  <td class="end">{{ p.payableDays }}</td>
+                  <td class="end">{{ p.grossEarnings | amount: lang() : 'full' : 2 }}</td>
+                  <td class="end">{{ p.taxAmount | amount: lang() : 'full' : 2 }}</td>
+                  <td class="end">{{ p.totalDeductions | amount: lang() : 'full' : 2 }}</td>
+                  <td class="end strong">{{ p.netPay | amount: lang() : 'full' : 2 }}</td>
+                  <td><span [class]="slipChip[p.status]">{{ 'payroll.slipStatus.' + p.status | translate }}</span></td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      } @else if (!loading()) {
+        <div class="empty-state">
+          <span class="material-icons-outlined" aria-hidden="true">calculate</span>
+          <h3>{{ 'payroll.detail.noPayslipsTitle' | translate }}</h3>
+          <p>{{ 'payroll.detail.noPayslipsBody' | translate }}</p>
+        </div>
+      }
+    </section>
+  } @else {
+    <div class="panel"><span class="skeleton" style="width: 40%"></span></div>
+  }
+</div>
+
+@if (confirm(); as action) {
+  <div class="overlay" (click)="busy() ? null : ask(null)">
+    <div class="dialog" role="alertdialog" aria-modal="true" aria-labelledby="confirm-title" (click)="$event.stopPropagation()">
+      <h3 id="confirm-title">{{ 'payroll.confirm.' + action + 'Title' | translate }}</h3>
+      <p>{{ 'payroll.confirm.' + action + 'Body' | translate }}</p>
+      <div class="dialog-actions">
+        <button type="button" class="btn btn-quiet" [disabled]="busy()" (click)="ask(null)">{{ 'common.cancel' | translate }}</button>
+        <button
+          type="button"
+          class="btn"
+          [class.btn-ink]="action === 'approve'"
+          [class.btn-danger]="action === 'cancel'"
+          [disabled]="busy()"
+          (click)="confirmAction()"
+        >
+          {{ (busy() ? 'payroll.detail.working' : 'payroll.confirm.' + action + 'Confirm') | translate }}
+        </button>
+      </div>
+    </div>
+  </div>
+}

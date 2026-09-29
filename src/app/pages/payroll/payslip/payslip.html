@@ -1,0 +1,167 @@
+<div class="toolbar no-print">
+  <button type="button" class="btn-link" (click)="back()">
+    <span class="material-icons-outlined flip" aria-hidden="true">arrow_back</span>
+    {{ 'payroll.detail.back' | translate }}
+  </button>
+  <button type="button" class="btn btn-quiet" (click)="print()" [disabled]="!slip()">
+    <span class="material-icons-outlined" aria-hidden="true">print</span>
+    {{ 'payroll.payslip.print' | translate }}
+  </button>
+</div>
+
+@if (slip(); as s) {
+  <article class="doc">
+    <header class="doc-head">
+      <div class="brand">
+        <svg class="seal" viewBox="0 0 40 40" aria-hidden="true">
+          <circle cx="20" cy="20" r="19" />
+          <circle cx="20" cy="20" r="15.5" class="inner" />
+          <text x="20" y="26.5" text-anchor="middle">H</text>
+        </svg>
+        <div>
+          <h2>{{ 'payroll.payslip.title' | translate }}</h2>
+          <p class="num">{{ s.periodStart | date: 'MMMM y' : undefined : lang() }}</p>
+        </div>
+      </div>
+      <dl class="doc-ref num">
+        <div>
+          <dt>{{ 'payroll.payslip.number' | translate }}</dt>
+          <dd class="serial">{{ s.payslipNumber }}</dd>
+        </div>
+        <div>
+          <dt>{{ 'payroll.runs.status' | translate }}</dt>
+          <dd><span [class]="chip[s.status]">{{ 'payroll.slipStatus.' + s.status | translate }}</span></dd>
+        </div>
+      </dl>
+    </header>
+
+    <section class="parties">
+      <dl>
+        <div>
+          <dt>{{ 'payroll.detail.employee' | translate }}</dt>
+          <dd><b>{{ s.employeeName }}</b></dd>
+        </div>
+        <div>
+          <dt>{{ 'payroll.payslip.code' | translate }}</dt>
+          <dd class="num">{{ s.employeeCode }}</dd>
+        </div>
+        <div>
+          <dt>{{ 'payroll.payslip.department' | translate }}</dt>
+          <dd>{{ s.departmentName || '—' }}</dd>
+        </div>
+        <div>
+          <dt>{{ 'payroll.payslip.designation' | translate }}</dt>
+          <dd>{{ s.designationTitle || '—' }}</dd>
+        </div>
+      </dl>
+      <dl>
+        <div>
+          <dt>{{ 'payroll.payslip.period' | translate }}</dt>
+          <dd class="num">
+            {{ s.periodStart | date: 'd MMM' : undefined : lang() }} – {{ s.periodEnd | date: 'd MMM y' : undefined : lang() }}
+          </dd>
+        </div>
+        <div>
+          <dt>{{ 'payroll.payslip.payableDays' | translate }}</dt>
+          <dd class="num">{{ s.payableDays }} / {{ s.periodDays }}</dd>
+        </div>
+        <div>
+          <dt>{{ 'payroll.payslip.unpaidLeave' | translate }}</dt>
+          <dd class="num">{{ s.unpaidLeaveDays }}</dd>
+        </div>
+        <div>
+          <dt>{{ 'payroll.payslip.bank' | translate }}</dt>
+          <dd class="num">{{ s.bankAccountMasked || '—' }}</dd>
+        </div>
+      </dl>
+    </section>
+
+    <section class="columns">
+      <div class="column">
+        <h3>{{ 'payroll.payslip.earnings' | translate }}</h3>
+        <table class="lines num">
+          <tbody>
+            @for (l of earnings(); track l.componentCode) {
+              <tr>
+                <td>
+                  {{ l.componentName }}
+                  @if (l.source === 'Override') {
+                    <span class="tag">{{ 'payroll.payslip.adjusted' | translate }}</span>
+                  }
+                </td>
+                <td class="end">{{ l.amount | amount: lang() : 'full' : 2 }}</td>
+              </tr>
+            }
+          </tbody>
+          <tfoot>
+            <tr>
+              <td>{{ 'payroll.payslip.totalEarnings' | translate }}</td>
+              <td class="end">{{ s.grossEarnings | amount: lang() : 'full' : 2 }}</td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+
+      <div class="column">
+        <h3>{{ 'payroll.payslip.deductions' | translate }}</h3>
+        <table class="lines num">
+          <tbody>
+            @for (l of deductions(); track l.componentCode) {
+              <tr>
+                <td>{{ l.componentName }}</td>
+                <td class="end">{{ l.amount | amount: lang() : 'full' : 2 }}</td>
+              </tr>
+            } @empty {
+              <tr>
+                <td class="muted" colspan="2">{{ 'payroll.payslip.noDeductions' | translate }}</td>
+              </tr>
+            }
+          </tbody>
+          <tfoot>
+            <tr>
+              <td>{{ 'payroll.payslip.totalDeductions' | translate }}</td>
+              <td class="end">{{ s.totalDeductions | amount: lang() : 'full' : 2 }}</td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </section>
+
+    <section class="net">
+      <div>
+        <span class="net-label">{{ 'payroll.payslip.netPay' | translate }}</span>
+        <span class="net-note">{{ 'payroll.payslip.taxableIncome' | translate }}: {{ s.taxableIncome | amount: lang() : 'full' : 2 }}</span>
+      </div>
+      <div class="net-figure num">
+        <span class="net-currency">{{ s.currencyCode }}</span>
+        <span class="net-amount">{{ s.netPay | amount: lang() : 'full' : 2 }}</span>
+      </div>
+    </section>
+
+    @if (employer().length) {
+      <section class="employer">
+        <h3>{{ 'payroll.payslip.employerContributions' | translate }}</h3>
+        <table class="lines num">
+          <tbody>
+            @for (l of employer(); track l.componentCode) {
+              <tr>
+                <td>{{ l.componentName }}</td>
+                <td class="end">{{ l.amount | amount: lang() : 'full' : 2 }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </section>
+    }
+
+    @if (s.holdReason) {
+      <p class="hold"><b>{{ 'payroll.slipStatus.OnHold' | translate }}:</b> {{ s.holdReason }}</p>
+    }
+
+    <footer class="doc-foot">
+      {{ 'payroll.payslip.footer' | translate: { date: (s.calculatedAt + 'Z' | date: 'd MMM y, h:mm a' : undefined : lang()) } }}
+    </footer>
+  </article>
+} @else {
+  <div class="doc"><span class="skeleton" style="width: 50%"></span></div>
+}

@@ -1,0 +1,10 @@
+{
+  "/azure-api": {
+    "target": "https://api.cognitive.microsofttranslator.com",
+    "secure": true,
+    "changeOrigin": true,
+    "pathRewrite": {
+      "^/azure-api": ""
+    }
+  }
+}

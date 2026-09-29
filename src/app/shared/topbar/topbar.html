@@ -1,31 +1,56 @@
 <header class="topbar">
+  <button
+    type="button"
+    class="icon-btn menu-btn"
+    (click)="layout.openMobile()"
+    [attr.aria-label]="'topbar.openMenu' | translate"
+  >
+    <span class="material-icons-outlined" aria-hidden="true">menu</span>
+  </button>
 
-  <div class="topbar-date">{{ today | date:'EEE, MMM d, y' }}</div>
+  <h1 class="page-title">{{ titleKey() | translate }}</h1>
 
-  <div class="topbar-right">
-
-    <button class="icon-btn">
-      <span class="material-icons text-xl">notifications</span>
+  <div class="actions">
+    <button type="button" class="lang-btn" (click)="language.toggle()">
+      {{ 'topbar.switchLanguage' | translate }}
     </button>
-    <button class="icon-btn">
-      <span class="material-icons text-xl">settings</span>
+
+    <button type="button" class="icon-btn" [attr.aria-label]="'topbar.notifications' | translate">
+      <span class="material-icons-outlined" aria-hidden="true">notifications</span>
+      <span class="dot" aria-hidden="true"></span>
     </button>
 
-    <div class="profile" (click)="toggleProfile()">
-      <img src="https://i.pravatar.cc/40" alt="User" />
-      <span class="name">Ali</span>
-      <span class="material-icons text-base chevron">expand_more</span>
+    <div class="profile">
+      <button
+        type="button"
+        class="profile-btn"
+        (click)="toggleMenu($event)"
+        [attr.aria-expanded]="menuOpen()"
+        aria-haspopup="menu"
+      >
+        <span class="avatar" aria-hidden="true">{{ user.initials }}</span>
+        <span class="profile-name">{{ user.name }}</span>
+        <span class="material-icons-outlined chevron" aria-hidden="true">expand_more</span>
+      </button>
 
-      @if (showProfileMenu) {
-        <div class="profile-menu">
-          <a>My Profile</a>
-          <a>Settings</a>
-          <div class="divider"></div>
-          <a class="logout" (click)="logout(); $event.stopPropagation()">Logout</a>
+      @if (menuOpen()) {
+        <div class="menu" role="menu" (click)="$event.stopPropagation()">
+          <div class="menu-head">
+            <span class="menu-name">{{ user.name }}</span>
+            @if (user.email) {
+              <span class="menu-email">{{ user.email }}</span>
+            }
+          </div>
+          <a role="menuitem" routerLink="/app/settings" (click)="closeMenu()">
+            <span class="material-icons-outlined" aria-hidden="true">settings</span>
+            {{ 'topbar.settings' | translate }}
+          </a>
+          <button type="button" role="menuitem" class="danger" (click)="logout()">
+            <span class="material-icons-outlined" aria-hidden="true">logout</span>
+            {{ 'topbar.logout' | translate }}
+          </button>
         </div>
       }
     </div>
-
   </div>
-
 </header>

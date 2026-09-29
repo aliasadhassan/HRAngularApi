@@ -1,0 +1,70 @@
+/*
+ * HR Cloud design tokens — "Treasury ledger"
+ * Ink + brass jaise purane bank ke ledger aur banknote. Paper thanda (sage-grey), cream nahi.
+ * Har page ye tokens use kare; component mein hex likhne ki zaroorat nahi honi chahiye.
+ */
+:root {
+  /* Core palette */
+  --ink: #13211a;          /* sidebar, banknote, primary buttons */
+  --ink-2: #1c2e25;        /* ink par hover / raised */
+  --vellum: #eef0ea;       /* app background */
+  --sheet: #fbfbf8;        /* panels, forms */
+  --brass: #b08d3e;        /* accent: active state, hairlines, highlights */
+  --brass-soft: #e9dfc4;
+  --moss: #3f5e48;         /* positive, charts */
+  --moss-soft: #dbe5dc;
+  --oxblood: #8e3b2e;      /* destructive, alerts */
+  --oxblood-soft: #f1dfda;
+  --amber: #a46a17;        /* pending / warning */
+  --amber-soft: #f4e6cc;
+
+  /* Text + lines */
+  --text: #232823;
+  --text-muted: #636a62;
+  --text-faint: #8d938b;
+  --text-on-ink: #eceee6;
+  --rule: #d9ddd2;
+  --rule-strong: #c3c9bc;
+
+  /* Type */
+  --font-display: 'Fraunces', 'Times New Roman', serif;
+  --font-ui: 'Inter', 'Segoe UI', system-ui, sans-serif;
+  --font-serial: 'IBM Plex Mono', ui-monospace, monospace;
+
+  --fs-12: 0.75rem;
+  --fs-13: 0.8125rem;
+  --fs-14: 0.875rem;
+  --fs-16: 1rem;
+  --fs-20: 1.25rem;
+  --fs-28: 1.75rem;
+  --fs-40: 2.5rem;
+  --fs-56: 3.5rem;
+
+  /* Shape — hierarchy ke hisaab se, sab pe ek jaisa nahi */
+  --radius-note: 14px;
+  --radius-panel: 10px;
+  --radius-control: 8px;
+  --radius-pill: 999px;
+
+  --shadow-pop: 0 18px 40px -12px rgba(19, 33, 26, 0.28);
+  --focus: 0 0 0 3px rgba(176, 141, 62, 0.45);
+
+  --sidebar-w: 264px;
+  --sidebar-w-collapsed: 76px;
+  --topbar-h: 64px;
+
+  /* Purane naam (employees page) — naye palette pe point karte hain */
+  --paper: var(--vellum);
+  --gold: var(--brass);
+  --line: var(--rule);
+  --text-dark: var(--text);
+  --color-ink: var(--ink);
+  --color-paper: var(--sheet);
+  --color-gold: var(--brass);
+  --color-moss: var(--moss);
+}
+
+[dir='rtl'] {
+  --font-display: 'IBM Plex Sans Arabic', 'Segoe UI', Tahoma, sans-serif;
+  --font-ui: 'IBM Plex Sans Arabic', 'Segoe UI', Tahoma, sans-serif;
+}

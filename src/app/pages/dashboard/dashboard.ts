@@ -1,91 +1,120 @@
-import { Component } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { KpiCardsComponent } from '../../shared/widgets/kpi-cards/kpi-cards';
+import { Component, computed, inject, signal } from '@angular/core';
+import { DatePipe } from '@angular/common';
+import { RouterLink } from '@angular/router';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { map, startWith } from 'rxjs';
 import { ChartComponent } from '../../shared/widgets/chart/chart';
+import { AmountPipe } from '../../shared/pipes/amount.pipe';
+import { LanguageService } from '../../core/i18n/language.service';
+import { CurrentUserService } from '../../core/auth/current-user';
+import { buildDashboardData, Task, TaskKind } from './dashboard.data';
+import { buildGuilloche } from './guilloche';
+import { AzureTranslateService } from '../../core/services/azure-translate';
 
 @Component({
-  standalone: true,
   selector: 'app-dashboard',
-  imports: [CommonModule, KpiCardsComponent, ChartComponent],
+  imports: [DatePipe, RouterLink, TranslatePipe, ChartComponent, AmountPipe],
   templateUrl: './dashboard.html',
-  styleUrls: ['./dashboard.css']
+  styleUrl: './dashboard.css'
 })
 export class DashboardComponent {
-  today = new Date();
+  private readonly translate = inject(TranslateService);
+  private readonly language = inject(LanguageService);
 
-  attendanceLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-  attendanceDatasets = [
-    { label: 'Attendance %', data: [92, 95, 90, 96, 94, 70, 65], backgroundColor: '#4C6B4F', borderRadius: 4, maxBarThickness: 28 }
-  ];
+  readonly lang = this.language.language;
+  readonly firstName = inject(CurrentUserService).get().name.split(' ')[0];
+  readonly today = new Date();
+  readonly data = buildDashboardData(this.today);
+  readonly guilloche = buildGuilloche();
 
-  growthLabels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
-  growthDatasets = [
-    { label: 'Employees', data: [98, 102, 108, 115, 122, 128], borderColor: '#C9A24B', backgroundColor: 'rgba(201,162,75,0.12)', fill: true, tension: 0.35, pointRadius: 3, pointBackgroundColor: '#C9A24B' }
-  ];
+  readonly greetingKey = (() => {
+    const h = this.today.getHours();
+    return h < 12 ? 'dashboard.greeting.morning' : h < 17 ? 'dashboard.greeting.afternoon' : 'dashboard.greeting.evening';
+  })();
 
-  departments = [
-    { name: 'Development', count: 58, color: '#4C6B4F' },
-    { name: 'Design', count: 34, color: '#C9A24B' },
-    { name: 'Marketing', count: 36, color: '#B4552F' }
-  ];
-  totalStaff = 128;
-  deptLabels = this.departments.map(d => d.name);
-  deptDatasets = [
-    { data: this.departments.map(d => d.count), backgroundColor: this.departments.map(d => d.color), borderWidth: 0 }
-  ];
+  readonly tasks = signal<Task[]>(this.data.tasks);
 
-  availabilityStats = { available: 104, unavailable: 18, onLeave: 6 };
-  quickView = [
-    { initials: 'SJ', name: 'Sarah Johnson', role: 'Senior Developer' },
-    { initials: 'EC', name: 'Emily Carter', role: 'UI/UX Designer' },
-    { initials: 'DL', name: 'David Lee', role: 'Marketing Lead' },
-    { initials: 'MS', name: 'Michael Smith', role: 'HR Executive' }
-  ];
+  readonly attendance = this.data.attendance;
+  readonly atWork = this.attendance.present + this.attendance.remote;
+  readonly segments = [
+    { key: 'present', value: this.attendance.present, className: 'seg-present' },
+    { key: 'remote', value: this.attendance.remote, className: 'seg-remote' },
+    { key: 'onLeave', value: this.attendance.onLeave, className: 'seg-leave' },
+    { key: 'absent', value: this.attendance.absent, className: 'seg-absent' }
+  ].map(s => ({ ...s, percent: (s.value / this.attendance.total) * 100 }));
 
-  payroll = [
-    { name: 'Development', count: 58, amount: '$12,400' },
-    { name: 'Design', count: 34, amount: '$8,200' },
-    { name: 'Marketing', count: 36, amount: '$7,650' },
-    { name: 'HR', count: 6, amount: '$5,300' }
-  ];
+  readonly departmentTotal = this.data.departments.reduce((sum, d) => sum + d.monthlyCost, 0);
 
-  recentEmployees = [
-    { name: 'Andrew James', department: 'Development', joinDate: '12 Jul 2026', status: 'Active' },
-    { name: 'Sophia White', department: 'Design', joinDate: '05 Jul 2026', status: 'Active' },
-    { name: 'Daniel Martinez', department: 'Marketing', joinDate: '28 Jun 2026', status: 'Probation' },
-    { name: 'Amelia Robinson', department: 'HR', joinDate: '20 Jun 2026', status: 'Active' }
-  ];
+  /** Language badle to chart labels bhi (tooltips translate hote hain). */
+  private readonly langTick = toSignal(this.translate.onLangChange.pipe(map(() => Date.now()), startWith(0)), {
+    initialValue: 0
+  });
 
-  leaveRequests = [
-    { initials: 'JA', name: 'James Allaire', reason: '4 Days · Personal Reason' },
-    { initials: 'ES', name: 'Esther Schmidt', reason: '2 Days · Going to Hospital' },
-    { initials: 'VP', name: 'Valerie Padgett', reason: '1 Day · Changing Account' },
-    { initials: 'DN', name: 'Diane Nash', reason: '1 Day · Not Well' },
-    { initials: 'SC', name: 'Sally Cavazos', reason: '2 Days · Going to Checkup' }
-  ];
+  readonly trendLabels = computed(() => {
+    this.langTick();
+    const fmt = new Intl.DateTimeFormat(`${this.lang()}-u-nu-latn`, { day: 'numeric', month: 'short' });
+    return this.data.attendanceTrend.map(p => fmt.format(p.date));
+  });
 
-  approveLeave(req: any) {
-    this.leaveRequests = this.leaveRequests.filter(r => r !== req);
+  readonly trendDatasets = computed(() => {
+    this.langTick();
+    const last = this.data.attendanceTrend.length - 1;
+    return [
+      {
+        label: this.translate.instant('dashboard.attendance.rate'),
+        data: this.data.attendanceTrend.map(p => p.rate),
+        backgroundColor: this.data.attendanceTrend.map((_, i) => (i === last ? '#b08d3e' : '#3f5e48')),
+        borderRadius: 4,
+        maxBarThickness: 22
+      }
+    ];
+  });
+
+  readonly trendOptions = {
+    scales: {
+      y: { min: 80, max: 100, ticks: { callback: (v: number | string) => `${v}%`, stepSize: 5 } }
+    }
+  };
+
+  readonly deptLabels = computed(() => {
+    this.langTick();
+    return this.data.departments.map(d => this.translate.instant(d.nameKey) as string);
+  });
+
+  readonly deptDatasets = computed(() => [
+    {
+      data: this.data.departments.map(d => d.monthlyCost),
+      backgroundColor: this.data.departments.map(d => d.color),
+      borderWidth: 2,
+      borderColor: '#fbfbf8',
+      hoverOffset: 4
+    }
+  ]);
+
+  readonly taskIcons: Record<TaskKind, string> = {
+    leave: 'event_busy',
+    salary: 'trending_up',
+    payroll: 'receipt_long',
+    contract: 'history_edu'
+  };
+
+  readonly eventIcons: Record<string, string> = {
+    payday: 'payments',
+    holiday: 'flag',
+    anniversary: 'workspace_premium',
+    joiner: 'person_add',
+    leave: 'flight_takeoff',
+    contract: 'history_edu'
+  };
+
+  /** Demo: faisla list se hata deta hai. API aane pe yahan approve/decline call hogi. */
+  decide(task: Task, _approved: boolean): void {
+    this.tasks.update(list => list.filter(t => t.id !== task.id));
   }
 
-  rejectLeave(req: any) {
-    this.leaveRequests = this.leaveRequests.filter(r => r !== req);
+  daysUntil(date: Date): number {
+    const start = new Date(this.today.getFullYear(), this.today.getMonth(), this.today.getDate());
+    return Math.round((date.getTime() - start.getTime()) / 86_400_000);
   }
-  meetings = [
-    { empInitials: 'AJ', empName: 'Andrew James', empRole: 'Developer',
-      withInitials: 'SJ', withName: 'Sarah Johnson', withPhone: '1:1 Sync',
-      date: '28 Jul 2026 - 11:15 AM', mode: 'Online', status: 'Confirmed' },
-    { empInitials: 'SW', empName: 'Sophia White', empRole: 'Designer',
-      withInitials: 'EC', withName: 'Emily Carter', withPhone: 'Design Review',
-      date: '29 Jul 2026 - 11:30 AM', mode: 'In-Person', status: 'Cancelled' },
-    { empInitials: 'DM', empName: 'Daniel Martinez', empRole: 'Marketing',
-      withInitials: 'DL', withName: 'David Lee', withPhone: 'Campaign Review',
-      date: '30 Jul 2026 - 09:30 AM', mode: 'Online', status: 'Confirmed' },
-    { empInitials: 'AR', empName: 'Amelia Robinson', empRole: 'HR Executive',
-      withInitials: 'MS', withName: 'Michael Smith', withPhone: 'Onboarding Sync',
-      date: '30 Jul 2026 - 10:00 AM', mode: 'Online', status: 'Checked Out' },
-    { empInitials: 'JC', empName: 'John Carter', empRole: 'Sales',
-      withInitials: 'RG', withName: 'Rachel Green', withPhone: 'Performance Review',
-      date: '30 Jul 2026 - 11:00 AM', mode: 'Online', status: 'Scheduled' }
-  ];
 }

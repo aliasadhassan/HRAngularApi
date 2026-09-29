@@ -18,6 +18,8 @@ import { filter } from 'rxjs';
 import { MsalService, MsalBroadcastService } from '@azure/msal-angular';
 import { InteractionStatus } from '@azure/msal-browser';
 import { AuthService } from './auth/auth';
+import { TranslatePipe, TranslateDirective } from '@ngx-translate/core';
+
 
 @Component({
   selector: 'app-root',
