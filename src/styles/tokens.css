@@ -49,8 +49,8 @@
   --shadow-pop: 0 18px 40px -12px rgba(19, 33, 26, 0.28);
   --focus: 0 0 0 3px rgba(176, 141, 62, 0.45);
 
-  --sidebar-w: 264px;
-  --sidebar-w-collapsed: 76px;
+  --sidebar-w: 236px;
+  --sidebar-w-collapsed: 64px;
   --topbar-h: 64px;
 
   /* Purane naam (employees page) — naye palette pe point karte hain */

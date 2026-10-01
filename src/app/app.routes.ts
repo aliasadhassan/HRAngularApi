@@ -15,6 +15,11 @@ import { ComingSoonComponent } from './pages/coming-soon/coming-soon';
 import { PayrollRunsComponent } from './pages/payroll/runs/payroll-runs';
 import { PayrollRunDetailComponent } from './pages/payroll/run-detail/payroll-run-detail';
 import { PayslipComponent } from './pages/payroll/payslip/payslip';
+import { P, permissionGuard } from './core/auth/permissions';
+import { UsersComponent } from './pages/admin/users/users';
+import { RolesComponent } from './pages/admin/roles/roles';
+import { LoginActivityComponent } from './pages/admin/login-activity/login-activity';
+import { CompanyComponent } from './pages/admin/company/company';
 
 export const routes: Routes = [
   { path: '', redirectTo: 'login', pathMatch: 'full' },
@@ -33,9 +38,11 @@ export const routes: Routes = [
       { path: 'employees', component: EmployeesComponent, data: { titleKey: 'nav.employees' } },
       { path: 'attendance', component: AttendanceComponent, data: { titleKey: 'nav.attendance' } },
       { path: 'leaves', component: LeavesComponent, data: { titleKey: 'nav.leaves' } },
-      { path: 'settings', component: SettingsComponent, data: { titleKey: 'nav.settings' } },
+      { path: 'settings', component: SettingsComponent, data: { titleKey: 'nav.mySettings' } },
       {
         path: 'payroll',
+        canActivate: [permissionGuard],
+        data: { permission: [P.payrollViewAll, P.payrollRun] },
         children: [
           { path: '', pathMatch: 'full', redirectTo: 'runs' },
           { path: 'runs', component: PayrollRunsComponent, data: { titleKey: 'nav.payrollRuns' } },
@@ -44,6 +51,16 @@ export const routes: Routes = [
           { path: 'salaries', component: ComingSoonComponent, data: { titleKey: 'nav.employeeSalaries' } },
           { path: 'structure', component: ComingSoonComponent, data: { titleKey: 'nav.salaryStructure' } },
           { path: 'setup', component: ComingSoonComponent, data: { titleKey: 'nav.payrollSetup' } }
+        ]
+      },
+      {
+        path: 'admin',
+        children: [
+          { path: '', pathMatch: 'full', redirectTo: 'users' },
+          { path: 'users', component: UsersComponent, canActivate: [permissionGuard], data: { titleKey: 'nav.users', permission: P.usersManage } },
+          { path: 'roles', component: RolesComponent, canActivate: [permissionGuard], data: { titleKey: 'nav.roles', permission: P.rolesManage } },
+          { path: 'login-activity', component: LoginActivityComponent, canActivate: [permissionGuard], data: { titleKey: 'nav.loginActivity', permission: P.settingsView } },
+          { path: 'company', component: CompanyComponent, canActivate: [permissionGuard], data: { titleKey: 'nav.companySettings', permission: [P.settingsView, P.settingsManage] } }
         ]
       },
       { path: '**', redirectTo: 'dashboard' }

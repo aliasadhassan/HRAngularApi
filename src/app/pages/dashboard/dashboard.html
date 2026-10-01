@@ -16,14 +16,17 @@
         <span class="material-icons-outlined" aria-hidden="true">person_add</span>
         {{ 'dashboard.actions.addEmployee' | translate }}
       </a>
-      <a class="btn btn-ink" routerLink="/app/payroll/runs">
-        {{ 'dashboard.actions.reviewPayroll' | translate }}
-      </a>
+      @if (canSeePayroll) {
+        <a class="btn btn-ink" routerLink="/app/payroll/runs">
+          {{ 'dashboard.actions.reviewPayroll' | translate }}
+        </a>
+      }
     </div>
   </header>
 
   <!-- Banknote + aaj ki haazri -->
-  <div class="row row-hero">
+  <div class="row row-hero" [class.solo]="!canSeePayroll">
+    @if (canSeePayroll) {
     <article class="note" [attr.aria-label]="'dashboard.note.label' | translate">
       <svg class="note-art" viewBox="0 0 640 400" preserveAspectRatio="xMaxYMid slice" aria-hidden="true">
         <g class="rosettes">
@@ -81,6 +84,7 @@
         </div>
       </div>
     </article>
+    }
 
     <section class="panel today">
       <header class="panel-head">
@@ -153,7 +157,7 @@
 
   <!-- Charts -->
   <div class="row">
-    <section class="panel span-7">
+    <section class="panel" [class.span-7]="canSeePayroll" [class.span-12]="!canSeePayroll">
       <header class="panel-head">
         <div>
           <h3>{{ 'dashboard.attendance.title' | translate }}</h3>
@@ -165,6 +169,7 @@
       </div>
     </section>
 
+    @if (canSeePayroll) {
     <section class="panel span-5">
       <header class="panel-head">
         <div>
@@ -192,6 +197,7 @@
         </ul>
       </div>
     </section>
+    }
   </div>
 
   <!-- Kaam + aane wale din -->

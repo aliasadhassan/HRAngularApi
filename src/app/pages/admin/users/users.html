@@ -1,0 +1,259 @@
+<div class="page">
+  <header class="page-intro">
+    <p>{{ 'admin.users.intro' | translate }}</p>
+    <button type="button" class="btn btn-ink" (click)="openInvite()">
+      <span class="material-icons-outlined" aria-hidden="true">person_add</span>
+      {{ 'admin.users.invite' | translate }}
+    </button>
+  </header>
+
+  <!-- Status tabs -->
+  <nav class="tabs" [attr.aria-label]="'admin.users.filterByStatus' | translate">
+    @for (tab of tabs; track tab) {
+      <button type="button" class="tab" [class.is-active]="status() === tab" (click)="setStatus(tab)" [attr.aria-pressed]="status() === tab">
+        {{ (tab ? 'admin.status.' + tab : 'admin.users.all') | translate }}
+        @if (countFor(tab) !== null) {
+          <span class="tab-count num">{{ countFor(tab) }}</span>
+        }
+      </button>
+    }
+  </nav>
+
+  <section class="panel panel-flush">
+    <div class="toolbar">
+      <label class="search">
+        <span class="material-icons-outlined" aria-hidden="true">search</span>
+        <input
+          type="search"
+          [(ngModel)]="search"
+          (ngModelChange)="onSearch()"
+          [placeholder]="'admin.users.searchPlaceholder' | translate"
+          [attr.aria-label]="'admin.users.searchPlaceholder' | translate"
+        />
+      </label>
+      <select class="role-filter" [(ngModel)]="roleId" (ngModelChange)="reload()" [attr.aria-label]="'admin.users.role' | translate">
+        <option value="">{{ 'admin.users.allRoles' | translate }}</option>
+        @for (r of roles(); track r.id) {
+          <option [value]="r.id">{{ r.name }}</option>
+        }
+      </select>
+    </div>
+
+    <div class="table-wrap">
+      <table class="ledger-table">
+        <thead>
+          <tr>
+            <th>{{ 'admin.users.user' | translate }}</th>
+            <th>{{ 'admin.users.roles' | translate }}</th>
+            <th>{{ 'admin.users.status' | translate }}</th>
+            <th>{{ 'admin.users.lastSignIn' | translate }}</th>
+            <th class="go"><span class="sr-only">{{ 'common.open' | translate }}</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          @if (loading() && users().length === 0) {
+            @for (i of [1, 2, 3, 4]; track i) {
+              <tr>
+                <td><span class="skeleton" style="width: 60%"></span></td>
+                <td><span class="skeleton" style="width: 50%"></span></td>
+                <td><span class="skeleton" style="width: 40%"></span></td>
+                <td><span class="skeleton" style="width: 40%"></span></td>
+                <td></td>
+              </tr>
+            }
+          } @else {
+            @for (u of users(); track u.id) {
+              @let seen = lastSeen(u);
+              <tr class="is-link" tabindex="0" (click)="openEdit(u)" (keydown.enter)="openEdit(u)" [class.is-dim]="u.status === 'Disabled'">
+                <td>
+                  <div class="who">
+                    <span class="avatar" aria-hidden="true">{{ initials(u.displayName) }}</span>
+                    <span class="who-text">
+                      <span class="cell-main">
+                        {{ u.displayName }}
+                        @if (u.isYou) {
+                          <span class="tag tag-you">{{ 'admin.users.you' | translate }}</span>
+                        }
+                      </span>
+                      <span class="cell-sub">
+                        {{ u.email }}
+                        @if (u.isSso) {
+                          <span class="tag" [attr.title]="'admin.users.ssoHint' | translate">Microsoft</span>
+                        }
+                      </span>
+                    </span>
+                  </div>
+                </td>
+                <td>
+                  <div class="role-list">
+                    @for (r of u.roles; track r.id) {
+                      <span class="role-pill" [class.is-admin]="r.name === 'Tenant Admin'">{{ r.name }}</span>
+                    } @empty {
+                      <span class="dim">{{ 'admin.users.noRole' | translate }}</span>
+                    }
+                  </div>
+                </td>
+                <td><span [class]="statusChip[u.status]">{{ 'admin.status.' + u.status | translate }}</span></td>
+                <td class="seen">{{ seen.key | translate: seen.params }}</td>
+                <td class="go">
+                  <span class="material-icons-outlined" aria-hidden="true">{{ lang() === 'ar' ? 'chevron_left' : 'chevron_right' }}</span>
+                </td>
+              </tr>
+            }
+          }
+        </tbody>
+      </table>
+    </div>
+
+    @if (!loading() && users().length === 0) {
+      <div class="empty-state">
+        <span class="material-icons-outlined" aria-hidden="true">person_search</span>
+        <h3>{{ 'admin.users.emptyTitle' | translate }}</h3>
+        <p>{{ 'admin.users.emptyBody' | translate }}</p>
+      </div>
+    }
+
+    @if (total() > pageSize) {
+      <footer class="pager">
+        <span class="num">{{ 'admin.users.range' | translate: { from: rangeFrom(), to: rangeTo(), total: total() } }}</span>
+        <div class="pager-buttons">
+          <button type="button" class="btn btn-quiet btn-small" [disabled]="page() === 1" (click)="goTo(page() - 1)">
+            {{ 'admin.users.prev' | translate }}
+          </button>
+          <button type="button" class="btn btn-quiet btn-small" [disabled]="page() === pages()" (click)="goTo(page() + 1)">
+            {{ 'admin.users.next' | translate }}
+          </button>
+        </div>
+      </footer>
+    }
+  </section>
+</div>
+
+@if (drawer(); as mode) {
+  @let u = editing();
+  <div class="overlay" (click)="closeDrawer()">
+    <aside class="drawer" role="dialog" aria-modal="true" aria-labelledby="user-drawer-title" (click)="$event.stopPropagation()">
+      <header class="drawer-head">
+        <h3 id="user-drawer-title">{{ (mode === 'invite' ? 'admin.users.invite' : 'admin.users.editTitle') | translate }}</h3>
+        <button type="button" class="btn-link" (click)="closeDrawer()" [attr.aria-label]="'common.close' | translate">
+          <span class="material-icons-outlined" aria-hidden="true">close</span>
+        </button>
+      </header>
+
+      <div class="drawer-body">
+        @if (u) {
+          <div class="profile">
+            <span class="avatar avatar-lg" aria-hidden="true">{{ initials(u.displayName) }}</span>
+            <div>
+              <span [class]="statusChip[u.status]">{{ 'admin.status.' + u.status | translate }}</span>
+              <p class="profile-email">{{ u.email }}</p>
+            </div>
+          </div>
+        }
+
+        @if (mode === 'invite') {
+          <div class="field">
+            <label for="u-email">{{ 'admin.users.email' | translate }}</label>
+            <input id="u-email" type="email" autocomplete="off" [(ngModel)]="formEmail" placeholder="name@company.com" />
+          </div>
+        }
+
+        <div class="field">
+          <label for="u-name">{{ 'admin.users.name' | translate }}</label>
+          <input id="u-name" type="text" autocomplete="off" [(ngModel)]="formName" />
+        </div>
+
+        <fieldset class="roles">
+          <legend>{{ 'admin.users.roles' | translate }}</legend>
+          @for (r of roles(); track r.id) {
+            <label class="role-option" [class.is-checked]="formRoles.has(r.id)">
+              <input type="checkbox" [checked]="formRoles.has(r.id)" (change)="toggleRole(r.id)" />
+              <span class="role-text">
+                <span class="role-name">
+                  {{ r.name }}
+                  @if (r.isSystem) {
+                    <span class="tag">{{ 'admin.users.systemRole' | translate }}</span>
+                  }
+                </span>
+                @if (r.description) {
+                  <span class="role-desc">{{ r.description }}</span>
+                }
+              </span>
+            </label>
+          }
+        </fieldset>
+
+        @if (mode === 'invite') {
+          <div class="notice notice-info">
+            <span class="material-icons-outlined" aria-hidden="true">mail</span>
+            <span>{{ 'admin.users.inviteHelp' | translate }}</span>
+          </div>
+        }
+
+        @if (u && !u.isYou) {
+          <section class="account">
+            <h4>{{ 'admin.users.account' | translate }}</h4>
+
+            <a class="account-row" routerLink="/app/admin/login-activity" [queryParams]="{ userId: u.id }">
+              <span class="material-icons-outlined" aria-hidden="true">history</span>
+              <span><b>{{ 'admin.users.actions.history' | translate }}</b>{{ 'admin.users.actions.historyHint' | translate }}</span>
+            </a>
+
+            @if (u.status === 'Invited') {
+              <button type="button" class="account-row" [disabled]="!!busyAction()" (click)="run('resend-invite')">
+                <span class="material-icons-outlined" aria-hidden="true">forward_to_inbox</span>
+                <span><b>{{ 'admin.users.actions.resendInvite' | translate }}</b>{{ 'admin.users.actions.resendInviteHint' | translate }}</span>
+              </button>
+            }
+            @if (u.status === 'Locked') {
+              <button type="button" class="account-row" [disabled]="!!busyAction()" (click)="run('unlock')">
+                <span class="material-icons-outlined" aria-hidden="true">lock_open</span>
+                <span><b>{{ 'admin.users.actions.unlock' | translate }}</b>{{ 'admin.users.actions.unlockHint' | translate }}</span>
+              </button>
+            }
+            @if (u.status !== 'Invited' && !u.isSso && u.status !== 'Disabled') {
+              <button type="button" class="account-row" [disabled]="!!busyAction()" (click)="run('send-password-reset')">
+                <span class="material-icons-outlined" aria-hidden="true">key</span>
+                <span><b>{{ 'admin.users.actions.reset' | translate }}</b>{{ 'admin.users.actions.resetHint' | translate }}</span>
+              </button>
+            }
+            @if (u.status !== 'Disabled' && u.status !== 'Invited') {
+              <button type="button" class="account-row" [class.is-confirming]="confirm() === 'revoke-sessions'" [disabled]="!!busyAction()" (click)="run('revoke-sessions')">
+                <span class="material-icons-outlined" aria-hidden="true">devices</span>
+                <span>
+                  <b>{{ (confirm() === 'revoke-sessions' ? 'admin.users.actions.confirmAgain' : 'admin.users.actions.revoke') | translate }}</b>
+                  {{ 'admin.users.actions.revokeHint' | translate }}
+                </span>
+              </button>
+            }
+            @if (u.status === 'Disabled') {
+              <button type="button" class="account-row" [disabled]="!!busyAction()" (click)="run('activate')">
+                <span class="material-icons-outlined" aria-hidden="true">how_to_reg</span>
+                <span><b>{{ 'admin.users.actions.activate' | translate }}</b>{{ 'admin.users.actions.activateHint' | translate }}</span>
+              </button>
+            } @else {
+              <button type="button" class="account-row danger" [class.is-confirming]="confirm() === 'deactivate'" [disabled]="!!busyAction()" (click)="run('deactivate')">
+                <span class="material-icons-outlined" aria-hidden="true">block</span>
+                <span>
+                  <b>{{ (confirm() === 'deactivate' ? 'admin.users.actions.confirmAgain' : 'admin.users.actions.deactivate') | translate }}</b>
+                  {{ 'admin.users.actions.deactivateHint' | translate }}
+                </span>
+              </button>
+            }
+          </section>
+        }
+
+        @if (u?.isYou) {
+          <p class="self-note">{{ 'admin.users.selfNote' | translate }}</p>
+        }
+      </div>
+
+      <footer class="drawer-foot">
+        <button type="button" class="btn btn-quiet" (click)="closeDrawer()">{{ 'common.cancel' | translate }}</button>
+        <button type="button" class="btn btn-ink" [disabled]="!formValid || saving()" (click)="save()">
+          {{ (saving() ? 'common.saving' : mode === 'invite' ? 'admin.users.sendInvite' : 'common.save') | translate }}
+        </button>
+      </footer>
+    </aside>
+  </div>
+}
