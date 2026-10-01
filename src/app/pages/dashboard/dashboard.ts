@@ -9,8 +9,8 @@ import { AmountPipe } from '../../shared/pipes/amount.pipe';
 import { LanguageService } from '../../core/i18n/language.service';
 import { CurrentUserService } from '../../core/auth/current-user';
 import { buildDashboardData, Task, TaskKind } from './dashboard.data';
-import { buildGuilloche } from './guilloche';
-import { AzureTranslateService } from '../../core/services/azure-translate';
+import { buildGuilloche } from '../../shared/guilloche/guilloche';
+import { P, PermissionService } from '../../core/auth/permissions';
 
 @Component({
   selector: 'app-dashboard',
@@ -33,7 +33,10 @@ export class DashboardComponent {
     return h < 12 ? 'dashboard.greeting.morning' : h < 17 ? 'dashboard.greeting.afternoon' : 'dashboard.greeting.evening';
   })();
 
-  readonly tasks = signal<Task[]>(this.data.tasks);
+  /** Company ka payroll sirf unhe dikhe jin ke paas payroll.view.all hai */
+  readonly canSeePayroll = inject(PermissionService).hasAny(P.payrollViewAll);
+
+  readonly tasks = signal<Task[]>(this.data.tasks.filter(t => t.kind !== 'payroll' || this.canSeePayroll));
 
   readonly attendance = this.data.attendance;
   readonly atWork = this.attendance.present + this.attendance.remote;

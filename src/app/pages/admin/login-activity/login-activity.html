@@ -1,0 +1,156 @@
+<div class="page">
+  <header class="page-intro">
+    <p>{{ 'admin.activity.intro' | translate }}</p>
+    <div class="ranges" role="group" [attr.aria-label]="'admin.activity.range' | translate">
+      @for (d of ranges; track d) {
+        <button type="button" class="range" [class.is-active]="days() === d" (click)="setDays(d)" [attr.aria-pressed]="days() === d">
+          {{ 'admin.activity.days.' + d | translate }}
+        </button>
+      }
+    </div>
+  </header>
+
+  <!-- Summary ledger strip -->
+  <section class="ledger-strip num" [attr.aria-label]="'admin.activity.summary' | translate">
+    <div class="cell">
+      <span class="label">{{ 'admin.activity.signIns' | translate }}</span>
+      <span class="value">{{ summary()?.signIns ?? '—' }}</span>
+      <span class="note">{{ 'admin.activity.uniqueUsers' | translate: { n: summary()?.uniqueUsers ?? 0 } }}</span>
+    </div>
+    <div class="cell">
+      <span class="label">{{ 'admin.activity.failed' | translate }}</span>
+      <span class="value" [class.warn]="(summary()?.failed ?? 0) > 0">{{ summary()?.failed ?? '—' }}</span>
+      <span class="note">{{ 'admin.activity.failureRate' | translate: { n: failureRate() } }}</span>
+    </div>
+    <div class="cell">
+      <span class="label">{{ 'admin.activity.lockouts' | translate }}</span>
+      <span class="value" [class.alarm]="(summary()?.lockouts ?? 0) > 0">{{ summary()?.lockouts ?? '—' }}</span>
+      <span class="note">{{ 'admin.activity.lockoutsNote' | translate }}</span>
+    </div>
+  </section>
+
+  @if (userId()) {
+    <div class="user-filter">
+      <span class="material-icons-outlined" aria-hidden="true">person</span>
+      {{ 'admin.activity.onlyUser' | translate: { name: userLabel() ?? '…' } }}
+      <button type="button" class="btn-link" (click)="clearUser()">{{ 'admin.activity.showAll' | translate }}</button>
+    </div>
+  }
+
+  <section class="panel panel-flush">
+    <div class="toolbar">
+      <div class="tabs-inline" role="group">
+        @for (o of outcomes; track o) {
+          <button type="button" class="seg" [class.is-active]="outcome() === o" (click)="setOutcome(o)" [attr.aria-pressed]="outcome() === o">
+            {{ 'admin.activity.outcome.' + o | translate }}
+          </button>
+        }
+      </div>
+      @if (!userId()) {
+        <label class="search">
+          <span class="material-icons-outlined" aria-hidden="true">search</span>
+          <input type="search" [(ngModel)]="search" (ngModelChange)="onSearch()"
+                 [placeholder]="'admin.users.searchPlaceholder' | translate"
+                 [attr.aria-label]="'admin.users.searchPlaceholder' | translate" />
+        </label>
+      }
+      <select class="method" [(ngModel)]="method" (ngModelChange)="reload()" [attr.aria-label]="'admin.activity.method' | translate">
+        <option value="">{{ 'admin.activity.allMethods' | translate }}</option>
+        <option value="Password">{{ 'admin.activity.methods.Password' | translate }}</option>
+        <option value="Microsoft">{{ 'admin.activity.methods.Microsoft' | translate }}</option>
+      </select>
+    </div>
+
+    <div class="table-wrap">
+      <table class="ledger-table">
+        <thead>
+          <tr>
+            <th>{{ 'admin.activity.when' | translate }}</th>
+            <th>{{ 'admin.users.user' | translate }}</th>
+            <th>{{ 'admin.activity.result' | translate }}</th>
+            <th>{{ 'admin.activity.method' | translate }}</th>
+            <th>{{ 'admin.activity.device' | translate }}</th>
+            <th>{{ 'admin.activity.ip' | translate }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          @if (loading() && items().length === 0) {
+            @for (i of [1, 2, 3, 4, 5]; track i) {
+              <tr>
+                @for (c of [1, 2, 3, 4, 5, 6]; track c) {
+                  <td><span class="skeleton" style="width: 60%"></span></td>
+                }
+              </tr>
+            }
+          } @else {
+            @for (a of items(); track a.id) {
+              @let when = utc(a.occurredAt);
+              @let rel = dayLabel(a);
+              @let dev = describeDevice(a.userAgent);
+              <tr [class.is-failed]="!a.succeeded">
+                <td class="num when">
+                  <span class="cell-main">
+                    {{ rel ? (rel | translate) : (when | date: 'd MMM' : undefined : lang()) }}
+                  </span>
+                  <span class="cell-sub">{{ when | date: 'h:mm a' : undefined : lang() }}</span>
+                </td>
+                <td>
+                  <span class="cell-main">{{ a.userName ?? a.emailAttempted }}</span>
+                  @if (a.userName) {
+                    <span class="cell-sub">{{ a.emailAttempted }}</span>
+                  }
+                </td>
+                <td>
+                  <span class="result" [class.ok]="a.succeeded">
+                    <span class="material-icons-outlined" aria-hidden="true">{{ a.succeeded ? 'check_circle' : 'cancel' }}</span>
+                    {{ reasonKey(a) | translate }}
+                  </span>
+                </td>
+                <td>
+                  <span class="method-cell">
+                    <span class="material-icons-outlined" aria-hidden="true">{{ a.method === 'Microsoft' ? 'window' : 'password' }}</span>
+                    {{ 'admin.activity.methods.' + a.method | translate }}
+                  </span>
+                </td>
+                <td>
+                  <span class="device">
+                    <span class="material-icons-outlined" aria-hidden="true">{{ dev.mobile ? 'smartphone' : 'computer' }}</span>
+                    <span>
+                      {{ dev.browser }}
+                      @if (dev.os) {
+                        <span class="cell-sub">{{ dev.os }}</span>
+                      }
+                    </span>
+                  </span>
+                </td>
+                <td class="ip">{{ a.ipAddress ?? '—' }}</td>
+              </tr>
+            }
+          }
+        </tbody>
+      </table>
+    </div>
+
+    @if (!loading() && items().length === 0) {
+      <div class="empty-state">
+        <span class="material-icons-outlined" aria-hidden="true">history</span>
+        <h3>{{ 'admin.activity.emptyTitle' | translate }}</h3>
+        <p>{{ 'admin.activity.emptyBody' | translate }}</p>
+      </div>
+    }
+
+    @if (total() > pageSize) {
+      <footer class="pager">
+        <span class="num">{{ 'admin.users.range' | translate: { from: rangeFrom(), to: rangeTo(), total: total() } }}</span>
+        <div class="pager-buttons">
+          <button type="button" class="btn btn-quiet btn-small" [disabled]="page() === 1" (click)="goTo(page() - 1)">
+            {{ 'admin.users.prev' | translate }}
+          </button>
+          <button type="button" class="btn btn-quiet btn-small" [disabled]="page() === pages()" (click)="goTo(page() + 1)">
+            {{ 'admin.users.next' | translate }}
+          </button>
+        </div>
+      </footer>
+    }
+  </section>
+</div>

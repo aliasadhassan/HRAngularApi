@@ -1,9 +1,6 @@
-<div
-  *ngIf="alert"
-  class="alert"
-  [class.show]="visible"
-  [class]="alert.type">
-
-  <span>{{ alert.message }}</span>
-  <button class="close" (click)="close()">×</button>
-</div>
+@if (alert(); as a) {
+  <div [class]="'alert ' + a.type + (visible() ? ' show' : '')" role="alert">
+    <span>{{ a.message }}</span>
+    <button type="button" class="close" (click)="close()" aria-label="Close">×</button>
+  </div>
+}

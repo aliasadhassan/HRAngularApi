@@ -3,20 +3,16 @@ import { inject } from '@angular/core';
 import { catchError, switchMap, throwError } from 'rxjs';
 import { AuthService } from '../auth/auth';
 
-const BYPASS_URLS = [
-  '/login',
-  '/register',
-  '/refreshToken',
-  '/logout',
-  '/forgot-password',
-  '/reset-password',
-  '/sso/callback'
-];
+/**
+ * Sirf asli auth endpoints (/identity/auth/...) pe token nahi lagta.
+ * Pehle `url.includes('/login')` tha — wo `/identity/login-activity` ko bhi pakad leta tha (401).
+ */
+const BYPASS = /\/identity\/auth\/(login|register|refreshToken|logout|forgot-password|reset-password|sso\/callback)(\/|\?|$)/i;
 
 export const tokenInterceptor: HttpInterceptorFn = (req, next) => {
   const authService = inject(AuthService);
 
-  if (BYPASS_URLS.some(url => req.url.includes(url))) {
+  if (BYPASS.test(req.url)) {
     return next(req.clone({ withCredentials: true }));
   }
 

@@ -4,6 +4,7 @@ import { HttpBackend, HttpClient, HttpErrorResponse } from '@angular/common/http
 import { Observable, Subject, throwError, timer } from 'rxjs';
 import { tap, takeUntil, map, retry, finalize, shareReplay } from 'rxjs/operators';
 import { jwtDecode, JwtPayload } from 'jwt-decode';
+import { environment } from '../../environments/environment';
 
 interface TokenResponse {
   accessToken: string;
@@ -13,7 +14,7 @@ interface TokenResponse {
   providedIn: 'root'
 })
 export class AuthService {
-  private readonly apiUrl = 'https://localhost:7164/identity/auth';
+  private readonly apiUrl = `${environment.apiGatewayUrl}/identity/auth`;
   private readonly httpClientWithoutInterceptors: HttpClient;
   private authCancel$ = new Subject<void>();
 

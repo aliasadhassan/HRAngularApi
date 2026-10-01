@@ -1,0 +1,140 @@
+<div class="page">
+  <header class="page-intro">
+    <p>{{ 'admin.roles.intro' | translate }}</p>
+    <button type="button" class="btn btn-ink" (click)="startNew()">
+      <span class="material-icons-outlined" aria-hidden="true">add</span>
+      {{ 'admin.roles.new' | translate }}
+    </button>
+  </header>
+
+  <div class="layout">
+    <!-- ── Roles list ── -->
+    <nav class="panel panel-flush role-list" [attr.aria-label]="'admin.roles.list' | translate">
+      @if (loading() && roles().length === 0) {
+        @for (i of [1, 2, 3, 4]; track i) {
+          <div class="role-row"><span class="skeleton" style="width: 70%"></span></div>
+        }
+      }
+
+      @if (systemRoles().length) {
+        <h3 class="list-heading">{{ 'admin.roles.builtIn' | translate }}</h3>
+        @for (r of systemRoles(); track r.id) {
+          <button type="button" class="role-row" [class.is-active]="selectedId() === r.id" (click)="select(r)">
+            <span class="role-row-text">
+              <span class="role-row-name">{{ r.name }}</span>
+              <span class="role-row-meta num">{{ 'admin.roles.meta' | translate: { users: r.userCount, perms: r.permissionIds.length } }}</span>
+            </span>
+            <span class="material-icons-outlined lock" aria-hidden="true">lock</span>
+          </button>
+        }
+      }
+
+      <h3 class="list-heading">{{ 'admin.roles.custom' | translate }}</h3>
+      @for (r of customRoles(); track r.id) {
+        <button type="button" class="role-row" [class.is-active]="selectedId() === r.id" (click)="select(r)">
+          <span class="role-row-text">
+            <span class="role-row-name">{{ r.name }}</span>
+            <span class="role-row-meta num">{{ 'admin.roles.meta' | translate: { users: r.userCount, perms: r.permissionIds.length } }}</span>
+          </span>
+        </button>
+      } @empty {
+        <p class="list-empty">{{ 'admin.roles.noCustom' | translate }}</p>
+      }
+      @if (isNew()) {
+        <div class="role-row is-active is-draft">
+          <span class="role-row-name">{{ name || ('admin.roles.untitled' | translate) }}</span>
+        </div>
+      }
+    </nav>
+
+    <!-- ── Detail ── -->
+    @if (selectedId()) {
+      <section class="panel detail">
+        <header class="detail-head">
+          <div class="detail-fields">
+            @if (readOnly()) {
+              <h2 class="detail-title">{{ name }}</h2>
+              @if (description) {
+                <p class="detail-desc">{{ description }}</p>
+              }
+            } @else {
+              <input class="title-input" [(ngModel)]="name" maxlength="100"
+                     [placeholder]="'admin.roles.namePlaceholder' | translate"
+                     [attr.aria-label]="'admin.roles.name' | translate" />
+              <input class="desc-input" [(ngModel)]="description" maxlength="500"
+                     [placeholder]="'admin.roles.descPlaceholder' | translate"
+                     [attr.aria-label]="'admin.roles.description' | translate" />
+            }
+          </div>
+
+          <div class="detail-actions">
+            @if (!isNew()) {
+              <button type="button" class="btn btn-quiet btn-small" [disabled]="saving()" (click)="duplicate()">
+                <span class="material-icons-outlined" aria-hidden="true">content_copy</span>
+                {{ 'admin.roles.duplicate' | translate }}
+              </button>
+            }
+            @if (selected() && !readOnly()) {
+              <button type="button" class="btn btn-danger btn-small" [disabled]="saving()" (click)="remove()">
+                {{ (confirmDelete() ? 'admin.users.actions.confirmAgain' : 'admin.roles.delete') | translate }}
+              </button>
+            }
+          </div>
+        </header>
+
+        @if (readOnly()) {
+          <div class="notice notice-info">
+            <span class="material-icons-outlined" aria-hidden="true">lock</span>
+            <span>{{ 'admin.roles.systemNote' | translate }}</span>
+          </div>
+        }
+
+        <div class="matrix">
+          @for (g of groups(); track g.module) {
+            @let state = moduleState(g);
+            <section class="module">
+              <header class="module-head">
+                <label class="module-toggle" [class.is-disabled]="readOnly()">
+                  <input type="checkbox"
+                         [checked]="state === 'all'"
+                         [indeterminate]="state === 'some'"
+                         [disabled]="readOnly()"
+                         (change)="toggleModule(g)" />
+                  <span class="module-name">{{ moduleLabel(g.module) }}</span>
+                </label>
+                <span class="module-count num">{{ 'admin.roles.ofCount' | translate: { on: countOn(g), total: g.permissions.length } }}</span>
+              </header>
+              <ul class="perms">
+                @for (p of g.permissions; track p.id) {
+                  <li>
+                    <label class="perm" [class.is-on]="has(p.id)" [class.is-disabled]="readOnly()">
+                      <input type="checkbox" [checked]="has(p.id)" [disabled]="readOnly()" (change)="toggle(p.id)" />
+                      <span class="perm-text">
+                        <span class="perm-name">{{ label(p) }}</span>
+                        <code class="perm-code">{{ p.code }}</code>
+                      </span>
+                    </label>
+                  </li>
+                }
+              </ul>
+            </section>
+          }
+        </div>
+
+        @if (!readOnly()) {
+          <footer class="savebar" [class.is-visible]="isDirty()">
+            <span>{{ (isNew() ? 'admin.roles.newHint' : 'admin.roles.unsaved') | translate }}</span>
+            <div class="savebar-actions">
+              <button type="button" class="btn btn-quiet btn-small" [disabled]="saving()" (click)="discard()">
+                {{ 'admin.roles.discard' | translate }}
+              </button>
+              <button type="button" class="btn btn-ink btn-small" [disabled]="saving() || !name.trim()" (click)="save()">
+                {{ (saving() ? 'common.saving' : 'common.save') | translate }}
+              </button>
+            </div>
+          </footer>
+        }
+      </section>
+    }
+  </div>
+</div>

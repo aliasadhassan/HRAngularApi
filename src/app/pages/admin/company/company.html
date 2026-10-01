@@ -1,0 +1,185 @@
+@if (company(); as c) {
+<div class="page">
+  <!-- Masthead -->
+  <header class="masthead">
+    <div class="logo">
+      @if (c.profile.logoUrl && !logoBroken()) {
+        <img [src]="c.profile.logoUrl" alt="" (error)="logoBroken.set(true)" />
+      } @else {
+        <span class="logo-initials">{{ initials() }}</span>
+      }
+    </div>
+    <div class="masthead-text">
+      <h2>{{ c.profile.name }}</h2>
+      <p class="masthead-meta">
+        <span class="mono">{{ c.profile.slug }}.hr-cloud.online</span>
+        <span class="chip chip-ink">{{ c.profile.plan }}</span>
+        @if (c.profile.ssoEnabled) {
+          <span class="chip chip-moss">{{ 'admin.company.ssoOn' | translate }}</span>
+        }
+      </p>
+    </div>
+  </header>
+
+  @if (!canEdit) {
+    <div class="notice notice-info">
+      <span class="material-icons-outlined" aria-hidden="true">visibility</span>
+      <span>{{ 'admin.company.readOnly' | translate }}</span>
+    </div>
+  }
+
+  <!-- ── Profile ── -->
+  <section class="panel section">
+    <div class="section-side">
+      <h3>{{ 'admin.company.profileTitle' | translate }}</h3>
+      <p>{{ 'admin.company.profileHelp' | translate }}</p>
+    </div>
+    <div class="section-body">
+      <div class="grid-2">
+        <div class="field">
+          <label for="c-name">{{ 'admin.company.name' | translate }}</label>
+          <input id="c-name" [(ngModel)]="profile.name" maxlength="200" [disabled]="!canEdit" />
+        </div>
+        <div class="field">
+          <label for="c-legal">{{ 'admin.company.legalName' | translate }}</label>
+          <input id="c-legal" [(ngModel)]="profile.legalName" maxlength="300" [disabled]="!canEdit"
+                 [placeholder]="'admin.company.legalNameHint' | translate" />
+        </div>
+        <div class="field">
+          <label for="c-email">{{ 'admin.company.email' | translate }}</label>
+          <input id="c-email" type="email" [(ngModel)]="profile.primaryEmail" maxlength="256" [disabled]="!canEdit" placeholder="hr@company.com" />
+        </div>
+        <div class="field">
+          <label for="c-phone">{{ 'admin.company.phone' | translate }}</label>
+          <input id="c-phone" type="tel" [(ngModel)]="profile.phone" maxlength="50" [disabled]="!canEdit" placeholder="+92 42 1234567" />
+        </div>
+        <div class="field span-2">
+          <label for="c-logo">{{ 'admin.company.logo' | translate }}</label>
+          <input id="c-logo" type="url" [(ngModel)]="profile.logoUrl" maxlength="500" [disabled]="!canEdit"
+                 placeholder="https://…/logo.png" (ngModelChange)="logoBroken.set(false)" />
+          <span class="field-hint">{{ 'admin.company.logoHint' | translate }}</span>
+        </div>
+      </div>
+      @if (canEdit) {
+        <footer class="section-foot" [class.is-dirty]="profileDirty()">
+          <button type="button" class="btn btn-quiet btn-small" [disabled]="!profileDirty() || saving()" (click)="reset('profile')">
+            {{ 'admin.roles.discard' | translate }}
+          </button>
+          <button type="button" class="btn btn-ink btn-small" [disabled]="!profileDirty() || !profile.name.trim() || saving()" (click)="saveProfile()">
+            {{ (saving() === 'profile' ? 'common.saving' : 'common.save') | translate }}
+          </button>
+        </footer>
+      }
+    </div>
+  </section>
+
+  <!-- ── Regional ── -->
+  <section class="panel section">
+    <div class="section-side">
+      <h3>{{ 'admin.company.regionalTitle' | translate }}</h3>
+      <p>{{ 'admin.company.regionalHelp' | translate }}</p>
+    </div>
+    <div class="section-body">
+      <div class="grid-2">
+        <div class="field">
+          <label for="c-tz">{{ 'admin.company.timeZone' | translate }}</label>
+          <select id="c-tz" [(ngModel)]="settings.timeZone" [disabled]="!canEdit">
+            @for (z of timeZones; track z) {
+              <option [value]="z">{{ z.replace('_', ' ') }}</option>
+            }
+          </select>
+          <span class="field-hint num">{{ 'admin.company.localTime' | translate: { time: timeNow(settings.timeZone) } }}</span>
+        </div>
+        <div class="field">
+          <label for="c-cur">{{ 'admin.company.currency' | translate }}</label>
+          <select id="c-cur" [(ngModel)]="settings.currency" [disabled]="!canEdit">
+            @for (cur of currencies; track cur) {
+              <option [value]="cur">{{ cur }}</option>
+            }
+          </select>
+          <span class="field-hint">{{ 'admin.company.currencyHint' | translate }}</span>
+        </div>
+        <div class="field">
+          <label for="c-date">{{ 'admin.company.dateFormat' | translate }}</label>
+          <select id="c-date" [(ngModel)]="settings.dateFormat" [disabled]="!canEdit">
+            @for (f of dateFormats; track f) {
+              <option [value]="f">{{ datePreview(f) }}  ({{ f }})</option>
+            }
+          </select>
+        </div>
+        <div class="field">
+          <label for="c-fy">{{ 'admin.company.fiscalYear' | translate }}</label>
+          <select id="c-fy" [(ngModel)]="settings.fiscalYearStartMonth" [disabled]="!canEdit">
+            @for (m of months; track m) {
+              <option [ngValue]="m">{{ monthName(m) }}</option>
+            }
+          </select>
+          <span class="field-hint">{{ 'admin.company.fiscalYearHint' | translate }}</span>
+        </div>
+        <div class="field span-2">
+          <span class="label">{{ 'admin.company.workWeek' | translate }}</span>
+          <div class="days" role="group" [attr.aria-label]="'admin.company.workWeek' | translate">
+            @for (d of days; track d.bit) {
+              <button type="button" class="day" [class.is-on]="isWorkDay(d.bit)" [attr.aria-pressed]="isWorkDay(d.bit)"
+                      [disabled]="!canEdit" (click)="toggleDay(d.bit)">
+                {{ 'admin.company.daysShort.' + d.key | translate }}
+              </button>
+            }
+          </div>
+          <span class="field-hint">{{ 'admin.company.workWeekHint' | translate: { n: workDayCount() } }}</span>
+        </div>
+      </div>
+      @if (canEdit) {
+        <footer class="section-foot" [class.is-dirty]="regionalDirty()">
+          <button type="button" class="btn btn-quiet btn-small" [disabled]="!regionalDirty() || saving()" (click)="reset('regional')">
+            {{ 'admin.roles.discard' | translate }}
+          </button>
+          <button type="button" class="btn btn-ink btn-small" [disabled]="!regionalDirty() || saving()" (click)="saveSettings('regional')">
+            {{ (saving() === 'regional' ? 'common.saving' : 'common.save') | translate }}
+          </button>
+        </footer>
+      }
+    </div>
+  </section>
+
+  <!-- ── Security ── -->
+  <section class="panel section">
+    <div class="section-side">
+      <h3>{{ 'admin.company.securityTitle' | translate }}</h3>
+      <p>{{ 'admin.company.securityHelp' | translate }}</p>
+    </div>
+    <div class="section-body">
+      <div class="grid-2">
+        <div class="field">
+          <label for="c-pwd">{{ 'admin.company.passwordMin' | translate }}</label>
+          <div class="stepper">
+            <input id="c-pwd" type="number" min="6" max="64" [(ngModel)]="settings.passwordMinLength" [disabled]="!canEdit" />
+            <span>{{ 'admin.company.characters' | translate }}</span>
+          </div>
+          <span class="field-hint">{{ 'admin.company.passwordMinHint' | translate }}</span>
+        </div>
+        <div class="field">
+          <label for="c-fail">{{ 'admin.company.maxFailed' | translate }}</label>
+          <div class="stepper">
+            <input id="c-fail" type="number" min="3" max="20" [(ngModel)]="settings.maxFailedLoginAttempts" [disabled]="!canEdit" />
+            <span>{{ 'admin.company.attempts' | translate }}</span>
+          </div>
+          <span class="field-hint">{{ 'admin.company.maxFailedHint' | translate }}</span>
+        </div>
+      </div>
+      @if (canEdit) {
+        <footer class="section-foot" [class.is-dirty]="securityDirty()">
+          <button type="button" class="btn btn-quiet btn-small" [disabled]="!securityDirty() || saving()" (click)="reset('security')">
+            {{ 'admin.roles.discard' | translate }}
+          </button>
+          <button type="button" class="btn btn-ink btn-small" [disabled]="!securityDirty() || saving()" (click)="saveSettings('security')">
+            {{ (saving() === 'security' ? 'common.saving' : 'common.save') | translate }}
+          </button>
+        </footer>
+      }
+    </div>
+  </section>
+</div>
+} @else {
+  <div class="panel"><span class="skeleton" style="width: 40%"></span></div>
+}

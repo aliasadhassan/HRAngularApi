@@ -1,52 +1,43 @@
-import { Component, HostListener } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { AlertService, Alert } from '../../services/alert/alert';
+import { Component, HostListener, effect, inject, signal } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { AlertService } from '../../services/alert/alert';
 
+/** Signals pe — pehle plain fields change detection ke beech badalte the (NG0100). */
 @Component({
   selector: 'app-alert',
   standalone: true,
-  imports: [CommonModule],
   templateUrl: './alert.html',
   styleUrl: './alert.css'
 })
 export class AlertComponent {
+  private readonly alertService = inject(AlertService);
 
-  alert: Alert | null = null;
+  readonly alert = toSignal(this.alertService.alert$, { initialValue: null });
+  readonly visible = signal(false);
   private shownAt = 0;
-  visible = false;
 
- constructor(private alertService: AlertService) {
-    this.alertService.alert$.subscribe(alert => {
-      this.alert = alert;
-
-      if (alert) {
-        this.visible = false;
+  constructor() {
+    effect(() => {
+      if (this.alert()) {
+        this.visible.set(false);
         this.shownAt = Date.now();
-
-        setTimeout(() => {
-          this.visible = true;
-        }, 10);
+        setTimeout(() => this.visible.set(true), 10);
       } else {
-        this.visible = false;
+        this.visible.set(false);
       }
     });
   }
 
-  close() {
+  close(): void {
     this.alertService.clear();
   }
 
+  /** Bahar click pe band — lekin dikhne ke foran baad wala click (jisne alert khola) nahi */
   @HostListener('document:click', ['$event'])
-  onDocumentClick(event: MouseEvent) {
-    if (!this.alert) return;
-
-    if (Date.now() - this.shownAt < 300) {
-      return;
-    }
-
-    const target = event.target as HTMLElement;
-    if (!target.closest('.alert')) {
-      this.alertService.clear();
-    }
+  onDocumentClick(event: MouseEvent): void {
+    if (!this.alert() || Date.now() - this.shownAt < 300) return;
+    const target = event.target as HTMLElement | null;
+    if (target?.closest('.alert')) return;
+    this.close();
   }
 }

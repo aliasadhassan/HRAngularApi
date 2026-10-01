@@ -1,0 +1,217 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.page-intro {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.page-intro p {
+  margin: 0;
+  max-width: 62ch;
+  color: var(--text-muted);
+  font-size: var(--fs-16);
+}
+
+/* ── Range + outcome segmented controls ── */
+.ranges,
+.tabs-inline {
+  display: inline-flex;
+  padding: 3px;
+  border: 1px solid var(--rule-strong);
+  border-radius: var(--radius-control);
+  background: var(--sheet);
+}
+.range,
+.seg {
+  height: 32px;
+  padding-inline: 12px;
+  border: none;
+  border-radius: 6px;
+  background: none;
+  color: var(--text-muted);
+  font-size: var(--fs-13);
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.range:hover,
+.seg:hover {
+  color: var(--text);
+}
+.range.is-active,
+.seg.is-active {
+  background: var(--ink);
+  color: var(--text-on-ink);
+}
+
+/* ── Summary strip ── */
+.ledger-strip {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  background: var(--sheet);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-panel);
+}
+.cell {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 18px 24px;
+}
+.cell + .cell {
+  border-inline-start: 1px solid var(--rule);
+}
+.label {
+  font-size: var(--fs-13);
+  color: var(--text-muted);
+}
+.value {
+  font-family: var(--font-display);
+  font-size: var(--fs-28);
+  font-weight: 500;
+  line-height: 1.15;
+}
+.value.warn {
+  color: var(--amber);
+}
+.value.alarm {
+  color: var(--oxblood);
+}
+.note {
+  font-size: var(--fs-12);
+  color: var(--text-faint);
+}
+
+.user-filter {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-radius: var(--radius-control);
+  background: var(--brass-soft);
+  font-size: var(--fs-14);
+}
+.user-filter .material-icons-outlined {
+  font-size: 18px;
+}
+.user-filter .btn-link {
+  margin-inline-start: auto;
+  color: var(--ink);
+  text-decoration: underline;
+}
+
+/* ── Toolbar ── */
+.toolbar {
+  display: flex;
+  gap: 12px;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--rule);
+  flex-wrap: wrap;
+  align-items: center;
+}
+.search {
+  flex: 1;
+  min-width: 200px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 40px;
+  padding-inline: 12px;
+  border: 1px solid var(--rule-strong);
+  border-radius: var(--radius-control);
+  background: var(--sheet);
+}
+.search:focus-within {
+  border-color: var(--brass);
+  box-shadow: var(--focus);
+}
+.search .material-icons-outlined {
+  font-size: 20px;
+  color: var(--text-faint);
+}
+.search input {
+  flex: 1;
+  border: none;
+  background: none;
+  outline: none;
+  height: 100%;
+}
+.method {
+  height: 40px;
+  min-width: 160px;
+  padding-inline: 12px;
+  border: 1px solid var(--rule-strong);
+  border-radius: var(--radius-control);
+  background: var(--sheet);
+}
+
+/* ── Table ── */
+.when {
+  white-space: nowrap;
+}
+tr.is-failed td:first-child {
+  box-shadow: inset 3px 0 0 var(--oxblood);
+}
+:host-context([dir='rtl']) tr.is-failed td:first-child {
+  box-shadow: inset -3px 0 0 var(--oxblood);
+}
+.result {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--oxblood);
+  font-weight: 500;
+  white-space: nowrap;
+}
+.result.ok {
+  color: var(--moss);
+}
+.result .material-icons-outlined {
+  font-size: 18px;
+}
+.method-cell,
+.device {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+.method-cell .material-icons-outlined,
+.device .material-icons-outlined {
+  font-size: 18px;
+  color: var(--text-faint);
+}
+.ip {
+  font-family: var(--font-serial);
+  font-size: var(--fs-12);
+  color: var(--text-muted);
+}
+
+.pager {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 20px;
+  border-top: 1px solid var(--rule);
+  font-size: var(--fs-13);
+  color: var(--text-muted);
+}
+.pager-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+@media (max-width: 767px) {
+  .ledger-strip {
+    grid-template-columns: 1fr;
+  }
+  .cell + .cell {
+    border-inline-start: none;
+    border-top: 1px solid var(--rule);
+  }
+}
