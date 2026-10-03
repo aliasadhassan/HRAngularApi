@@ -1,0 +1,264 @@
+<div class="page">
+  <header class="page-intro">
+    <p>{{ 'leave.intro' | translate }}</p>
+    @if (my()) {
+      <button type="button" class="btn btn-ink" (click)="openApply()">
+        <span class="material-icons-outlined" aria-hidden="true">event_available</span>{{ 'leave.apply' | translate }}
+      </button>
+    }
+  </header>
+
+  @if (canApprove || canSeeAll) {
+    <nav class="tabs">
+      <button type="button" class="tab" [class.is-active]="tab() === 'mine'" (click)="setTab('mine')">{{ 'leave.tabs.mine' | translate }}</button>
+      @if (canApprove) {
+        <button type="button" class="tab" [class.is-active]="tab() === 'approvals'" (click)="setTab('approvals')">
+          {{ 'leave.tabs.approvals' | translate }}
+          @if (approvals().length) { <span class="tab-count num alert-count">{{ approvals().length }}</span> }
+        </button>
+      }
+      @if (canSeeAll) {
+        <button type="button" class="tab" [class.is-active]="tab() === 'all'" (click)="setTab('all')">{{ 'leave.tabs.all' | translate }}</button>
+      }
+    </nav>
+  }
+
+  <!-- ═══ Mine ═══ -->
+  @if (tab() === 'mine') {
+    @if (notLinked()) {
+      <div class="notice notice-info">
+        <span class="material-icons-outlined" aria-hidden="true">link_off</span>
+        <span>{{ notLinked() }}</span>
+      </div>
+    }
+
+    @if (my(); as m) {
+      <section class="balances">
+        @for (b of m.balances; track b.leaveTypeId) {
+          @let pct = percentUsed(b);
+          <button type="button" class="balance" (click)="openApply(b.leaveTypeId)" [style.--accent]="b.color || 'var(--moss)'">
+            <span class="b-head">
+              <span class="b-name">{{ b.leaveTypeName }}</span>
+              @if (!b.isPaid) { <span class="tag">{{ 'leave.unpaid' | translate }}</span> }
+            </span>
+            <span class="b-figure num">
+              <span class="b-avail">{{ b.available }}</span>
+              <span class="b-of">/ {{ b.entitled + b.carriedForward + b.adjusted }} {{ 'leave.days' | translate }}</span>
+            </span>
+            <span class="b-bar" aria-hidden="true">
+              <span class="b-used" [style.width.%]="pct.used"></span>
+              <span class="b-pending" [style.width.%]="pct.pending"></span>
+            </span>
+            <span class="b-meta num">
+              {{ 'leave.usedN' | translate: { n: b.used } }}
+              @if (b.pending) { · {{ 'leave.pendingN' | translate: { n: b.pending } }} }
+            </span>
+          </button>
+        } @empty {
+          <div class="panel empty-state">
+            <span class="material-icons-outlined" aria-hidden="true">beach_access</span>
+            <h3>{{ 'leave.noPolicyTitle' | translate }}</h3>
+            <p>{{ 'leave.noPolicyBody' | translate }}</p>
+          </div>
+        }
+      </section>
+
+      <section class="panel panel-flush">
+        <header class="list-head"><h3 class="section-title">{{ 'leave.myRequests' | translate: { year: m.year } }}</h3></header>
+        <div class="table-wrap">
+          <table class="ledger-table">
+            <thead>
+              <tr>
+                <th>{{ 'leave.type' | translate }}</th>
+                <th>{{ 'leave.dates' | translate }}</th>
+                <th class="end">{{ 'leave.daysCol' | translate }}</th>
+                <th>{{ 'leave.status' | translate }}</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (r of m.requests; track r.id) {
+                <tr>
+                  <td><span class="dot" [style.background]="r.color || 'var(--moss)'"></span>{{ r.leaveTypeName }}</td>
+                  <td class="num">
+                    {{ r.startDate | date: 'd MMM' : undefined : lang() }}@if (r.endDate !== r.startDate) { – {{ r.endDate | date: 'd MMM' : undefined : lang() }} }
+                    @if (r.isHalfDay) { <span class="cell-sub">{{ 'leave.half.' + r.halfDayPeriod | translate }}</span> }
+                  </td>
+                  <td class="end num">{{ r.totalDays }}</td>
+                  <td>
+                    <span [class]="chip[r.status]">{{ 'leave.statusName.' + r.status | translate }}</span>
+                    @if (r.status === 'Pending') {
+                      @let step = r.approvals[r.currentApprovalLevel - 1];
+                      <span class="cell-sub">{{ 'leave.waitingFor' | translate: { who: step?.approverName ?? ('leave.approver.' + step?.approverType | translate) } }}</span>
+                    }
+                    @if (r.status === 'Rejected') {
+                      @for (a of r.approvals; track a.level) { @if (a.decision === 'Rejected') { <span class="cell-sub">“{{ a.comment }}”</span> } }
+                    }
+                  </td>
+                  <td class="end">
+                    @if (r.canCancel) {
+                      <button type="button" class="btn-link" [disabled]="busy() === r.id" (click)="cancel(r)">{{ 'leave.cancel' | translate }}</button>
+                    }
+                  </td>
+                </tr>
+              } @empty {
+                <tr><td colspan="5" class="dim">{{ 'leave.noRequests' | translate }}</td></tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </section>
+    }
+  }
+
+  <!-- ═══ Approvals ═══ -->
+  @if (tab() === 'approvals') {
+    <section class="inbox">
+      @for (r of approvals(); track r.id) {
+        <article class="panel request">
+          <div class="r-main">
+            <div class="r-who">
+              <span class="cell-main">{{ r.employeeName }}</span>
+              <span class="cell-sub">{{ r.employeeCode }}@if (r.departmentName) { · {{ r.departmentName }} }</span>
+            </div>
+            <div class="r-what">
+              <span class="r-type"><span class="dot" [style.background]="r.color || 'var(--moss)'"></span>{{ r.leaveTypeName }}</span>
+              <span class="r-dates num">
+                {{ r.startDate | date: 'EEE d MMM' : undefined : lang() }}@if (r.endDate !== r.startDate) { – {{ r.endDate | date: 'EEE d MMM' : undefined : lang() }} }
+              </span>
+              <span class="r-days num">{{ 'leave.nDays' | translate: { n: r.totalDays } }}</span>
+            </div>
+            @if (r.reason) { <p class="r-reason">“{{ r.reason }}”</p> }
+          </div>
+          <div class="r-actions">
+            @if (rejectingId === r.id) {
+              <input class="reject-input" [(ngModel)]="rejectComment" [placeholder]="'leave.rejectReason' | translate" maxlength="500" />
+              <button type="button" class="btn btn-danger btn-small" [disabled]="!rejectComment.trim() || busy() === r.id" (click)="confirmReject(r)">{{ 'leave.reject' | translate }}</button>
+              <button type="button" class="btn-link" (click)="rejectingId = null">{{ 'common.cancel' | translate }}</button>
+            } @else {
+              <button type="button" class="btn btn-quiet btn-small" [disabled]="busy() === r.id" (click)="startReject(r)">{{ 'leave.reject' | translate }}</button>
+              <button type="button" class="btn btn-ink btn-small" [disabled]="busy() === r.id" (click)="approve(r)">{{ 'leave.approve' | translate }}</button>
+            }
+          </div>
+        </article>
+      } @empty {
+        <div class="panel empty-state">
+          <span class="material-icons-outlined" aria-hidden="true">task_alt</span>
+          <h3>{{ 'leave.inboxEmptyTitle' | translate }}</h3>
+          <p>{{ 'leave.inboxEmptyBody' | translate }}</p>
+        </div>
+      }
+    </section>
+  }
+
+  <!-- ═══ All ═══ -->
+  @if (tab() === 'all') {
+    <section class="panel panel-flush">
+      <div class="toolbar">
+        <select class="select-sm" [ngModel]="allStatus()" (ngModelChange)="allStatus.set($event); loadAll()" [attr.aria-label]="'leave.status' | translate">
+          <option value="">{{ 'leave.anyStatus' | translate }}</option>
+          @for (s of ['Pending', 'Approved', 'Rejected', 'Cancelled']; track s) { <option [value]="s">{{ 'leave.statusName.' + s | translate }}</option> }
+        </select>
+      </div>
+      <div class="table-wrap">
+        <table class="ledger-table">
+          <thead>
+            <tr>
+              <th>{{ 'people.employee' | translate }}</th>
+              <th>{{ 'leave.type' | translate }}</th>
+              <th>{{ 'leave.dates' | translate }}</th>
+              <th class="end">{{ 'leave.daysCol' | translate }}</th>
+              <th>{{ 'leave.status' | translate }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (r of all(); track r.id) {
+              <tr class="is-link" (click)="toggle(r.id)">
+                <td><span class="cell-main">{{ r.employeeName }}</span><span class="cell-sub">{{ r.departmentName }}</span></td>
+                <td><span class="dot" [style.background]="r.color || 'var(--moss)'"></span>{{ r.leaveTypeName }}</td>
+                <td class="num">{{ r.startDate | date: 'd MMM' : undefined : lang() }}@if (r.endDate !== r.startDate) { – {{ r.endDate | date: 'd MMM' : undefined : lang() }} }</td>
+                <td class="end num">{{ r.totalDays }}</td>
+                <td><span [class]="chip[r.status]">{{ 'leave.statusName.' + r.status | translate }}</span></td>
+              </tr>
+              @if (expanded() === r.id) {
+                <tr class="trail-row">
+                  <td colspan="5">
+                    <ol class="trail">
+                      @for (a of r.approvals; track a.level) {
+                        <li [class]="'d-' + a.decision">
+                          <span class="cell-main">{{ a.approverName ?? ('leave.approver.' + a.approverType | translate) }}</span>
+                          <span class="cell-sub">{{ 'leave.decision.' + a.decision | translate }}@if (a.decidedByName) { · {{ a.decidedByName }} }@if (a.comment) { · “{{ a.comment }}” }</span>
+                        </li>
+                      }
+                    </ol>
+                  </td>
+                </tr>
+              }
+            } @empty {
+              <tr><td colspan="5" class="dim">{{ 'leave.noRequests' | translate }}</td></tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+  }
+</div>
+
+@if (applying()) {
+  <div class="overlay" (click)="applying.set(false)">
+    <aside class="drawer" role="dialog" aria-modal="true" (click)="$event.stopPropagation()">
+      <header class="drawer-head">
+        <h3>{{ 'leave.apply' | translate }}</h3>
+        <button type="button" class="btn-link" (click)="applying.set(false)" [attr.aria-label]="'common.close' | translate">
+          <span class="material-icons-outlined" aria-hidden="true">close</span>
+        </button>
+      </header>
+      <div class="drawer-body">
+        <div class="field">
+          <label for="l-type">{{ 'leave.type' | translate }}</label>
+          <select id="l-type" [(ngModel)]="form.leaveTypeId">
+            @for (b of my()?.balances ?? []; track b.leaveTypeId) {
+              <option [value]="b.leaveTypeId">{{ b.leaveTypeName }} · {{ 'leave.availableN' | translate: { n: b.available } }}</option>
+            }
+          </select>
+        </div>
+        @if (selectedBalance()?.allowHalfDay) {
+          <label class="check"><input type="checkbox" [(ngModel)]="form.halfDay" (ngModelChange)="onDatesChange()" />{{ 'leave.halfDay' | translate }}</label>
+        }
+        <div class="grid-2">
+          <div class="field"><label for="l-start">{{ (form.halfDay ? 'leave.date' : 'leave.from') | translate }}</label><input id="l-start" type="date" [(ngModel)]="form.startDate" (ngModelChange)="onDatesChange()" /></div>
+          @if (form.halfDay) {
+            <div class="field">
+              <label for="l-half">{{ 'leave.which' | translate }}</label>
+              <select id="l-half" [(ngModel)]="form.halfDayPeriod">
+                <option value="FirstHalf">{{ 'leave.half.FirstHalf' | translate }}</option>
+                <option value="SecondHalf">{{ 'leave.half.SecondHalf' | translate }}</option>
+              </select>
+            </div>
+          } @else {
+            <div class="field"><label for="l-end">{{ 'leave.to' | translate }}</label><input id="l-end" type="date" [min]="form.startDate" [(ngModel)]="form.endDate" (ngModelChange)="onDatesChange()" /></div>
+          }
+        </div>
+
+        @if (preview(); as p) {
+          <div class="days-card" [class.zero]="p.days === 0">
+            <span class="d-num num">{{ p.days }}</span>
+            <span>
+              <span class="cell-main">{{ (p.days === 0 ? 'leave.noWorkingDays' : 'leave.workingDays') | translate }}</span>
+              @if (selectedBalance(); as b) {
+                <span class="cell-sub num">{{ 'leave.afterThis' | translate: { n: b.available - p.days } }}</span>
+              }
+              @for (h of p.holidays; track h) { <span class="cell-sub">🎉 {{ h }}</span> }
+            </span>
+          </div>
+        }
+
+        <div class="field"><label for="l-reason">{{ 'leave.reason' | translate }}</label><textarea id="l-reason" rows="3" [(ngModel)]="form.reason" maxlength="1000"></textarea></div>
+      </div>
+      <footer class="drawer-foot">
+        <button type="button" class="btn btn-quiet" (click)="applying.set(false)">{{ 'common.cancel' | translate }}</button>
+        <button type="button" class="btn btn-ink" [disabled]="!canSubmit() || saving()" (click)="submit()">{{ (saving() ? 'common.saving' : 'leave.send') | translate }}</button>
+      </footer>
+    </aside>
+  </div>
+}

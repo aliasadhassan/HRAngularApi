@@ -3,7 +3,7 @@ import { HttpClient, HttpErrorResponse, HttpParams } from '@angular/common/http'
 import { Observable, map } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import {
-  AssignSalary, CalcType, EmployeeSalary, PagedResult, PayComponent, PayGroup, PayPeriod, PayrollEmployee, PayrollRun,
+  AssignSalary, CalcType, MyPayslip, EmployeeSalary, PagedResult, PayComponent, PayGroup, PayPeriod, PayrollEmployee, PayrollRun,
   PayrollSettings, Payslip, PayslipListItem, SalaryGrade, SalaryTemplate, SavePayComponent, TaxRegime, TaxSlab,
   TemplateLine, TemplateListItem
 } from './payroll.models';
@@ -72,8 +72,13 @@ export class PayrollService {
     return this.http.get<PayslipListItem[]>(`${this.base}/runs/${runId}/payslips`);
   }
 
-  getPayslip(id: string): Observable<Payslip> {
-    return this.http.get<Payslip>(`${this.base}/payslips/${id}`);
+  /** self = employee apni payslip (/payroll/me/...) — admin wala endpoint nahi */
+  getPayslip(id: string, self = false): Observable<Payslip> {
+    return this.http.get<Payslip>(self ? `${this.base}/me/payslips/${id}` : `${this.base}/payslips/${id}`);
+  }
+
+  getMyPayslips(): Observable<MyPayslip[]> {
+    return this.http.get<MyPayslip[]>(`${this.base}/me/payslips`);
   }
 
   // ── Setup ──

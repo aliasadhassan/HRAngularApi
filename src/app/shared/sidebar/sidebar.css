@@ -34,15 +34,18 @@
   height: 32px;
   flex-shrink: 0;
 }
+
 .brand-seal circle {
   fill: none;
   stroke: var(--brass);
   stroke-width: 1.2;
 }
+
 .brand-seal circle.inner {
   stroke-width: 0.6;
   stroke-dasharray: 1.2 1.6;
 }
+
 .brand-seal text {
   font-family: 'Fraunces', serif;
   font-size: 19px;
@@ -55,6 +58,7 @@
   flex-direction: column;
   min-width: 0;
 }
+
 .brand-name {
   font-family: 'Fraunces', serif;
   font-size: 1.0625rem;
@@ -62,34 +66,78 @@
   letter-spacing: 0.01em;
   white-space: nowrap;
 }
+
 .brand-tag {
   font-size: 11px;
   color: rgba(236, 238, 230, 0.5);
   white-space: nowrap;
 }
 
-/* ── Nav ───────────────────────────────────────── */
+/* ── Navigation ────────────────────────────────── */
 .nav {
   flex: 1;
   overflow-y: auto;
   overflow-x: hidden;
-  padding: 12px 10px;
+  padding: 10px 10px;
   scrollbar-width: thin;
   scrollbar-color: rgba(236, 238, 230, 0.15) transparent;
 }
 
 .nav-section + .nav-section {
-  margin-top: 16px;
+  margin-top: 10px;
+}
+
+/* Module header */
+.nav-section-toggle {
+  width: 100%;
+  min-height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 0 8px;
+  margin: 0 0 2px;
+  border: 0;
+  border-radius: var(--radius-control);
+  background: transparent;
+  color: rgba(236, 238, 230, 0.45);
+  font: inherit;
+  cursor: pointer;
+  text-align: start;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.nav-section-toggle:hover {
+  background: rgba(236, 238, 230, 0.045);
+  color: rgba(236, 238, 230, 0.75);
 }
 
 .nav-heading {
   font-family: var(--font-ui);
-  font-size: 11px;
-  font-weight: 500;
-  color: rgba(236, 238, 230, 0.42);
-  padding-inline: 10px;
-  margin-bottom: 4px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
   white-space: nowrap;
+}
+
+.nav-section-chevron {
+  font-size: 17px;
+  flex-shrink: 0;
+  transition: transform 0.2s ease;
+}
+
+.nav-section.is-section-collapsed .nav-section-chevron {
+  transform: rotate(-90deg);
+}
+
+/*
+ * Module accordion:
+ * Normal sidebar mein closed module ke items hide honge.
+ * Lekin sidebar khud collapsed ho to icons hide NAHI honge.
+ */
+.nav-section.is-section-collapsed ul {
+  display: none;
 }
 
 ul {
@@ -98,20 +146,20 @@ ul {
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 1px;
 }
 
 .nav-link {
   position: relative;
   display: flex;
   align-items: center;
-  gap: 10px;
-  height: 34px;
+  gap: 9px;
+  height: 32px;
   padding-inline: 10px;
   border-radius: var(--radius-control);
   color: rgba(236, 238, 230, 0.68);
   text-decoration: none;
-  font-size: var(--fs-13);
+  font-size: 12.5px;
   white-space: nowrap;
   transition: background 0.15s ease, color 0.15s ease;
 }
@@ -126,11 +174,11 @@ ul {
   color: #f6f0dc;
 }
 
-/* Brass ledger rule — active item ki pehchaan */
+/* Active item indicator */
 .nav-link.is-active::before {
   content: '';
   position: absolute;
-  inset-block: 7px;
+  inset-block: 6px;
   inset-inline-start: -10px;
   width: 3px;
   border-start-end-radius: 3px;
@@ -139,7 +187,7 @@ ul {
 }
 
 .nav-icon {
-  font-size: 18px;
+  font-size: 17px;
   flex-shrink: 0;
   width: 18px;
 }
@@ -153,7 +201,7 @@ ul {
   text-overflow: ellipsis;
 }
 
-/* ── Foot ──────────────────────────────────────── */
+/* ── Footer ────────────────────────────────────── */
 .sidebar-foot {
   padding: 8px 10px 10px;
   border-top: 1px solid rgba(236, 238, 230, 0.07);
@@ -189,6 +237,7 @@ ul {
   flex-direction: column;
   min-width: 0;
 }
+
 .user-name {
   font-size: var(--fs-12);
   font-weight: 500;
@@ -196,6 +245,7 @@ ul {
   overflow: hidden;
   text-overflow: ellipsis;
 }
+
 .user-email {
   font-size: 11px;
   color: rgba(236, 238, 230, 0.48);
@@ -217,10 +267,12 @@ ul {
   cursor: pointer;
   transition: background 0.15s ease, color 0.15s ease;
 }
+
 .collapse-btn:hover {
   background: rgba(236, 238, 230, 0.06);
   color: var(--text-on-ink);
 }
+
 .collapse-btn .material-icons-outlined {
   font-size: 18px;
   transition: transform 0.22s ease;
@@ -230,7 +282,7 @@ ul {
   transform: scaleX(-1);
 }
 
-/* ── Collapsed (desktop) ───────────────────────── */
+/* ── Sidebar collapsed (desktop) ───────────────── */
 :host(.is-collapsed) {
   width: var(--sidebar-w-collapsed);
 }
@@ -245,12 +297,40 @@ ul {
   display: none;
 }
 
+/*
+ * IMPORTANT:
+ * Sidebar collapsed = icons-only mode.
+ * Module accordion state is ignored here, so ALL page icons remain visible.
+ */
+:host(.is-collapsed) .nav-section-toggle {
+  justify-content: center;
+  padding: 0;
+  margin-bottom: 6px;
+  cursor: default;
+  pointer-events: none;
+}
+
 :host(.is-collapsed) .nav-heading {
+  display: block;
+  width: 12px;
   height: 1px;
-  margin: 0 12px 10px;
+  margin: 0;
   padding: 0;
   font-size: 0;
   background: rgba(236, 238, 230, 0.1);
+}
+
+:host(.is-collapsed) .nav-section-chevron {
+  display: none;
+}
+
+/*
+ * FIX:
+ * Even if Administration / People / Payroll is internally collapsed,
+ * its icons MUST remain visible when the whole sidebar is collapsed.
+ */
+:host(.is-collapsed) .nav-section.is-section-collapsed ul {
+  display: flex;
 }
 
 :host(.is-collapsed) .nav-link,
@@ -293,20 +373,38 @@ ul {
     box-shadow: var(--shadow-pop);
   }
 
-  /* Drawer mein hamesha poora menu */
+  /* Drawer mein hamesha full sidebar */
   :host(.is-collapsed) .brand-text,
   :host(.is-collapsed) .nav-label,
   :host(.is-collapsed) .user-text {
     display: flex;
   }
-  :host(.is-collapsed) .nav-label { display: inline; }
+
+  :host(.is-collapsed) .nav-section-toggle {
+    justify-content: space-between;
+    padding-inline: 8px;
+    margin-bottom: 2px;
+    cursor: pointer;
+    pointer-events: auto;
+  }
+
   :host(.is-collapsed) .nav-heading {
+    width: auto;
     height: auto;
-    margin: 0 0 6px;
-    padding-inline: 12px;
-    font-size: var(--fs-12);
+    margin: 0;
+    padding: 0;
+    font-size: 10px;
     background: none;
   }
+
+  :host(.is-collapsed) .nav-section-chevron {
+    display: inline-block;
+  }
+
+  :host(.is-collapsed) .nav-label {
+    display: inline;
+  }
+
   :host(.is-collapsed) .nav-link,
   :host(.is-collapsed) .user {
     justify-content: flex-start;

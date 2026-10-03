@@ -1,0 +1,223 @@
+<div class="page">
+  <header class="page-intro">
+    <p>{{ 'leaveSetup.intro' | translate }}</p>
+  </header>
+
+  <nav class="tabs">
+    @for (t of tabs; track t) {
+      <button type="button" class="tab" [class.is-active]="tab() === t" (click)="tab.set(t)">{{ 'leaveSetup.tabs.' + t | translate }}</button>
+    }
+  </nav>
+
+  @if (tab() === 'types') {
+    <section class="panel panel-flush">
+      <header class="list-head">
+        <p class="section-help">{{ 'leaveSetup.types.help' | translate }}</p>
+        <button type="button" class="btn btn-ink btn-small" (click)="openType()"><span class="material-icons-outlined" aria-hidden="true">add</span>{{ 'leaveSetup.types.new' | translate }}</button>
+      </header>
+      <div class="table-wrap">
+        <table class="ledger-table">
+          <thead><tr><th>{{ 'leave.type' | translate }}</th><th>{{ 'leaveSetup.types.rules' | translate }}</th><th class="end">{{ 'payrollSetup.components.order' | translate }}</th></tr></thead>
+          <tbody>
+            @for (t of types(); track t.id) {
+              <tr class="is-link" tabindex="0" (click)="openType(t)" (keydown.enter)="openType(t)" [class.is-dim]="!t.isActive">
+                <td><span class="swatch" [style.background]="t.color || 'var(--moss)'"></span><span class="cell-main">{{ t.name }}</span> <span class="mono dim">{{ t.code }}</span></td>
+                <td class="flags">
+                  <span class="flag">{{ (t.isPaid ? 'leaveSetup.types.paid' : 'leaveSetup.types.unpaid') | translate }}</span>
+                  @if (t.allowHalfDay) { <span class="flag">{{ 'leaveSetup.types.halfDay' | translate }}</span> }
+                  @if (t.allowNegativeBalance) { <span class="flag">{{ 'leaveSetup.types.negative' | translate }}</span> }
+                </td>
+                <td class="end num dim">{{ t.sortOrder }}</td>
+              </tr>
+            } @empty { <tr><td colspan="3" class="dim">{{ 'org.empty' | translate }}</td></tr> }
+          </tbody>
+        </table>
+      </div>
+    </section>
+  }
+
+  @if (tab() === 'policies') {
+    <div class="tax-head">
+      <p class="section-help">{{ 'leaveSetup.policies.help' | translate }}</p>
+      <button type="button" class="btn btn-ink btn-small" (click)="openPolicy()"><span class="material-icons-outlined" aria-hidden="true">add</span>{{ 'leaveSetup.policies.new' | translate }}</button>
+    </div>
+    <div class="cards">
+      @for (p of policies(); track p.id) {
+        <section class="panel policy" (click)="openPolicy(p)">
+          <header class="policy-head">
+            <div>
+              <h3 class="section-title">{{ p.name }}</h3>
+              <p class="cell-sub">{{ p.locationName ?? ('leaveSetup.policies.allLocations' | translate) }} · {{ 'payrollSetup.tax.from' | translate: { date: (p.effectiveFrom | date: 'd MMM y' : undefined : lang()) } }}</p>
+            </div>
+            <span [class]="p.isActive ? 'chip chip-moss' : 'chip chip-muted'">{{ (p.isActive ? 'admin.status.Active' : 'structure.inactive') | translate }}</span>
+          </header>
+          @for (r of p.rules; track r.leaveTypeId) {
+            <div class="rule-row num">
+              <span>{{ r.leaveTypeName }}</span>
+              <span><b>{{ r.annualEntitlement }}</b> {{ 'leave.days' | translate }} · {{ 'leaveSetup.accrual.' + r.accrualMethod | translate }}</span>
+            </div>
+          } @empty { <p class="dim">{{ 'leaveSetup.policies.noRules' | translate }}</p> }
+        </section>
+      } @empty {
+        <div class="panel empty-state"><p>{{ 'leaveSetup.policies.empty' | translate }}</p></div>
+      }
+    </div>
+  }
+
+  @if (tab() === 'holidays') {
+    <section class="panel panel-flush">
+      <header class="list-head">
+        <div class="year-nav">
+          <button type="button" class="icon-btn-sm" (click)="shiftYear(-1)" [attr.aria-label]="'admin.users.prev' | translate"><span class="material-icons-outlined flip" aria-hidden="true">chevron_left</span></button>
+          <span class="section-title num">{{ year() }}</span>
+          <button type="button" class="icon-btn-sm" (click)="shiftYear(1)" [attr.aria-label]="'admin.users.next' | translate"><span class="material-icons-outlined flip" aria-hidden="true">chevron_right</span></button>
+        </div>
+        <button type="button" class="btn btn-ink btn-small" (click)="openHoliday()"><span class="material-icons-outlined" aria-hidden="true">add</span>{{ 'leaveSetup.holidays.new' | translate }}</button>
+      </header>
+      <div class="table-wrap">
+        <table class="ledger-table">
+          <thead><tr><th>{{ 'leave.date' | translate }}</th><th>{{ 'org.name' | translate }}</th><th>{{ 'people.location' | translate }}</th><th></th></tr></thead>
+          <tbody>
+            @for (h of holidays(); track h.id) {
+              <tr>
+                <td class="num"><span class="cell-main">{{ h.date | date: 'd MMM' : undefined : lang() }}</span><span class="cell-sub">{{ h.date | date: 'EEEE' : undefined : lang() }}</span></td>
+                <td>{{ h.name }} @if (h.isOptional) { <span class="flag">{{ 'leaveSetup.holidays.optional' | translate }}</span> }</td>
+                <td>{{ h.locationName ?? ('leaveSetup.policies.allLocations' | translate) }}</td>
+                <td class="row-actions">
+                  <button type="button" class="icon-btn-sm" (click)="openHoliday(h)" [attr.aria-label]="'common.edit' | translate"><span class="material-icons-outlined" aria-hidden="true">edit</span></button>
+                  <button type="button" class="icon-btn-sm" (click)="deleteHoliday(h)" [attr.aria-label]="'common.delete' | translate"><span class="material-icons-outlined" aria-hidden="true">delete</span></button>
+                </td>
+              </tr>
+            } @empty { <tr><td colspan="4" class="dim">{{ 'leaveSetup.holidays.empty' | translate }}</td></tr> }
+          </tbody>
+        </table>
+      </div>
+    </section>
+  }
+
+  @if (tab() === 'approval') {
+    <section class="panel approval">
+      <h3 class="section-title">{{ 'leaveSetup.approval.title' | translate }}</h3>
+      <p class="section-help">{{ 'leaveSetup.approval.help' | translate }}</p>
+      <div class="chain">
+        <div class="field">
+          <label for="a1">{{ 'leaveSetup.approval.level1' | translate }}</label>
+          <select id="a1" [(ngModel)]="approval.level1Approver">
+            @for (a of approvers; track a) { <option [value]="a">{{ 'leave.approver.' + a | translate }}</option> }
+          </select>
+        </div>
+        <span class="material-icons-outlined arrow flip" aria-hidden="true">arrow_forward</span>
+        <div class="field">
+          <label for="a2">{{ 'leaveSetup.approval.level2' | translate }}</label>
+          <select id="a2" [(ngModel)]="approval.level2Approver">
+            <option [ngValue]="null">{{ 'leaveSetup.approval.none' | translate }}</option>
+            @for (a of approvers; track a) { <option [ngValue]="a">{{ 'leave.approver.' + a | translate }}</option> }
+          </select>
+        </div>
+      </div>
+      <p class="field-hint">{{ 'leaveSetup.approval.fallback' | translate }}</p>
+      <label class="check"><input type="checkbox" [(ngModel)]="approval.allowCancelAfterApproval" />{{ 'leaveSetup.approval.allowCancel' | translate }}</label>
+      <footer class="form-foot">
+        <button type="button" class="btn btn-ink btn-small" [disabled]="saving()" (click)="saveApproval()">{{ 'common.save' | translate }}</button>
+      </footer>
+    </section>
+  }
+</div>
+
+@if (drawer(); as d) {
+  <div class="overlay" (click)="drawer.set(null)">
+    <aside class="drawer" [class.wide]="d === 'policy'" role="dialog" aria-modal="true" (click)="$event.stopPropagation()">
+      <header class="drawer-head">
+        <h3>{{ 'leaveSetup.drawer.' + d | translate }}</h3>
+        <button type="button" class="btn-link" (click)="drawer.set(null)" [attr.aria-label]="'common.close' | translate"><span class="material-icons-outlined" aria-hidden="true">close</span></button>
+      </header>
+      <div class="drawer-body">
+        @if (d === 'type') {
+          <div class="grid-2">
+            <div class="field"><label for="t-name">{{ 'org.name' | translate }}</label><input id="t-name" [(ngModel)]="typeForm.name" maxlength="100" placeholder="Annual leave" /></div>
+            <div class="field"><label for="t-code">{{ 'org.code' | translate }}</label><input id="t-code" [(ngModel)]="typeForm.code" maxlength="20" placeholder="AL" /></div>
+          </div>
+          <div class="field">
+            <span class="label">{{ 'leaveSetup.types.color' | translate }}</span>
+            <div class="colors">
+              @for (c of colors; track c) {
+                <button type="button" class="color" [style.background]="c" [class.is-on]="typeForm.color === c" (click)="typeForm.color = c" [attr.aria-label]="c"></button>
+              }
+            </div>
+          </div>
+          <div class="checks">
+            <label class="check"><input type="checkbox" [(ngModel)]="typeForm.isPaid" />{{ 'leaveSetup.types.paid' | translate }}</label>
+            <label class="check"><input type="checkbox" [(ngModel)]="typeForm.allowHalfDay" />{{ 'leaveSetup.types.halfDay' | translate }}</label>
+            <label class="check"><input type="checkbox" [(ngModel)]="typeForm.allowNegativeBalance" />{{ 'leaveSetup.types.negative' | translate }}</label>
+            <label class="check"><input type="checkbox" [(ngModel)]="typeForm.isActive" />{{ 'admin.status.Active' | translate }}</label>
+          </div>
+          <div class="field"><label for="t-order">{{ 'payrollSetup.components.order' | translate }}</label><input id="t-order" type="number" [(ngModel)]="typeForm.sortOrder" /></div>
+        }
+
+        @if (d === 'policy') {
+          <div class="grid-2">
+            <div class="field span-2"><label for="p-name">{{ 'org.name' | translate }}</label><input id="p-name" [(ngModel)]="policyForm.name" maxlength="150" placeholder="Pakistan staff 2026" /></div>
+            <div class="field">
+              <label for="p-loc">{{ 'people.location' | translate }}</label>
+              <select id="p-loc" [(ngModel)]="policyForm.locationId" [disabled]="!!editingId">
+                <option [ngValue]="null">{{ 'leaveSetup.policies.allLocations' | translate }}</option>
+                @for (l of locations(); track l.id) { <option [ngValue]="l.id">{{ l.name }}</option> }
+              </select>
+            </div>
+            <div class="field"><label for="p-from">{{ 'payrollSetup.tax.effectiveFrom' | translate }}</label><input id="p-from" type="date" [(ngModel)]="policyForm.effectiveFrom" [disabled]="!!editingId" /></div>
+          </div>
+          <label class="check"><input type="checkbox" [(ngModel)]="policyForm.isActive" />{{ 'admin.status.Active' | translate }}</label>
+
+          <h4 class="sub">{{ 'leaveSetup.policies.entitlements' | translate }}</h4>
+          @for (r of policyForm.rules; track r.leaveTypeId; let i = $index) {
+            <div class="rule-edit">
+              <div class="rule-top">
+                <b>{{ typeName(r.leaveTypeId) }}</b>
+                <button type="button" class="icon-btn-sm" (click)="removeRule(i)" [attr.aria-label]="'common.delete' | translate"><span class="material-icons-outlined" aria-hidden="true">close</span></button>
+              </div>
+              <div class="rule-grid">
+                <label>{{ 'leaveSetup.policies.perYear' | translate }}<input type="number" min="0" max="365" step="0.5" [(ngModel)]="r.annualEntitlement" /></label>
+                <label>{{ 'leaveSetup.policies.accrual' | translate }}
+                  <select [(ngModel)]="r.accrualMethod">@for (a of accruals; track a) { <option [value]="a">{{ 'leaveSetup.accrual.' + a | translate }}</option> }</select>
+                </label>
+                <label>{{ 'leaveSetup.policies.carry' | translate }}<input type="number" min="0" [(ngModel)]="r.maxCarryForward" /></label>
+                <label>{{ 'leaveSetup.policies.minService' | translate }}<input type="number" min="0" [(ngModel)]="r.minServiceDays" /></label>
+                <label>{{ 'leaveSetup.policies.maxStretch' | translate }}<input type="number" min="1" [(ngModel)]="r.maxConsecutiveDays" /></label>
+                <label>{{ 'leaveSetup.policies.gender' | translate }}
+                  <select [(ngModel)]="r.applicableGender">
+                    <option [ngValue]="null">{{ 'leaveSetup.policies.everyone' | translate }}</option>
+                    <option ngValue="Female">{{ 'people.gender.Female' | translate }}</option>
+                    <option ngValue="Male">{{ 'people.gender.Male' | translate }}</option>
+                  </select>
+                </label>
+              </div>
+            </div>
+          }
+          @if (unusedTypes().length) {
+            <select class="add-rule" [ngModel]="''" (ngModelChange)="addRule($event)" [attr.aria-label]="'leaveSetup.policies.addType' | translate">
+              <option value="" disabled>{{ 'leaveSetup.policies.addType' | translate }}</option>
+              @for (t of unusedTypes(); track t.id) { <option [value]="t.id">{{ t.name }}</option> }
+            </select>
+          }
+        }
+
+        @if (d === 'holiday') {
+          <div class="field"><label for="h-name">{{ 'org.name' | translate }}</label><input id="h-name" [(ngModel)]="holidayForm.name" maxlength="150" placeholder="Independence Day" /></div>
+          <div class="field"><label for="h-date">{{ 'leave.date' | translate }}</label><input id="h-date" type="date" [(ngModel)]="holidayForm.date" /></div>
+          <div class="field">
+            <label for="h-loc">{{ 'people.location' | translate }}</label>
+            <select id="h-loc" [(ngModel)]="holidayForm.locationId">
+              <option [ngValue]="null">{{ 'leaveSetup.policies.allLocations' | translate }}</option>
+              @for (l of locations(); track l.id) { <option [ngValue]="l.id">{{ l.name }}</option> }
+            </select>
+          </div>
+          <label class="check"><input type="checkbox" [(ngModel)]="holidayForm.isOptional" />{{ 'leaveSetup.holidays.optionalHint' | translate }}</label>
+        }
+      </div>
+      <footer class="drawer-foot">
+        <button type="button" class="btn btn-quiet" (click)="drawer.set(null)">{{ 'common.cancel' | translate }}</button>
+        <button type="button" class="btn btn-ink" [disabled]="!valid() || saving()" (click)="save()">{{ (saving() ? 'common.saving' : 'common.save') | translate }}</button>
+      </footer>
+    </aside>
+  </div>
+}
