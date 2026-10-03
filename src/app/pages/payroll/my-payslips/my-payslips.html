@@ -1,0 +1,60 @@
+<div class="page">
+  <header class="page-intro">
+    <p>{{ 'myPayslips.intro' | translate }}</p>
+  </header>
+
+  @if (latest(); as l) {
+    <section class="hero">
+      <div>
+        <span class="h-label">{{ 'myPayslips.latest' | translate: { period: (l.periodStart | date: 'MMMM y' : undefined : lang()) } }}</span>
+        <div class="h-figure num">
+          <span class="h-cur">{{ l.currencyCode }}</span>
+          <span class="h-amt">{{ l.netPay | amount: lang() : 'full' : 2 }}</span>
+        </div>
+        <span class="h-meta">{{ 'myPayslips.paidOn' | translate: { date: (l.payDate ? (l.payDate | date: 'd MMM y' : undefined : lang()) : '—') } }}</span>
+      </div>
+      <div class="h-side num">
+        <span class="h-label">{{ 'myPayslips.thisYear' | translate }}</span>
+        <span class="h-year">{{ l.currencyCode }} {{ yearTotal() | amount: lang() }}</span>
+        <a class="btn btn-brass btn-small" [routerLink]="['/app/me/payslips', l.id]">{{ 'myPayslips.view' | translate }}</a>
+      </div>
+    </section>
+  }
+
+  <section class="panel panel-flush">
+    <div class="table-wrap">
+      <table class="ledger-table">
+        <thead>
+          <tr>
+            <th>{{ 'payroll.runs.period' | translate }}</th>
+            <th>{{ 'payroll.payslip.number' | translate }}</th>
+            <th class="end">{{ 'payroll.runs.gross' | translate }}</th>
+            <th class="end">{{ 'payroll.payslip.deductions' | translate }}</th>
+            <th class="end">{{ 'payroll.runs.net' | translate }}</th>
+            <th class="go"></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (s of slips() ?? []; track s.id) {
+            <tr class="is-link" [routerLink]="['/app/me/payslips', s.id]" tabindex="0">
+              <td><span class="cell-main period">{{ s.periodStart | date: 'MMMM y' : undefined : lang() }}</span>
+                <span class="cell-sub">{{ 'myPayslips.paidOn' | translate: { date: (s.payDate ? (s.payDate | date: 'd MMM' : undefined : lang()) : '—') } }}</span></td>
+              <td class="mono dim">{{ s.payslipNumber }}</td>
+              <td class="end num">{{ s.grossEarnings | amount: lang() }}</td>
+              <td class="end num dim">{{ s.totalDeductions | amount: lang() }}</td>
+              <td class="end num net"><span class="dim">{{ s.currencyCode }}</span> {{ s.netPay | amount: lang() : 'full' : 2 }}</td>
+              <td class="go"><span class="material-icons-outlined" aria-hidden="true">{{ lang() === 'ar' ? 'chevron_left' : 'chevron_right' }}</span></td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+    @if (slips()?.length === 0) {
+      <div class="empty-state">
+        <span class="material-icons-outlined" aria-hidden="true">receipt_long</span>
+        <h3>{{ 'myPayslips.emptyTitle' | translate }}</h3>
+        <p>{{ 'myPayslips.emptyBody' | translate }}</p>
+      </div>
+    }
+  </section>
+</div>

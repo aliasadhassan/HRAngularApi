@@ -21,6 +21,8 @@ export class PayslipComponent {
   private readonly location = inject(Location);
 
   readonly id = input.required<string>();
+  /** Route data: self=true → employee apni payslip */
+  readonly self = input(false);
   readonly lang = inject(LanguageService).language;
   readonly chip = PAYSLIP_STATUS_CHIP;
 
@@ -32,7 +34,7 @@ export class PayslipComponent {
 
   constructor() {
     effect(() => {
-      this.api.getPayslip(this.id()).subscribe({
+      this.api.getPayslip(this.id(), this.self()).subscribe({
         next: s => this.slip.set(s),
         error: err => {
           this.alert.error(PayrollService.errorMessage(err, this.translate.instant('payroll.errors.load')));

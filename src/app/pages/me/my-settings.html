@@ -1,0 +1,93 @@
+<div class="page narrow">
+  @if (me(); as m) {
+    <header class="masthead">
+      <span class="avatar-xl" aria-hidden="true">{{ initials() }}</span>
+      <div>
+        <h2>{{ m.displayName }}</h2>
+        <p class="mast-sub">{{ m.email }} · {{ m.tenant.name }}</p>
+        <div class="roles">
+          @for (r of m.roles; track r) { <span class="role-pill">{{ r }}</span> }
+        </div>
+      </div>
+    </header>
+
+    <section class="panel section">
+      <div class="side">
+        <h3 class="section-title">{{ 'mySettings.profile' | translate }}</h3>
+        <p class="section-help">{{ 'mySettings.profileHelp' | translate }}</p>
+      </div>
+      <div class="body">
+        <div class="field">
+          <label for="m-name">{{ 'admin.users.name' | translate }}</label>
+          <input id="m-name" [(ngModel)]="name" maxlength="200" />
+        </div>
+        <div class="field">
+          <label for="m-email">{{ 'admin.users.email' | translate }}</label>
+          <input id="m-email" [value]="m.email" disabled />
+          <span class="field-hint">{{ 'mySettings.emailHint' | translate }}</span>
+        </div>
+        <footer class="foot">
+          <button type="button" class="btn btn-ink btn-small" [disabled]="!name.trim() || name.trim() === m.displayName || saving()" (click)="saveName()">
+            {{ (saving() === 'name' ? 'common.saving' : 'common.save') | translate }}
+          </button>
+        </footer>
+      </div>
+    </section>
+
+    <section class="panel section">
+      <div class="side">
+        <h3 class="section-title">{{ 'mySettings.language' | translate }}</h3>
+        <p class="section-help">{{ 'mySettings.languageHelp' | translate }}</p>
+      </div>
+      <div class="body">
+        <div class="langs">
+          <button type="button" class="lang" [class.is-on]="language.language() === 'en'" (click)="setLanguage('en')">
+            <span class="lang-name">English</span><span class="lang-dir">LTR</span>
+          </button>
+          <button type="button" class="lang ar" [class.is-on]="language.language() === 'ar'" (click)="setLanguage('ar')">
+            <span class="lang-name">العربية</span><span class="lang-dir">RTL</span>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel section">
+      <div class="side">
+        <h3 class="section-title">{{ 'mySettings.password' | translate }}</h3>
+        <p class="section-help">{{ 'mySettings.passwordHelp' | translate }}</p>
+      </div>
+      <div class="body">
+        @if (m.hasPassword) {
+          <div class="field">
+            <label for="p-cur">{{ 'mySettings.current' | translate }}</label>
+            <input id="p-cur" [type]="showPwd() ? 'text' : 'password'" autocomplete="current-password" [(ngModel)]="pwd.current" />
+          </div>
+          <div class="grid-2">
+            <div class="field">
+              <label for="p-new">{{ 'mySettings.new' | translate }}</label>
+              <input id="p-new" [type]="showPwd() ? 'text' : 'password'" autocomplete="new-password" [(ngModel)]="pwd.next" />
+            </div>
+            <div class="field">
+              <label for="p-conf">{{ 'mySettings.confirm' | translate }}</label>
+              <input id="p-conf" [type]="showPwd() ? 'text' : 'password'" autocomplete="new-password" [(ngModel)]="pwd.confirm" />
+            </div>
+          </div>
+          @if (pwdError(); as err) { <p class="err">{{ err | translate }}</p> }
+          <label class="check"><input type="checkbox" [checked]="showPwd()" (change)="showPwd.set(!showPwd())" />{{ 'mySettings.show' | translate }}</label>
+          <footer class="foot">
+            <button type="button" class="btn btn-ink btn-small" [disabled]="!canChangePwd() || saving()" (click)="changePassword()">
+              {{ (saving() === 'password' ? 'common.saving' : 'mySettings.change') | translate }}
+            </button>
+          </footer>
+        } @else {
+          <div class="notice notice-info">
+            <span class="material-icons-outlined" aria-hidden="true">window</span>
+            <span>{{ 'mySettings.sso' | translate }}</span>
+          </div>
+        }
+      </div>
+    </section>
+  } @else {
+    <div class="panel"><span class="skeleton" style="width: 40%"></span></div>
+  }
+</div>

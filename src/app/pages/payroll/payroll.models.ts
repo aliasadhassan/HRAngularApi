@@ -269,3 +269,17 @@ export interface AssignSalary {
   changeReason: SalaryChangeReason;
   remarks: string | null;
 }
+
+export interface MyPayslip {
+  id: string;
+  payrollRunId: string;
+  payslipNumber: string;
+  periodStart: string;
+  periodEnd: string;
+  payDate: string | null;
+  currencyCode: string;
+  grossEarnings: number;
+  totalDeductions: number;
+  netPay: number;
+  runStatus: RunStatus;
+}
