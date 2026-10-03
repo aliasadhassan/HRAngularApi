@@ -123,3 +123,149 @@ export const PAYSLIP_STATUS_CHIP: Record<PayslipStatus, string> = {
   OnHold: 'chip chip-oxblood',
   Paid: 'chip chip-ink'
 };
+
+// ───────────── Setup / structure / salaries ─────────────
+export type ProrationMethod = 'CalendarDays' | 'WorkingDays' | 'Fixed30';
+export type CalcType = 'Fixed' | 'PercentOfComponent' | 'PercentOfGross' | 'Variable' | 'Remainder';
+export type SalaryBasis = 'Annual' | 'Monthly' | 'Hourly';
+export type SalaryChangeReason = 'Joining' | 'Increment' | 'Promotion' | 'Correction' | 'Other';
+export type TaxCalcMethod = 'None' | 'Annualized' | 'PerPeriodFlat';
+
+export interface PayrollSettings {
+  baseCurrency: string;
+  prorationMethod: ProrationMethod;
+  roundingDecimals: number;
+  payslipNumberPrefix: string;
+  requireApproval: boolean;
+}
+
+export interface PayComponent {
+  id: string;
+  code: string;
+  name: string;
+  systemCode: string | null;
+  componentType: ComponentType;
+  defaultCalcType: CalcType;
+  defaultBaseComponentId: string | null;
+  isTaxable: boolean;
+  isProrated: boolean;
+  isRecurring: boolean;
+  showOnPayslip: boolean;
+  sortOrder: number;
+  isActive: boolean;
+}
+export type SavePayComponent = Omit<PayComponent, 'id' | 'systemCode' | 'isActive'>;
+
+export interface TaxSlab {
+  id?: string;
+  fromAmount: number;
+  toAmount: number | null;
+  fixedAmount: number;
+  ratePercent: number;
+}
+export interface TaxRegime {
+  id: string;
+  isPlatformDefined: boolean;
+  countryCode: string;
+  name: string;
+  taxYearStartMonth: number;
+  calcMethod: TaxCalcMethod;
+  effectiveFrom: string;
+  effectiveTo: string | null;
+  isActive: boolean;
+  slabs: TaxSlab[];
+}
+
+export interface SalaryGrade {
+  id: string;
+  code: string;
+  name: string;
+  currencyCode: string;
+  minAnnual: number | null;
+  maxAnnual: number | null;
+  isActive: boolean;
+}
+
+export interface TemplateListItem {
+  id: string;
+  name: string;
+  salaryGradeId: string | null;
+  gradeCode: string | null;
+  lineCount: number;
+  isActive: boolean;
+}
+export interface TemplateLine {
+  payComponentId: string;
+  componentCode?: string;
+  componentName?: string;
+  componentType?: ComponentType;
+  calcType: CalcType;
+  amount: number | null;
+  percentage: number | null;
+  baseComponentId: string | null;
+}
+export interface SalaryTemplate {
+  id: string;
+  name: string;
+  salaryGradeId: string | null;
+  isActive: boolean;
+  lines: TemplateLine[];
+}
+
+export interface PayrollEmployee {
+  employeeId: string;
+  employeeCode: string;
+  fullName: string;
+  workEmail: string;
+  departmentName: string | null;
+  employmentType: string;
+  joiningDate: string;
+  exitDate: string | null;
+  isActive: boolean;
+  payGroupId: string | null;
+  payGroupName: string | null;
+  hasSalary: boolean;
+  salaryBasis: SalaryBasis | null;
+  salaryAmount: number | null;
+  currencyCode: string | null;
+}
+export interface PagedResult<T> {
+  items: T[];
+  page: number;
+  pageSize: number;
+  totalCount: number;
+}
+
+export interface SalaryOverride {
+  payComponentId: string;
+  isExcluded: boolean;
+  calcType: CalcType | null;
+  amount: number | null;
+  percentage: number | null;
+  baseComponentId: string | null;
+}
+export interface EmployeeSalary {
+  id: string;
+  salaryTemplateId: string;
+  templateName: string;
+  salaryGradeId: string | null;
+  currencyCode: string;
+  salaryBasis: SalaryBasis;
+  basisAmount: number;
+  effectiveFrom: string;
+  effectiveTo: string | null;
+  changeReason: SalaryChangeReason;
+  remarks: string | null;
+  overrides: SalaryOverride[];
+}
+export interface AssignSalary {
+  employeeId: string;
+  salaryTemplateId: string;
+  salaryGradeId: string | null;
+  currencyCode: string | null;
+  salaryBasis: SalaryBasis;
+  basisAmount: number;
+  effectiveFrom: string;
+  changeReason: SalaryChangeReason;
+  remarks: string | null;
+}

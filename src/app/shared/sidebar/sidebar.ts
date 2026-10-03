@@ -54,6 +54,7 @@ export class SidebarComponent {
       title: 'nav.people',
       items: [
         { icon: 'groups', label: 'nav.employees', route: '/app/employees', permission: P.employeesView },
+        { icon: 'lan', label: 'nav.organization', route: '/app/organization', permission: P.employeesView },
         { icon: 'event_available', label: 'nav.leaves', route: '/app/leaves', permission: [P.leavesViewOwn, P.leavesViewAll] },
         { icon: 'schedule', label: 'nav.attendance', route: '/app/attendance', permission: P.employeesView }
       ]

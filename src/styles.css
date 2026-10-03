@@ -1,4 +1,11 @@
 @import "material-icons/iconfont/material-icons.css";
+/* Arabic: Amiri (classical Naskh) headings ke liye, IBM Plex Sans Arabic UI text ke liye.
+   Sirf "arabic" subset — English pages pe ye files download hi nahi hoti (unicode-range). */
+@import "@fontsource/amiri/arabic-400.css";
+@import "@fontsource/amiri/arabic-700.css";
+@import "@fontsource/ibm-plex-sans-arabic/arabic-400.css";
+@import "@fontsource/ibm-plex-sans-arabic/arabic-500.css";
+@import "@fontsource/ibm-plex-sans-arabic/arabic-600.css";
 @import "./styles/tokens.css";
 @import "./styles/ledger.css";
 
@@ -110,9 +117,3 @@ app-root {
     transition-duration: 0.01ms !important;
   }
 }
-
-/* RTL Support */
-
-/* ==========================================
-   ARABIC STYLING VIA RTL DIRECTION
-   ========================================== */

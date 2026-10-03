@@ -65,6 +65,15 @@
 }
 
 [dir='rtl'] {
-  --font-display: 'IBM Plex Sans Arabic', 'Segoe UI', Tahoma, sans-serif;
-  --font-ui: 'IBM Plex Sans Arabic', 'Segoe UI', Tahoma, sans-serif;
+  /* Headings + bare numbers: Amiri (Latin digits Fraunces se — font stack mein pehle Amiri, Latin ke liye Fraunces) */
+  --font-display: 'Amiri', 'Fraunces', 'Times New Roman', serif;
+  /* UI text: Amiri chhote size pe parhne mein mushkil, is liye Plex Sans Arabic */
+  --font-ui: 'IBM Plex Sans Arabic', 'Inter', 'Segoe UI', Tahoma, sans-serif;
+}
+
+/* Amiri ka x-height chhota hai — Arabic headings thore bade aur khule */
+[dir='rtl'] h1,
+[dir='rtl'] h2,
+[dir='rtl'] h3 {
+  line-height: 1.5;
 }

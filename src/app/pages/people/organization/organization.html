@@ -1,0 +1,142 @@
+<div class="page">
+  <header class="page-intro">
+    <p>{{ 'org.intro' | translate }}</p>
+    <button type="button" class="btn btn-ink" (click)="tab() === 'departments' ? openDept() : tab() === 'designations' ? openDesig() : openLoc()">
+      <span class="material-icons-outlined" aria-hidden="true">add</span>{{ 'org.new.' + tab() | translate }}
+    </button>
+  </header>
+
+  <nav class="tabs">
+    @for (t of tabs; track t) {
+      <button type="button" class="tab" [class.is-active]="tab() === t" (click)="tab.set(t)">
+        {{ 'org.tabs.' + t | translate }} <span class="tab-count num">{{ count(t) }}</span>
+      </button>
+    }
+  </nav>
+
+  <section class="panel panel-flush">
+    <div class="table-wrap">
+      @if (tab() === 'departments') {
+        <table class="ledger-table">
+          <thead><tr><th>{{ 'org.department' | translate }}</th><th>{{ 'org.parent' | translate }}</th><th>{{ 'org.head' | translate }}</th><th class="end">{{ 'org.people' | translate }}</th></tr></thead>
+          <tbody>
+            @for (d of departments(); track d.id) {
+              <tr class="is-link" tabindex="0" (click)="openDept(d)" (keydown.enter)="openDept(d)" [class.is-dim]="!d.isActive">
+                <td><span class="cell-main">{{ d.name }} <span class="mono dim">{{ d.code }}</span></span>@if (d.description) { <span class="cell-sub">{{ d.description }}</span> }</td>
+                <td>{{ d.parentName ?? '—' }}</td>
+                <td>{{ d.headName ?? '—' }}</td>
+                <td class="end num">{{ d.employeeCount }}</td>
+              </tr>
+            } @empty { <tr><td colspan="4" class="dim">{{ 'org.empty' | translate }}</td></tr> }
+          </tbody>
+        </table>
+      }
+      @if (tab() === 'designations') {
+        <table class="ledger-table">
+          <thead><tr><th>{{ 'org.designation' | translate }}</th><th>{{ 'org.level' | translate }}</th><th class="end">{{ 'org.people' | translate }}</th></tr></thead>
+          <tbody>
+            @for (d of sortedDesignations(); track d.id) {
+              <tr class="is-link" tabindex="0" (click)="openDesig(d)" (keydown.enter)="openDesig(d)" [class.is-dim]="!d.isActive">
+                <td><span class="cell-main">{{ d.title }}</span>@if (d.description) { <span class="cell-sub">{{ d.description }}</span> }</td>
+                <td>@if (d.level) { <span class="level num">L{{ d.level }}</span> } @else { — }</td>
+                <td class="end num">{{ d.employeeCount }}</td>
+              </tr>
+            } @empty { <tr><td colspan="3" class="dim">{{ 'org.empty' | translate }}</td></tr> }
+          </tbody>
+        </table>
+      }
+      @if (tab() === 'locations') {
+        <table class="ledger-table">
+          <thead><tr><th>{{ 'org.location' | translate }}</th><th>{{ 'admin.company.timeZone' | translate }}</th><th>{{ 'admin.company.workWeek' | translate }}</th><th class="end">{{ 'org.people' | translate }}</th></tr></thead>
+          <tbody>
+            @for (l of locations(); track l.id) {
+              <tr class="is-link" tabindex="0" (click)="openLoc(l)" (keydown.enter)="openLoc(l)" [class.is-dim]="!l.isActive">
+                <td>
+                  <span class="cell-main">{{ l.name }} <span class="mono dim">{{ l.code }}</span> @if (l.isHeadOffice) { <span class="chip chip-ink">{{ 'org.headOffice' | translate }}</span> }</span>
+                  <span class="cell-sub">{{ [l.city, l.countryCode].join(', ') }}</span>
+                </td>
+                <td>{{ l.timeZone }}</td>
+                <td class="dim">{{ workDays(l.workWeekDays) }}</td>
+                <td class="end num">{{ l.employeeCount }}</td>
+              </tr>
+            } @empty { <tr><td colspan="4" class="dim">{{ 'org.empty' | translate }}</td></tr> }
+          </tbody>
+        </table>
+      }
+    </div>
+  </section>
+</div>
+
+@if (drawer(); as d) {
+  <div class="overlay" (click)="drawer.set(null)">
+    <aside class="drawer" role="dialog" aria-modal="true" (click)="$event.stopPropagation()">
+      <header class="drawer-head">
+        <h3>{{ (editingId ? 'org.edit.' : 'org.new.') + d | translate }}</h3>
+        <button type="button" class="btn-link" (click)="drawer.set(null)" [attr.aria-label]="'common.close' | translate">
+          <span class="material-icons-outlined" aria-hidden="true">close</span>
+        </button>
+      </header>
+      <div class="drawer-body">
+        @if (d === 'departments') {
+          <div class="grid-2">
+            <div class="field"><label for="d-name">{{ 'org.name' | translate }}</label><input id="d-name" [(ngModel)]="deptForm.name" maxlength="150" /></div>
+            <div class="field"><label for="d-code">{{ 'org.code' | translate }}</label><input id="d-code" [(ngModel)]="deptForm.code" maxlength="20" /></div>
+          </div>
+          <div class="field"><label for="d-desc">{{ 'org.description' | translate }}</label><input id="d-desc" [(ngModel)]="deptForm.description" maxlength="500" /></div>
+          <div class="field">
+            <label for="d-parent">{{ 'org.parent' | translate }}</label>
+            <select id="d-parent" [(ngModel)]="deptForm.parentDepartmentId">
+              <option [ngValue]="null">{{ 'org.none' | translate }}</option>
+              @for (p of parentOptions(); track p.id) { <option [ngValue]="p.id">{{ p.name }}</option> }
+            </select>
+          </div>
+          <div class="field">
+            <label for="d-head">{{ 'org.head' | translate }}</label>
+            <select id="d-head" [(ngModel)]="deptForm.headEmployeeId">
+              <option [ngValue]="null">{{ 'org.none' | translate }}</option>
+              @for (p of people(); track p.id) { <option [ngValue]="p.id">{{ p.fullName }} · {{ p.designationTitle }}</option> }
+            </select>
+          </div>
+        }
+        @if (d === 'designations') {
+          <div class="field"><label for="g-title">{{ 'org.title' | translate }}</label><input id="g-title" [(ngModel)]="desigForm.title" maxlength="150" /></div>
+          <div class="field">
+            <label for="g-level">{{ 'org.level' | translate }}</label>
+            <input id="g-level" type="number" min="1" max="20" [(ngModel)]="desigForm.level" />
+            <span class="field-hint">{{ 'org.levelHint' | translate }}</span>
+          </div>
+          <div class="field"><label for="g-desc">{{ 'org.description' | translate }}</label><input id="g-desc" [(ngModel)]="desigForm.description" maxlength="500" /></div>
+        }
+        @if (d === 'locations') {
+          <div class="grid-2">
+            <div class="field"><label for="l-name">{{ 'org.name' | translate }}</label><input id="l-name" [(ngModel)]="locForm.name" maxlength="150" /></div>
+            <div class="field"><label for="l-code">{{ 'org.code' | translate }}</label><input id="l-code" [(ngModel)]="locForm.code" maxlength="20" /></div>
+            <div class="field"><label for="l-country">{{ 'payrollSetup.groups.country' | translate }}</label><input id="l-country" [(ngModel)]="locForm.countryCode" maxlength="2" /></div>
+            <div class="field"><label for="l-city">{{ 'people.form.city' | translate }}</label><input id="l-city" [(ngModel)]="locForm.city" maxlength="100" /></div>
+            <div class="field span-2"><label for="l-addr">{{ 'people.form.line1' | translate }}</label><input id="l-addr" [(ngModel)]="locForm.addressLine" maxlength="300" /></div>
+            <div class="field span-2">
+              <label for="l-tz">{{ 'admin.company.timeZone' | translate }}</label>
+              <select id="l-tz" [(ngModel)]="locForm.timeZone">
+                @for (z of timeZones; track z) { <option [value]="z">{{ z }}</option> }
+              </select>
+            </div>
+          </div>
+          <div class="field">
+            <span class="label">{{ 'admin.company.workWeek' | translate }}</span>
+            <div class="days">
+              @for (x of days; track x.bit) {
+                <button type="button" class="day" [class.is-on]="isOn(x.bit)" (click)="toggleDay(x.bit)">{{ 'admin.company.daysShort.' + x.key | translate }}</button>
+              }
+            </div>
+            <span class="field-hint">{{ 'org.workWeekHint' | translate }}</span>
+          </div>
+          <label class="check"><input type="checkbox" [(ngModel)]="locForm.isHeadOffice" />{{ 'org.headOffice' | translate }}</label>
+        }
+      </div>
+      <footer class="drawer-foot">
+        <button type="button" class="btn btn-quiet" (click)="drawer.set(null)">{{ 'common.cancel' | translate }}</button>
+        <button type="button" class="btn btn-ink" [disabled]="!valid() || saving()" (click)="save()">{{ (saving() ? 'common.saving' : 'common.save') | translate }}</button>
+      </footer>
+    </aside>
+  </div>
+}
