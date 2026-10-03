@@ -1,0 +1,154 @@
+.warn-icon {
+  font-size: 18px;
+  color: var(--amber);
+}
+.bulkbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 20px;
+  background: var(--ink);
+  color: var(--text-on-ink);
+  font-size: var(--fs-13);
+}
+.bulkbar select {
+  height: 32px;
+  padding-inline: 8px;
+  border: none;
+  border-radius: 6px;
+}
+.pick {
+  width: 44px;
+}
+.pick input {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--ink);
+}
+.missing {
+  font-size: var(--fs-13);
+  color: var(--amber);
+  font-weight: 500;
+}
+.amount {
+  font-family: var(--font-display);
+  font-size: 1.0625rem;
+  font-weight: 600;
+  margin-inline-start: 4px;
+}
+tr.is-dim td {
+  opacity: 0.55;
+}
+
+.drawer.wide {
+  width: min(600px, 100%);
+}
+.drawer-head .cell-sub {
+  margin-top: 2px;
+}
+
+/* Current salary — chhota banknote */
+.salary-note {
+  position: relative;
+  padding: 20px 22px;
+  border-radius: var(--radius-panel);
+  background: linear-gradient(160deg, #17281f, var(--ink));
+  color: var(--text-on-ink);
+  outline: 1px solid rgba(176, 141, 62, 0.35);
+  outline-offset: -7px;
+}
+.note-label {
+  font-size: var(--fs-12);
+  color: rgba(236, 238, 230, 0.6);
+}
+.note-figure {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin: 6px 0 4px;
+}
+.note-cur {
+  color: var(--brass);
+  font-family: var(--font-display);
+}
+.note-amt {
+  font-family: var(--font-display);
+  font-size: var(--fs-40);
+  font-weight: 500;
+  line-height: 1;
+  color: #f7f1dd;
+}
+.note-basis {
+  color: rgba(236, 238, 230, 0.6);
+  font-size: var(--fs-13);
+}
+.note-meta {
+  margin: 0 0 14px;
+  font-size: var(--fs-13);
+  color: rgba(236, 238, 230, 0.7);
+}
+
+.sub {
+  font-family: var(--font-ui);
+  font-size: var(--fs-13);
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+.comp-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px dashed var(--rule);
+}
+.comp-row.excluded .cell-main {
+  text-decoration: line-through;
+  color: var(--text-faint);
+}
+.tag-adj {
+  padding: 0 5px;
+  margin-inline-end: 4px;
+  border-radius: 4px;
+  background: var(--amber-soft);
+  color: var(--amber);
+  font-size: 11px;
+}
+.override-form {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px;
+  margin: 6px 0;
+  border-radius: var(--radius-control);
+  background: var(--vellum);
+  font-size: var(--fs-13);
+}
+.override-form select,
+.override-form input {
+  height: 32px;
+  min-width: 0;
+  padding-inline: 8px;
+  border: 1px solid var(--rule-strong);
+  border-radius: 6px;
+}
+.override-form input {
+  width: 110px;
+}
+
+.history {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.history li {
+  display: grid;
+  grid-template-columns: 80px 1fr;
+  gap: 12px;
+  padding: 8px 0;
+  border-bottom: 1px dashed var(--rule);
+}
+.h-date {
+  font-size: var(--fs-13);
+  color: var(--text-muted);
+}

@@ -1,0 +1,266 @@
+<div class="page">
+  <header class="page-intro">
+    <p>{{ 'salaries.intro' | translate }}</p>
+  </header>
+
+  <nav class="tabs">
+    <button type="button" class="tab" [class.is-active]="filter() === 'all'" (click)="setFilter('all')">{{ 'salaries.filter.all' | translate }}</button>
+    <button type="button" class="tab" [class.is-active]="filter() === 'unassigned'" (click)="setFilter('unassigned')">
+      <span class="material-icons-outlined warn-icon" aria-hidden="true">error_outline</span>
+      {{ 'salaries.filter.unassigned' | translate }}
+    </button>
+  </nav>
+
+  <section class="panel panel-flush">
+    <div class="toolbar">
+      <label class="search">
+        <span class="material-icons-outlined" aria-hidden="true">search</span>
+        <input type="search" [(ngModel)]="search" (ngModelChange)="onSearch()" [placeholder]="'salaries.search' | translate" [attr.aria-label]="'salaries.search' | translate" />
+      </label>
+      <select class="select-sm" [(ngModel)]="payGroupId" (ngModelChange)="reload()" [attr.aria-label]="'payroll.runs.payGroup' | translate">
+        <option value="">{{ 'salaries.allGroups' | translate }}</option>
+        @for (g of groups(); track g.id) { <option [value]="g.id">{{ g.name }}</option> }
+      </select>
+    </div>
+
+    @if (selected().size) {
+      <div class="bulkbar">
+        <span>{{ 'salaries.selected' | translate: { n: selected().size } }}</span>
+        <select [(ngModel)]="bulkGroupId" [attr.aria-label]="'payroll.runs.payGroup' | translate">
+          <option value="">{{ 'salaries.removeFromGroup' | translate }}</option>
+          @for (g of groups(); track g.id) { <option [value]="g.id">{{ g.name }}</option> }
+        </select>
+        <button type="button" class="btn btn-brass btn-small" [disabled]="saving()" (click)="assignGroup()">{{ 'salaries.applyGroup' | translate }}</button>
+      </div>
+    }
+
+    <div class="table-wrap">
+      <table class="ledger-table">
+        <thead>
+          <tr>
+            <th class="pick"><input type="checkbox" [checked]="allSelected()" (change)="toggleAll()" [attr.aria-label]="'salaries.selectAll' | translate" /></th>
+            <th>{{ 'payroll.detail.employee' | translate }}</th>
+            <th>{{ 'payroll.runs.payGroup' | translate }}</th>
+            <th class="end">{{ 'salaries.currentSalary' | translate }}</th>
+            <th>{{ 'salaries.joined' | translate }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          @if (loading() && rows().length === 0) {
+            @for (i of [1, 2, 3, 4]; track i) {
+              <tr><td></td><td><span class="skeleton" style="width: 60%"></span></td><td><span class="skeleton" style="width: 50%"></span></td><td><span class="skeleton"></span></td><td><span class="skeleton" style="width: 50%"></span></td></tr>
+            }
+          } @else {
+            @for (r of rows(); track r.employeeId) {
+              <tr class="is-link" tabindex="0" (click)="open(r)" (keydown.enter)="open(r)" [class.is-dim]="!r.isActive">
+                <td class="pick" (click)="toggle(r.employeeId, $event)">
+                  <input type="checkbox" [checked]="selected().has(r.employeeId)" [attr.aria-label]="r.fullName" />
+                </td>
+                <td>
+                  <span class="cell-main">{{ r.fullName }}</span>
+                  <span class="cell-sub">{{ r.employeeCode }}@if (r.departmentName) {, {{ r.departmentName }}}</span>
+                </td>
+                <td>
+                  @if (r.payGroupName) { {{ r.payGroupName }} } @else { <span class="missing">{{ 'salaries.noGroup' | translate }}</span> }
+                </td>
+                <td class="end">
+                  @if (r.hasSalary) {
+                    <span class="dim">{{ r.currencyCode }}</span>
+                    <span class="amount">{{ r.salaryAmount | amount: lang() }}</span>
+                    <span class="cell-sub">{{ 'salaries.basis.' + r.salaryBasis | translate }}</span>
+                  } @else {
+                    <span class="missing">{{ 'salaries.noSalary' | translate }}</span>
+                  }
+                </td>
+                <td class="num">{{ r.joiningDate | date: 'd MMM y' : undefined : lang() }}</td>
+              </tr>
+            }
+          }
+        </tbody>
+      </table>
+    </div>
+
+    @if (!loading() && rows().length === 0) {
+      <div class="empty-state">
+        <span class="material-icons-outlined" aria-hidden="true">{{ filter() === 'unassigned' ? 'task_alt' : 'groups' }}</span>
+        <h3>{{ (filter() === 'unassigned' ? 'salaries.allSetTitle' : 'salaries.emptyTitle') | translate }}</h3>
+        <p>{{ (filter() === 'unassigned' ? 'salaries.allSetBody' : 'salaries.emptyBody') | translate }}</p>
+      </div>
+    }
+
+    @if (total() > pageSize) {
+      <footer class="pager">
+        <span class="num">{{ 'admin.users.range' | translate: { from: (page() - 1) * pageSize + 1, to: Math.min(page() * pageSize, total()), total: total() } }}</span>
+        <div class="pager-buttons">
+          <button type="button" class="btn btn-quiet btn-small" [disabled]="page() === 1" (click)="goTo(page() - 1)">{{ 'admin.users.prev' | translate }}</button>
+          <button type="button" class="btn btn-quiet btn-small" [disabled]="page() === pages()" (click)="goTo(page() + 1)">{{ 'admin.users.next' | translate }}</button>
+        </div>
+      </footer>
+    }
+  </section>
+</div>
+
+@if (employee(); as e) {
+  <div class="overlay" (click)="close()">
+    <aside class="drawer wide" role="dialog" aria-modal="true" (click)="$event.stopPropagation()">
+      <header class="drawer-head">
+        <div>
+          <h3>{{ e.fullName }}</h3>
+          <p class="cell-sub">{{ e.employeeCode }} · {{ e.payGroupName ?? ('salaries.noGroup' | translate) }}</p>
+        </div>
+        <button type="button" class="btn-link" (click)="close()" [attr.aria-label]="'common.close' | translate">
+          <span class="material-icons-outlined" aria-hidden="true">close</span>
+        </button>
+      </header>
+
+      <div class="drawer-body">
+        @if (warning()) {
+          <div class="notice notice-error"><span class="material-icons-outlined" aria-hidden="true">warning</span><span>{{ warning() }}</span></div>
+        }
+
+        @if (mode() === 'view' && current(); as cur) {
+          <!-- Current salary: mini banknote -->
+          <section class="salary-note">
+            <span class="note-label">{{ 'salaries.current' | translate }}</span>
+            <div class="note-figure num">
+              <span class="note-cur">{{ cur.currencyCode }}</span>
+              <span class="note-amt">{{ cur.basisAmount | amount: lang() }}</span>
+              <span class="note-basis">/ {{ 'salaries.per.' + cur.salaryBasis | translate }}</span>
+            </div>
+            <p class="note-meta">{{ cur.templateName }} · {{ 'salaries.since' | translate: { date: (cur.effectiveFrom | date: 'd MMM y' : undefined : lang()) } }}</p>
+            <button type="button" class="btn btn-brass btn-small" (click)="startRevise()">{{ 'salaries.revise' | translate }}</button>
+          </section>
+
+          <!-- Components & overrides -->
+          @if (template(); as t) {
+            <section>
+              <h4 class="sub">{{ 'salaries.components' | translate }}</h4>
+              @for (l of t.lines; track l.payComponentId) {
+                @let o = overrideFor(l.payComponentId);
+                <div class="comp-row" [class.excluded]="o?.isExcluded">
+                  <div>
+                    <span class="cell-main">{{ l.componentName }}</span>
+                    <span class="cell-sub">
+                      @if (o && !o.isExcluded) {
+                        <span class="tag-adj">{{ 'payroll.payslip.adjusted' | translate }}</span>
+                        {{ 'payrollSetup.calcType.' + o.calcType | translate }} {{ o.amount ?? o.percentage }}{{ o.percentage !== null ? '%' : '' }}
+                      } @else if (o?.isExcluded) {
+                        {{ 'salaries.excluded' | translate }}
+                      } @else {
+                        {{ 'payrollSetup.calcType.' + l.calcType | translate }} {{ l.amount ?? l.percentage ?? '' }}{{ l.percentage !== null ? '%' : '' }}
+                      }
+                    </span>
+                  </div>
+                  @if (l.calcType !== 'Remainder') {
+                    <div class="row-actions">
+                      @if (o) {
+                        <button type="button" class="btn-link" (click)="resetOverride(l.payComponentId)">{{ 'salaries.useTemplate' | translate }}</button>
+                      } @else {
+                        <button type="button" class="btn-link" (click)="editOverride(l.payComponentId)">{{ 'salaries.adjust' | translate }}</button>
+                        <button type="button" class="btn-link" (click)="exclude(l.payComponentId)">{{ 'salaries.exclude' | translate }}</button>
+                      }
+                    </div>
+                  }
+                </div>
+                @if (overrideEdit?.componentId === l.payComponentId) {
+                  <div class="override-form">
+                    <select [(ngModel)]="overrideEdit!.calcType">
+                      @for (c of overrideTypes; track c) { <option [value]="c">{{ 'payrollSetup.calcType.' + c | translate }}</option> }
+                    </select>
+                    @if (overrideEdit!.calcType === 'Fixed') {
+                      <input type="number" [(ngModel)]="overrideEdit!.amount" />
+                    } @else {
+                      <input type="number" [(ngModel)]="overrideEdit!.percentage" /><span>%</span>
+                    }
+                    @if (overrideEdit!.calcType === 'PercentOfComponent') {
+                      <select [(ngModel)]="overrideEdit!.baseComponentId">
+                        @for (b of t.lines; track b.payComponentId) {
+                          @if (b.payComponentId !== l.payComponentId) { <option [value]="b.payComponentId">{{ b.componentCode }}</option> }
+                        }
+                      </select>
+                    }
+                    <button type="button" class="btn btn-ink btn-small" [disabled]="saving()" (click)="saveOverride()">{{ 'common.save' | translate }}</button>
+                    <button type="button" class="btn-link" (click)="overrideEdit = null">{{ 'common.cancel' | translate }}</button>
+                  </div>
+                }
+              }
+              <p class="field-hint">{{ 'salaries.overrideHint' | translate }}</p>
+            </section>
+          }
+
+          <!-- History -->
+          @if (history().length > 1) {
+            <section>
+              <h4 class="sub">{{ 'salaries.history' | translate }}</h4>
+              <ol class="history">
+                @for (h of history(); track h.id) {
+                  <li>
+                    <span class="h-date num">{{ h.effectiveFrom | date: 'MMM y' : undefined : lang() }}</span>
+                    <span class="h-text">
+                      <span class="cell-main num">{{ h.currencyCode }} {{ h.basisAmount | amount: lang() }}</span>
+                      <span class="cell-sub">{{ 'salaries.reason.' + h.changeReason | translate }}@if (h.remarks) { · {{ h.remarks }}}</span>
+                    </span>
+                  </li>
+                }
+              </ol>
+            </section>
+          }
+        }
+
+        @if (mode() === 'revise') {
+          <h4 class="sub">{{ (current() ? 'salaries.reviseTitle' : 'salaries.firstTitle') | translate }}</h4>
+          <div class="grid-2">
+            <div class="field span-2">
+              <label for="s-tpl">{{ 'structure.templates.title' | translate }}</label>
+              <select id="s-tpl" [(ngModel)]="form.salaryTemplateId">
+                <option value="" disabled>{{ 'salaries.chooseTemplate' | translate }}</option>
+                @for (t of templates(); track t.id) { <option [value]="t.id">{{ t.name }}</option> }
+              </select>
+            </div>
+            <div class="field">
+              <label for="s-basis">{{ 'salaries.basisLabel' | translate }}</label>
+              <select id="s-basis" [(ngModel)]="form.salaryBasis">
+                @for (b of bases; track b) { <option [value]="b">{{ 'salaries.basis.' + b | translate }}</option> }
+              </select>
+            </div>
+            <div class="field">
+              <label for="s-amt">{{ 'salaries.amount' | translate }}</label>
+              <input id="s-amt" type="number" min="0" [(ngModel)]="form.basisAmount" />
+            </div>
+            <div class="field">
+              <label for="s-grade">{{ 'structure.templates.grade' | translate }}</label>
+              <select id="s-grade" [(ngModel)]="form.salaryGradeId">
+                <option [ngValue]="null">—</option>
+                @for (g of grades(); track g.id) { <option [ngValue]="g.id">{{ g.code }} – {{ g.name }}</option> }
+              </select>
+            </div>
+            <div class="field">
+              <label for="s-from">{{ 'salaries.effectiveFrom' | translate }}</label>
+              <input id="s-from" type="date" [(ngModel)]="form.effectiveFrom" />
+            </div>
+            <div class="field">
+              <label for="s-reason">{{ 'salaries.reasonLabel' | translate }}</label>
+              <select id="s-reason" [(ngModel)]="form.changeReason">
+                @for (r of reasons; track r) { <option [value]="r">{{ 'salaries.reason.' + r | translate }}</option> }
+              </select>
+            </div>
+            <div class="field">
+              <label for="s-rem">{{ 'salaries.remarks' | translate }}</label>
+              <input id="s-rem" [(ngModel)]="form.remarks" maxlength="500" />
+            </div>
+          </div>
+          <p class="field-hint">{{ 'salaries.reviseHint' | translate }}</p>
+        }
+      </div>
+
+      @if (mode() === 'revise') {
+        <footer class="drawer-foot">
+          <button type="button" class="btn btn-quiet" (click)="current() ? mode.set('view') : close()">{{ 'common.cancel' | translate }}</button>
+          <button type="button" class="btn btn-ink" [disabled]="saving() || !form.salaryTemplateId || !form.basisAmount" (click)="saveSalary()">
+            {{ (saving() ? 'common.saving' : 'common.save') | translate }}
+          </button>
+        </footer>
+      }
+    </aside>
+  </div>
+}

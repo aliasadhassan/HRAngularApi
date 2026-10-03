@@ -1,0 +1,181 @@
+<div class="page">
+  <header class="page-intro">
+    <p>{{ 'people.intro' | translate }}</p>
+    @if (canCreate) {
+      <button type="button" class="btn btn-ink" (click)="openNew()">
+        <span class="material-icons-outlined" aria-hidden="true">person_add</span>{{ 'people.add' | translate }}
+      </button>
+    }
+  </header>
+
+  <nav class="tabs">
+    @for (t of tabs; track t) {
+      <button type="button" class="tab" [class.is-active]="tab() === t" (click)="setTab(t)">
+        {{ (t ? 'people.status.' + t : 'people.all') | translate }}
+      </button>
+    }
+  </nav>
+
+  <section class="panel panel-flush">
+    <div class="toolbar">
+      <label class="search">
+        <span class="material-icons-outlined" aria-hidden="true">search</span>
+        <input type="search" [(ngModel)]="search" (ngModelChange)="onSearch()" [placeholder]="'people.search' | translate" [attr.aria-label]="'people.search' | translate" />
+      </label>
+      <select class="select-sm" [(ngModel)]="departmentId" (ngModelChange)="reload()" [attr.aria-label]="'people.department' | translate">
+        <option value="">{{ 'people.allDepartments' | translate }}</option>
+        @for (d of departments(); track d.id) { <option [value]="d.id">{{ d.name }}</option> }
+      </select>
+      <select class="select-sm" [(ngModel)]="locationId" (ngModelChange)="reload()" [attr.aria-label]="'people.location' | translate">
+        <option value="">{{ 'people.allLocations' | translate }}</option>
+        @for (l of locations(); track l.id) { <option [value]="l.id">{{ l.name }}</option> }
+      </select>
+    </div>
+
+    <div class="table-wrap">
+      <table class="ledger-table">
+        <thead>
+          <tr>
+            <th>{{ 'people.employee' | translate }}</th>
+            <th>{{ 'people.role' | translate }}</th>
+            <th>{{ 'people.location' | translate }}</th>
+            <th>{{ 'people.statusLabel' | translate }}</th>
+            <th>{{ 'people.joined' | translate }}</th>
+            <th class="go"><span class="sr-only">{{ 'common.open' | translate }}</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          @if (loading() && rows().length === 0) {
+            @for (i of [1, 2, 3, 4, 5]; track i) {
+              <tr><td><span class="skeleton" style="width: 60%"></span></td><td><span class="skeleton" style="width: 50%"></span></td><td><span class="skeleton" style="width: 40%"></span></td><td><span class="skeleton" style="width: 40%"></span></td><td><span class="skeleton" style="width: 40%"></span></td><td></td></tr>
+            }
+          } @else {
+            @for (e of rows(); track e.id) {
+              <tr class="is-link" tabindex="0" (click)="open(e)" (keydown.enter)="open(e)">
+                <td>
+                  <div class="who">
+                    <span class="avatar" aria-hidden="true">{{ initials(e.fullName) }}</span>
+                    <span>
+                      <span class="cell-main">{{ e.fullName }}</span>
+                      <span class="cell-sub">{{ e.employeeCode }} · {{ e.workEmail }}</span>
+                    </span>
+                  </div>
+                </td>
+                <td>
+                  <span class="cell-main">{{ e.designationTitle }}</span>
+                  <span class="cell-sub">{{ e.departmentName }}@if (e.managerName) { · {{ 'people.reportsTo' | translate: { name: e.managerName } }} }</span>
+                </td>
+                <td>
+                  {{ e.locationName }}
+                  <span class="cell-sub">{{ 'people.type.' + e.employmentType | translate }}</span>
+                </td>
+                <td><span [class]="chip[e.employmentStatus]">{{ 'people.status.' + e.employmentStatus | translate }}</span></td>
+                <td class="num">{{ e.joiningDate | date: 'd MMM y' : undefined : lang() }}</td>
+                <td class="go"><span class="material-icons-outlined" aria-hidden="true">{{ rtl() ? 'chevron_left' : 'chevron_right' }}</span></td>
+              </tr>
+            }
+          }
+        </tbody>
+      </table>
+    </div>
+
+    @if (!loading() && rows().length === 0) {
+      <div class="empty-state">
+        <span class="material-icons-outlined" aria-hidden="true">groups</span>
+        <h3>{{ 'people.emptyTitle' | translate }}</h3>
+        <p>{{ 'people.emptyBody' | translate }}</p>
+      </div>
+    }
+
+    @if (total() > pageSize) {
+      <footer class="pager">
+        <span class="num">{{ 'admin.users.range' | translate: { from: (page() - 1) * pageSize + 1, to: (page() * pageSize > total() ? total() : page() * pageSize), total: total() } }}</span>
+        <div class="pager-buttons">
+          <button type="button" class="btn btn-quiet btn-small" [disabled]="page() === 1" (click)="goTo(page() - 1)">{{ 'admin.users.prev' | translate }}</button>
+          <button type="button" class="btn btn-quiet btn-small" [disabled]="page() === pages()" (click)="goTo(page() + 1)">{{ 'admin.users.next' | translate }}</button>
+        </div>
+      </footer>
+    }
+  </section>
+</div>
+
+@if (drawerOpen()) {
+  <div class="overlay" (click)="drawerOpen.set(false)">
+    <aside class="drawer wide" role="dialog" aria-modal="true" (click)="$event.stopPropagation()">
+      <header class="drawer-head">
+        <h3>{{ 'people.add' | translate }}</h3>
+        <button type="button" class="btn-link" (click)="drawerOpen.set(false)" [attr.aria-label]="'common.close' | translate">
+          <span class="material-icons-outlined" aria-hidden="true">close</span>
+        </button>
+      </header>
+      <div class="drawer-body">
+        <h4 class="sub">{{ 'people.form.person' | translate }}</h4>
+        <div class="grid-3">
+          <div class="field"><label for="f-first">{{ 'people.form.firstName' | translate }}</label><input id="f-first" [(ngModel)]="form.firstName" maxlength="100" /></div>
+          <div class="field"><label for="f-mid">{{ 'people.form.middleName' | translate }}</label><input id="f-mid" [(ngModel)]="form.middleName" maxlength="100" /></div>
+          <div class="field"><label for="f-last">{{ 'people.form.lastName' | translate }}</label><input id="f-last" [(ngModel)]="form.lastName" maxlength="100" /></div>
+        </div>
+        <div class="grid-2">
+          <div class="field"><label for="f-email">{{ 'people.form.workEmail' | translate }}</label><input id="f-email" type="email" [(ngModel)]="form.workEmail" maxlength="256" /></div>
+          <div class="field"><label for="f-code">{{ 'people.form.code' | translate }}</label><input id="f-code" [(ngModel)]="form.employeeCode" maxlength="20" [placeholder]="'people.form.codeAuto' | translate" /></div>
+        </div>
+
+        <h4 class="sub">{{ 'people.form.job' | translate }}</h4>
+        <div class="grid-2">
+          <div class="field">
+            <label for="f-dept">{{ 'people.department' | translate }}</label>
+            <select id="f-dept" [(ngModel)]="form.departmentId">
+              <option value="" disabled>{{ 'people.form.choose' | translate }}</option>
+              @for (d of departments(); track d.id) { <option [value]="d.id">{{ d.name }}</option> }
+            </select>
+          </div>
+          <div class="field">
+            <label for="f-desig">{{ 'people.designation' | translate }}</label>
+            <select id="f-desig" [(ngModel)]="form.designationId">
+              <option value="" disabled>{{ 'people.form.choose' | translate }}</option>
+              @for (d of designations(); track d.id) { <option [value]="d.id">{{ d.title }}</option> }
+            </select>
+          </div>
+          <div class="field">
+            <label for="f-loc">{{ 'people.location' | translate }}</label>
+            <select id="f-loc" [(ngModel)]="form.locationId">
+              <option value="" disabled>{{ 'people.form.choose' | translate }}</option>
+              @for (l of locations(); track l.id) { <option [value]="l.id">{{ l.name }}</option> }
+            </select>
+          </div>
+          <div class="field">
+            <label for="f-mgr">{{ 'people.manager' | translate }}</label>
+            <select id="f-mgr" [(ngModel)]="form.managerId">
+              <option [ngValue]="null">{{ 'people.form.noManager' | translate }}</option>
+              @for (m of managers(); track m.id) { <option [ngValue]="m.id">{{ m.fullName }} · {{ m.designationTitle }}</option> }
+            </select>
+          </div>
+          <div class="field">
+            <label for="f-type">{{ 'people.form.type' | translate }}</label>
+            <select id="f-type" [(ngModel)]="form.employmentType">
+              @for (t of types; track t) { <option [value]="t">{{ 'people.type.' + t | translate }}</option> }
+            </select>
+          </div>
+          <div class="field"><label for="f-join">{{ 'people.joiningDate' | translate }}</label><input id="f-join" type="date" [(ngModel)]="form.joiningDate" /></div>
+          <div class="field">
+            <label for="f-prob">{{ 'people.probationEnd' | translate }}</label>
+            <input id="f-prob" type="date" [(ngModel)]="form.probationEndDate" />
+            <span class="field-hint">{{ 'people.form.probationHint' | translate }}</span>
+          </div>
+        </div>
+        @if (departments().length === 0 || designations().length === 0 || locations().length === 0) {
+          <div class="notice notice-info">
+            <span class="material-icons-outlined" aria-hidden="true">info</span>
+            <span>{{ 'people.form.needOrg' | translate }}</span>
+          </div>
+        }
+      </div>
+      <footer class="drawer-foot">
+        <button type="button" class="btn btn-quiet" (click)="drawerOpen.set(false)">{{ 'common.cancel' | translate }}</button>
+        <button type="button" class="btn btn-ink" [disabled]="!valid() || saving()" (click)="save()">
+          {{ (saving() ? 'common.saving' : 'people.add') | translate }}
+        </button>
+      </footer>
+    </aside>
+  </div>
+}

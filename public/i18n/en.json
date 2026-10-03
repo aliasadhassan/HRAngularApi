@@ -43,7 +43,8 @@
     "roles": "Roles & permissions",
     "loginActivity": "Login activity",
     "companySettings": "Company settings",
-    "mySettings": "My settings"
+    "mySettings": "My settings",
+    "organization": "Organization"
   },
   "topbar": {
     "switchLanguage": "العربية",
@@ -483,5 +484,392 @@
     "Leaves": "Leaves",
     "Payroll": "Payroll",
     "Settings": "Administration"
+  },
+  "payrollSetup": {
+    "intro": "Everything payroll needs before the first run: company defaults, pay groups and their periods, pay components and tax rules.",
+    "saved": "Saved.",
+    "errors": {
+      "load": "Couldn't load payroll setup.",
+      "save": "That didn't work. Check the values and try again."
+    },
+    "init": {
+      "title": "Set up payroll",
+      "body": "Payroll isn't set up for your company yet. Choose your main currency and we'll create the default settings and system components.",
+      "action": "Set up payroll"
+    },
+    "tabs": {
+      "general": "General",
+      "groups": "Pay groups",
+      "components": "Pay components",
+      "tax": "Tax rules"
+    },
+    "general": {
+      "title": "Company payroll defaults",
+      "help": "Apply to every pay group and run.",
+      "currency": "Currency",
+      "proration": "Proration for partial months",
+      "rounding": "Decimal places",
+      "prefix": "Payslip number prefix",
+      "requireApproval": "Runs must be approved before payment"
+    },
+    "proration": {
+      "CalendarDays": "Calendar days",
+      "WorkingDays": "Working days (Mon–Fri)",
+      "Fixed30": "Fixed 30-day month"
+    },
+    "prorationHint": {
+      "CalendarDays": "A joiner on 16 October gets 16/31 of the month.",
+      "WorkingDays": "Only weekdays count; weekends don't reduce pay.",
+      "Fixed30": "Every month counts as 30 days, common in the Gulf."
+    },
+    "groups": {
+      "title": "Pay groups",
+      "new": "New pay group",
+      "edit": "Edit pay group",
+      "people": "{{n}} people",
+      "empty": "No pay groups yet.",
+      "periodsHelp": "Periods are the months (or weeks) this group gets paid for.",
+      "generate": "Create the next",
+      "periodsWord": "periods",
+      "generateAction": "Create periods",
+      "generated": "Periods created.",
+      "noPeriods": "No periods yet. Create the next few above.",
+      "name": "Name",
+      "code": "Code",
+      "frequency": "Pay frequency",
+      "country": "Country code",
+      "anchor": "First period starts",
+      "offset": "Pay day (days after period end)",
+      "lockedFields": "Frequency, country, currency and start date can't change once periods exist."
+    },
+    "frequency": {
+      "Monthly": "Monthly",
+      "SemiMonthly": "Twice a month",
+      "BiWeekly": "Every two weeks",
+      "Weekly": "Weekly"
+    },
+    "periodStatus": {
+      "Open": "Open",
+      "Locked": "Locked"
+    },
+    "components": {
+      "title": "Pay components",
+      "help": "The lines that can appear on a payslip. System components are created automatically and can't be removed.",
+      "new": "New component",
+      "edit": "Edit component",
+      "component": "Component",
+      "type": "Type",
+      "calc": "Default rule",
+      "flags": "Behaviour",
+      "order": "Order",
+      "system": "system",
+      "code": "Code",
+      "name": "Name",
+      "base": "Percentage of",
+      "taxable": "Taxable",
+      "prorated": "Prorated",
+      "recurring": "Every period",
+      "showOnPayslip": "Show on payslip",
+      "hidden": "Hidden"
+    },
+    "componentType": {
+      "Earning": "Earning",
+      "Deduction": "Deduction",
+      "EmployerContribution": "Employer contribution",
+      "Informational": "Information only"
+    },
+    "calcType": {
+      "Fixed": "Fixed amount",
+      "PercentOfComponent": "% of a component",
+      "PercentOfGross": "% of gross",
+      "Variable": "Entered each period",
+      "Remainder": "Rest of gross"
+    },
+    "tax": {
+      "help": "Income tax slabs per country. Platform rules are maintained by HR Cloud; you can add your own.",
+      "new": "New tax rule",
+      "platform": "HR Cloud",
+      "yours": "Your rule",
+      "from": "from {{date}}",
+      "incomeFrom": "Annual income from",
+      "incomeTo": "to",
+      "fixed": "Fixed tax",
+      "rate": "Rate on excess",
+      "andAbove": "and above",
+      "noTax": "No income tax.",
+      "empty": "No tax rules yet.",
+      "name": "Name",
+      "method": "Method",
+      "yearStart": "Tax year starts (month)",
+      "effectiveFrom": "Effective from",
+      "slabs": "Slabs",
+      "addSlab": "Add slab"
+    },
+    "taxMethod": {
+      "None": "No income tax",
+      "Annualized": "Annualized",
+      "PerPeriodFlat": "Per period"
+    }
+  },
+  "structure": {
+    "intro": "Grades set salary bands. Templates are the recipe that splits a gross salary into components, so you don't enter BASIC, HRA and allowances by hand for every employee.",
+    "errors": {
+      "load": "Couldn't load the salary structure."
+    },
+    "inactive": "Inactive",
+    "grades": {
+      "title": "Grades",
+      "help": "Annual salary bands. Salaries outside a band get a warning, not a block.",
+      "new": "New grade",
+      "edit": "Edit grade",
+      "grade": "Grade",
+      "band": "Annual band",
+      "perYear": "per year",
+      "noBand": "No band",
+      "empty": "No grades yet.",
+      "code": "Code",
+      "name": "Name",
+      "min": "Minimum (annual)",
+      "max": "Maximum (annual)",
+      "bandHint": "Leave empty for no limit."
+    },
+    "templates": {
+      "title": "Salary templates",
+      "help": "Click a template to edit its recipe.",
+      "new": "New template",
+      "edit": "Edit template",
+      "lines": "{{n}} components",
+      "forGrade": "for {{grade}}",
+      "empty": "No templates yet.",
+      "name": "Template name",
+      "grade": "Grade",
+      "anyGrade": "Any grade",
+      "component": "Component",
+      "rule": "Rule",
+      "value": "Value",
+      "of": "of",
+      "rest": "Whatever is left of gross",
+      "addLine": "Add component",
+      "oneRemainder": "Only one component can take the rest of gross.",
+      "preview": "Preview on a gross of {{gross}}",
+      "total": "Total earnings",
+      "notBalanced": "Earnings don't add up to gross. Add a component with the 'Rest of gross' rule."
+    }
+  },
+  "salaries": {
+    "intro": "Who is paid in which pay group, and what they earn. Salary changes are dated, so history is never overwritten.",
+    "errors": {
+      "load": "Couldn't load employees."
+    },
+    "filter": {
+      "all": "All employees",
+      "unassigned": "Needs setup"
+    },
+    "search": "Search by name or code",
+    "allGroups": "All pay groups",
+    "selected": "{{n}} selected",
+    "removeFromGroup": "Remove from pay group",
+    "applyGroup": "Apply",
+    "selectAll": "Select all",
+    "groupAssigned": "Pay group updated.",
+    "currentSalary": "Current salary",
+    "joined": "Joined",
+    "noGroup": "No pay group",
+    "noSalary": "No salary",
+    "basis": {
+      "Monthly": "monthly",
+      "Annual": "annual",
+      "Hourly": "hourly"
+    },
+    "per": {
+      "Monthly": "month",
+      "Annual": "year",
+      "Hourly": "hour"
+    },
+    "emptyTitle": "No employees found",
+    "emptyBody": "Employees appear here once they're added in People.",
+    "allSetTitle": "Everyone is set up",
+    "allSetBody": "Every active employee has a pay group and a salary.",
+    "current": "Current salary",
+    "since": "since {{date}}",
+    "revise": "Change salary",
+    "components": "Components",
+    "excluded": "Not paid",
+    "useTemplate": "Use template",
+    "adjust": "Adjust",
+    "exclude": "Don't pay",
+    "overrideHint": "Adjustments apply to this employee only. The rest of gross is recalculated automatically.",
+    "history": "Salary history",
+    "reviseTitle": "Change salary",
+    "firstTitle": "Set salary",
+    "chooseTemplate": "Choose a template",
+    "basisLabel": "Paid",
+    "amount": "Gross amount",
+    "effectiveFrom": "Effective from",
+    "reasonLabel": "Reason",
+    "remarks": "Remarks",
+    "reviseHint": "The current salary ends the day before. Payroll picks up the new amount from that date, including mid-month changes.",
+    "saved": "Salary saved.",
+    "reason": {
+      "Joining": "Joining",
+      "Increment": "Increment",
+      "Promotion": "Promotion",
+      "Correction": "Correction",
+      "Other": "Other"
+    }
+  },
+  "people": {
+    "intro": "Everyone who works at your company, their role and where they sit.",
+    "add": "Add employee",
+    "added": "{{name}} added.",
+    "all": "All",
+    "back": "All employees",
+    "search": "Search by name, code or email",
+    "department": "Department",
+    "designation": "Designation",
+    "location": "Location",
+    "manager": "Manager",
+    "allDepartments": "All departments",
+    "allLocations": "All locations",
+    "employee": "Employee",
+    "role": "Role",
+    "statusLabel": "Status",
+    "joined": "Joined",
+    "reportsTo": "reports to {{name}}",
+    "status": {
+      "Active": "Active",
+      "Probation": "Probation",
+      "OnNotice": "On notice",
+      "Suspended": "Suspended",
+      "Exited": "Exited"
+    },
+    "type": {
+      "FullTime": "Full-time",
+      "PartTime": "Part-time",
+      "Contract": "Contract",
+      "Intern": "Intern"
+    },
+    "gender": {
+      "Male": "Male",
+      "Female": "Female",
+      "Other": "Other"
+    },
+    "marital": {
+      "Single": "Single",
+      "Married": "Married",
+      "Divorced": "Divorced",
+      "Widowed": "Widowed"
+    },
+    "emptyTitle": "No employees found",
+    "emptyBody": "Try a different search or filter, or add someone new.",
+    "errors": {
+      "load": "Couldn't load employees. Check your connection and try again."
+    },
+    "joiningDate": "Joining date",
+    "probationEnd": "Probation ends",
+    "tenure": "With the company",
+    "tenureValue": "{{y}} y {{m}} m",
+    "exitedOn": "Left on {{date}}",
+    "probationUntil": "On probation until {{date}}",
+    "tabs": {
+      "overview": "Overview",
+      "job": "Job history",
+      "contacts": "Emergency contacts"
+    },
+    "personal": "Personal",
+    "contact": "Contact",
+    "jobHistory": "Job history",
+    "noHistory": "No job changes recorded.",
+    "emergency": "Emergency contacts",
+    "noContacts": "No emergency contacts yet.",
+    "primary": "Primary",
+    "change": {
+      "Joined": "Joined",
+      "DesignationChange": "Designation changed",
+      "Transfer": "Transferred",
+      "ManagerChange": "Manager changed",
+      "StatusChange": "Status changed",
+      "Exit": "Left the company"
+    },
+    "actions": {
+      "confirm": "Confirm probation",
+      "changeJob": "Change job",
+      "exit": "Record exit"
+    },
+    "drawer": {
+      "profile": "Edit personal details",
+      "job": "Change job",
+      "exit": "Record exit",
+      "confirm": "Confirm probation"
+    },
+    "jobHint": "Saved to job history. Payroll picks up the new department and designation automatically.",
+    "exitWarning": "The employee will be marked as exited from this date. Their records stay; payroll stops after the exit date.",
+    "exitDate": "Last working day",
+    "exitReason": "Reason",
+    "confirmBody": "Confirming ends probation. The employee becomes Active.",
+    "confirmDate": "Confirmation date",
+    "form": {
+      "person": "Person",
+      "firstName": "First name",
+      "middleName": "Middle name",
+      "lastName": "Last name",
+      "workEmail": "Work email",
+      "code": "Employee code",
+      "codeAuto": "Leave empty to generate",
+      "job": "Job",
+      "choose": "Choose…",
+      "noManager": "No manager",
+      "type": "Employment type",
+      "probationHint": "Leave empty if there's no probation.",
+      "needOrg": "Add at least one department, designation and location in Organization first.",
+      "gender": "Gender",
+      "dob": "Date of birth",
+      "marital": "Marital status",
+      "nationality": "Nationality",
+      "personalEmail": "Personal email",
+      "workPhone": "Work phone",
+      "personalPhone": "Personal phone",
+      "address": "Address",
+      "line1": "Address line 1",
+      "line2": "Address line 2",
+      "city": "City",
+      "state": "State / province",
+      "postal": "Postal code",
+      "country": "Country code"
+    }
+  },
+  "org": {
+    "intro": "How your company is organized. Employees are assigned a department, a designation and a location.",
+    "tabs": {
+      "departments": "Departments",
+      "designations": "Designations",
+      "locations": "Locations"
+    },
+    "new": {
+      "departments": "New department",
+      "designations": "New designation",
+      "locations": "New location"
+    },
+    "edit": {
+      "departments": "Edit department",
+      "designations": "Edit designation",
+      "locations": "Edit location"
+    },
+    "department": "Department",
+    "designation": "Designation",
+    "location": "Location",
+    "parent": "Parent department",
+    "head": "Head",
+    "people": "People",
+    "level": "Level",
+    "empty": "Nothing here yet.",
+    "name": "Name",
+    "code": "Code",
+    "title": "Title",
+    "description": "Description",
+    "none": "None",
+    "levelHint": "Higher number = more senior. Used for sorting and reports.",
+    "headOffice": "Head office",
+    "workWeekHint": "Used for leave days at this location."
   }
 }

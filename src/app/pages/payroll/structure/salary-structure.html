@@ -1,0 +1,186 @@
+<div class="page">
+  <header class="page-intro">
+    <p>{{ 'structure.intro' | translate }}</p>
+  </header>
+
+  <div class="columns">
+    <!-- Grades -->
+    <section class="panel panel-flush">
+      <header class="list-head">
+        <div>
+          <h3 class="section-title">{{ 'structure.grades.title' | translate }}</h3>
+          <p class="section-help">{{ 'structure.grades.help' | translate }}</p>
+        </div>
+        <button type="button" class="btn btn-ink btn-small" (click)="openGrade()">
+          <span class="material-icons-outlined" aria-hidden="true">add</span>{{ 'structure.grades.new' | translate }}
+        </button>
+      </header>
+      <div class="table-wrap">
+        <table class="ledger-table">
+          <thead>
+            <tr>
+              <th>{{ 'structure.grades.grade' | translate }}</th>
+              <th class="end">{{ 'structure.grades.band' | translate }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (g of grades(); track g.id) {
+              <tr class="is-link" tabindex="0" (click)="openGrade(g)" (keydown.enter)="openGrade(g)">
+                <td>
+                  <span class="cell-main"><span class="grade-code">{{ g.code }}</span> {{ g.name }}</span>
+                </td>
+                <td class="end num">
+                  @if (g.minAnnual !== null || g.maxAnnual !== null) {
+                    <span class="dim">{{ g.currencyCode }}</span>
+                    {{ g.minAnnual | amount: lang() : 'compact' }} – {{ g.maxAnnual | amount: lang() : 'compact' }}
+                    <span class="cell-sub">{{ 'structure.grades.perYear' | translate }}</span>
+                  } @else {
+                    <span class="dim">{{ 'structure.grades.noBand' | translate }}</span>
+                  }
+                </td>
+              </tr>
+            } @empty {
+              <tr><td colspan="2" class="dim">{{ 'structure.grades.empty' | translate }}</td></tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Templates -->
+    <section class="panel panel-flush">
+      <header class="list-head">
+        <div>
+          <h3 class="section-title">{{ 'structure.templates.title' | translate }}</h3>
+          <p class="section-help">{{ 'structure.templates.help' | translate }}</p>
+        </div>
+        <button type="button" class="btn btn-ink btn-small" (click)="openTemplate()">
+          <span class="material-icons-outlined" aria-hidden="true">add</span>{{ 'structure.templates.new' | translate }}
+        </button>
+      </header>
+      <div class="cards">
+        @for (t of templates(); track t.id) {
+          <button type="button" class="template-card" (click)="openTemplate(t)">
+            <span class="material-icons-outlined" aria-hidden="true">account_tree</span>
+            <span class="t-text">
+              <span class="cell-main">{{ t.name }}</span>
+              <span class="cell-sub">
+                {{ 'structure.templates.lines' | translate: { n: t.lineCount } }}
+                @if (t.gradeCode) { · {{ 'structure.templates.forGrade' | translate: { grade: t.gradeCode } }} }
+              </span>
+            </span>
+            @if (!t.isActive) { <span class="chip chip-muted">{{ 'structure.inactive' | translate }}</span> }
+          </button>
+        } @empty {
+          <div class="empty-state"><p>{{ 'structure.templates.empty' | translate }}</p></div>
+        }
+      </div>
+    </section>
+  </div>
+</div>
+
+@if (drawer(); as d) {
+  <div class="overlay" (click)="drawer.set(null)">
+    <aside class="drawer" [class.wide]="d === 'template'" role="dialog" aria-modal="true" (click)="$event.stopPropagation()">
+      <header class="drawer-head">
+        <h3>
+          @if (d === 'grade') { {{ (editingId ? 'structure.grades.edit' : 'structure.grades.new') | translate }} }
+          @else { {{ (editingId ? 'structure.templates.edit' : 'structure.templates.new') | translate }} }
+        </h3>
+        <button type="button" class="btn-link" (click)="drawer.set(null)" [attr.aria-label]="'common.close' | translate">
+          <span class="material-icons-outlined" aria-hidden="true">close</span>
+        </button>
+      </header>
+
+      <div class="drawer-body">
+        @if (d === 'grade') {
+          <div class="grid-2">
+            <div class="field"><label for="g-code">{{ 'structure.grades.code' | translate }}</label><input id="g-code" [(ngModel)]="gradeForm.code" maxlength="20" placeholder="G3" /></div>
+            <div class="field"><label for="g-name">{{ 'structure.grades.name' | translate }}</label><input id="g-name" [(ngModel)]="gradeForm.name" maxlength="100" /></div>
+            <div class="field"><label for="g-min">{{ 'structure.grades.min' | translate }}</label><input id="g-min" type="number" [(ngModel)]="gradeForm.minAnnual" /></div>
+            <div class="field"><label for="g-max">{{ 'structure.grades.max' | translate }}</label><input id="g-max" type="number" [(ngModel)]="gradeForm.maxAnnual" /></div>
+          </div>
+          <p class="field-hint">{{ 'structure.grades.bandHint' | translate }}</p>
+        }
+
+        @if (d === 'template') {
+          <div class="grid-2">
+            <div class="field"><label for="t-name">{{ 'structure.templates.name' | translate }}</label><input id="t-name" [(ngModel)]="templateForm.name" maxlength="100" /></div>
+            <div class="field">
+              <label for="t-grade">{{ 'structure.templates.grade' | translate }}</label>
+              <select id="t-grade" [(ngModel)]="templateForm.salaryGradeId">
+                <option [ngValue]="null">{{ 'structure.templates.anyGrade' | translate }}</option>
+                @for (g of grades(); track g.id) { <option [ngValue]="g.id">{{ g.code }} – {{ g.name }}</option> }
+              </select>
+            </div>
+          </div>
+
+          <div class="lines">
+            <div class="lines-head">
+              <span>{{ 'structure.templates.component' | translate }}</span>
+              <span>{{ 'structure.templates.rule' | translate }}</span>
+              <span>{{ 'structure.templates.value' | translate }}</span>
+              <span></span>
+            </div>
+            @for (l of templateForm.lines; track $index; let i = $index) {
+              <div class="line">
+                <select [(ngModel)]="l.payComponentId" [attr.aria-label]="'structure.templates.component' | translate">
+                  @for (c of pickable(); track c.id) { <option [value]="c.id">{{ c.name }}</option> }
+                </select>
+                <select [(ngModel)]="l.calcType" (ngModelChange)="onCalcChange(l)" [attr.aria-label]="'structure.templates.rule' | translate">
+                  @for (t of calcTypes; track t) { <option [value]="t">{{ 'payrollSetup.calcType.' + t | translate }}</option> }
+                </select>
+                <div class="value">
+                  @switch (l.calcType) {
+                    @case ('Fixed') { <input type="number" [(ngModel)]="l.amount" [attr.aria-label]="'structure.templates.value' | translate" /> }
+                    @case ('PercentOfGross') { <input type="number" [(ngModel)]="l.percentage" /><span>%</span> }
+                    @case ('PercentOfComponent') {
+                      <input type="number" class="pct" [(ngModel)]="l.percentage" /><span>% {{ 'structure.templates.of' | translate }}</span>
+                      <select [(ngModel)]="l.baseComponentId">
+                        @for (b of baseOptions(l); track b.id) { <option [value]="b.id">{{ b.code }}</option> }
+                      </select>
+                    }
+                    @case ('Remainder') { <span class="dim">{{ 'structure.templates.rest' | translate }}</span> }
+                  }
+                </div>
+                <button type="button" class="icon-btn-sm" (click)="removeLine(i)" [attr.aria-label]="'common.delete' | translate">
+                  <span class="material-icons-outlined" aria-hidden="true">close</span>
+                </button>
+              </div>
+            }
+            <button type="button" class="btn btn-quiet btn-small" (click)="addLine()">{{ 'structure.templates.addLine' | translate }}</button>
+            @if (remainderCount() > 1) {
+              <p class="warn">{{ 'structure.templates.oneRemainder' | translate }}</p>
+            }
+          </div>
+
+          <!-- Live preview -->
+          <section class="preview">
+            <h4>{{ 'structure.templates.preview' | translate: { gross: (previewGross | amount: lang()) } }}</h4>
+            @for (p of preview(); track p.id) {
+              <div class="preview-row num">
+                <span>{{ p.name }}</span>
+                <span [class.neg]="p.amount < 0">{{ isNaN(p.amount) ? '?' : (p.amount | amount: lang() : 'full' : 2) }}</span>
+              </div>
+            }
+            <div class="preview-row total num" [class.off]="previewTotal() !== previewGross">
+              <span>{{ 'structure.templates.total' | translate }}</span>
+              <span>{{ previewTotal() | amount: lang() : 'full' : 2 }}</span>
+            </div>
+            @if (previewTotal() !== previewGross) {
+              <p class="warn">{{ 'structure.templates.notBalanced' | translate }}</p>
+            }
+          </section>
+        }
+      </div>
+
+      <footer class="drawer-foot">
+        <button type="button" class="btn btn-quiet" (click)="drawer.set(null)">{{ 'common.cancel' | translate }}</button>
+        <button type="button" class="btn btn-ink" [disabled]="saving() || (d === 'template' && remainderCount() > 1)"
+                (click)="d === 'grade' ? saveGrade() : saveTemplate()">
+          {{ (saving() ? 'common.saving' : 'common.save') | translate }}
+        </button>
+      </footer>
+    </aside>
+  </div>
+}

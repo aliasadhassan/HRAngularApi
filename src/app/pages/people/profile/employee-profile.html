@@ -1,0 +1,252 @@
+<div class="page">
+  <a class="btn-link back" routerLink="/app/employees">
+    <span class="material-icons-outlined flip" aria-hidden="true">arrow_back</span>{{ 'people.back' | translate }}
+  </a>
+
+  @if (emp(); as e) {
+    <!-- Masthead -->
+    <header class="masthead">
+      <span class="avatar-xl" aria-hidden="true">{{ initials(fullName()) }}</span>
+      <div class="mast-text">
+        <div class="mast-title">
+          <h2>{{ fullName() }}</h2>
+          <span [class]="chip[e.employmentStatus]">{{ 'people.status.' + e.employmentStatus | translate }}</span>
+        </div>
+        <p class="mast-sub">{{ e.designation.name }} · {{ e.department.name }}</p>
+        <p class="mast-meta">
+          <span class="mono">{{ e.employeeCode }}</span>
+          <span><span class="material-icons-outlined" aria-hidden="true">mail</span>{{ e.workEmail }}</span>
+          @if (e.workPhone) { <span><span class="material-icons-outlined" aria-hidden="true">call</span>{{ e.workPhone }}</span> }
+        </p>
+      </div>
+      @if (canEdit && e.employmentStatus !== 'Exited') {
+        <div class="mast-actions">
+          @if (e.employmentStatus === 'Probation') {
+            <button type="button" class="btn btn-quiet btn-small" (click)="startConfirm()">{{ 'people.actions.confirm' | translate }}</button>
+          }
+          <button type="button" class="btn btn-quiet btn-small" (click)="changeJob()">{{ 'people.actions.changeJob' | translate }}</button>
+          <button type="button" class="btn btn-danger btn-small" (click)="startExit()">{{ 'people.actions.exit' | translate }}</button>
+        </div>
+      }
+    </header>
+
+    <!-- Facts strip -->
+    <section class="facts num">
+      <div><span class="label">{{ 'people.joined' | translate }}</span><span class="value">{{ e.joiningDate | date: 'd MMM y' : undefined : lang() }}</span></div>
+      <div>
+        <span class="label">{{ 'people.tenure' | translate }}</span>
+        <span class="value">
+          @if (tenure(); as t) { {{ 'people.tenureValue' | translate: { y: t.years, m: t.months } }} }
+        </span>
+      </div>
+      <div><span class="label">{{ 'people.location' | translate }}</span><span class="value">{{ e.location.name }}</span></div>
+      <div>
+        <span class="label">{{ 'people.manager' | translate }}</span>
+        <span class="value">
+          @if (e.manager) { <a [routerLink]="['/app/employees', e.manager.id]">{{ e.manager.name }}</a> } @else { — }
+        </span>
+      </div>
+      <div><span class="label">{{ 'people.form.type' | translate }}</span><span class="value">{{ 'people.type.' + e.employmentType | translate }}</span></div>
+    </section>
+
+    @if (e.employmentStatus === 'Exited') {
+      <div class="notice notice-error">
+        <span class="material-icons-outlined" aria-hidden="true">logout</span>
+        <span>{{ 'people.exitedOn' | translate: { date: (e.exitDate | date: 'd MMM y' : undefined : lang()) } }}@if (e.exitReason) { · {{ e.exitReason }} }</span>
+      </div>
+    } @else if (e.employmentStatus === 'Probation' && e.probationEndDate) {
+      <div class="notice notice-info">
+        <span class="material-icons-outlined" aria-hidden="true">hourglass_top</span>
+        <span>{{ 'people.probationUntil' | translate: { date: (e.probationEndDate | date: 'd MMM y' : undefined : lang()) } }}</span>
+      </div>
+    }
+
+    <nav class="tabs">
+      @for (t of ['overview', 'job', 'contacts']; track t) {
+        <button type="button" class="tab" [class.is-active]="tab() === t" (click)="tab.set($any(t))">
+          {{ 'people.tabs.' + t | translate }}
+          @if (t === 'contacts') { <span class="tab-count num">{{ e.emergencyContacts.length }}</span> }
+        </button>
+      }
+    </nav>
+
+    @if (tab() === 'overview') {
+      <div class="cols">
+        <section class="panel">
+          <header class="panel-head">
+            <h3>{{ 'people.personal' | translate }}</h3>
+            @if (canEdit) { <button type="button" class="btn btn-quiet btn-small" (click)="editProfile()">{{ 'common.edit' | translate }}</button> }
+          </header>
+          <dl class="kv">
+            <div><dt>{{ 'people.form.gender' | translate }}</dt><dd>{{ e.gender ? ('people.gender.' + e.gender | translate) : '—' }}</dd></div>
+            <div><dt>{{ 'people.form.dob' | translate }}</dt><dd class="num">{{ e.dateOfBirth ? (e.dateOfBirth | date: 'd MMM y' : undefined : lang()) : '—' }}</dd></div>
+            <div><dt>{{ 'people.form.marital' | translate }}</dt><dd>{{ e.maritalStatus ? ('people.marital.' + e.maritalStatus | translate) : '—' }}</dd></div>
+            <div><dt>{{ 'people.form.nationality' | translate }}</dt><dd>{{ e.nationalityCode ?? '—' }}</dd></div>
+          </dl>
+        </section>
+        <section class="panel">
+          <header class="panel-head"><h3>{{ 'people.contact' | translate }}</h3></header>
+          <dl class="kv">
+            <div><dt>{{ 'people.form.workEmail' | translate }}</dt><dd>{{ e.workEmail }}</dd></div>
+            <div><dt>{{ 'people.form.personalEmail' | translate }}</dt><dd>{{ e.personalEmail ?? '—' }}</dd></div>
+            <div><dt>{{ 'people.form.workPhone' | translate }}</dt><dd class="num">{{ e.workPhone ?? '—' }}</dd></div>
+            <div><dt>{{ 'people.form.personalPhone' | translate }}</dt><dd class="num">{{ e.personalPhone ?? '—' }}</dd></div>
+            <div class="wide">
+              <dt>{{ 'people.form.address' | translate }}</dt>
+              <dd>
+                @if (hasAddress()) {
+                  {{ addressLine() }}
+                } @else { — }
+              </dd>
+            </div>
+          </dl>
+        </section>
+      </div>
+    }
+
+    @if (tab() === 'job') {
+      <section class="panel">
+        <header class="panel-head"><h3>{{ 'people.jobHistory' | translate }}</h3></header>
+        <ol class="timeline">
+          @for (h of history(); track h.id; let first = $first) {
+            <li [class.is-current]="first">
+              <span class="t-dot" aria-hidden="true"></span>
+              <div class="t-body">
+                <span class="t-date num">{{ h.effectiveDate | date: 'd MMM y' : undefined : lang() }}</span>
+                <span class="cell-main">{{ 'people.change.' + h.changeType | translate }}</span>
+                <span class="cell-sub">{{ lookup('designation', h.designationId) }} · {{ lookup('department', h.departmentId) }} · {{ lookup('location', h.locationId) }}</span>
+                @if (h.remarks) { <span class="t-remarks">“{{ h.remarks }}”</span> }
+              </div>
+            </li>
+          } @empty {
+            <li class="dim">{{ 'people.noHistory' | translate }}</li>
+          }
+        </ol>
+      </section>
+    }
+
+    @if (tab() === 'contacts') {
+      <section class="panel">
+        <header class="panel-head"><h3>{{ 'people.emergency' | translate }}</h3></header>
+        @for (c of e.emergencyContacts; track c.id) {
+          <div class="contact">
+            <span class="material-icons-outlined" aria-hidden="true">contact_emergency</span>
+            <div>
+              <span class="cell-main">{{ c.name }} @if (c.isPrimary) { <span class="chip chip-moss">{{ 'people.primary' | translate }}</span> }</span>
+              <span class="cell-sub">{{ c.relationship }} · <span class="num">{{ c.phone }}</span>@if (c.alternatePhone) { · <span class="num">{{ c.alternatePhone }}</span> }</span>
+            </div>
+          </div>
+        } @empty {
+          <p class="dim">{{ 'people.noContacts' | translate }}</p>
+        }
+      </section>
+    }
+  } @else {
+    <div class="panel"><span class="skeleton" style="width: 40%"></span></div>
+  }
+</div>
+
+@if (drawer(); as d) {
+  <div class="overlay" (click)="drawer.set(null)">
+    <aside class="drawer" [class.wide]="d === 'profile'" role="dialog" aria-modal="true" (click)="$event.stopPropagation()">
+      <header class="drawer-head">
+        <h3>{{ 'people.drawer.' + d | translate }}</h3>
+        <button type="button" class="btn-link" (click)="drawer.set(null)" [attr.aria-label]="'common.close' | translate">
+          <span class="material-icons-outlined" aria-hidden="true">close</span>
+        </button>
+      </header>
+      <div class="drawer-body">
+        @if (d === 'profile') {
+          <div class="grid-3">
+            <div class="field"><label for="p-first">{{ 'people.form.firstName' | translate }}</label><input id="p-first" [(ngModel)]="profileForm.firstName" /></div>
+            <div class="field"><label for="p-mid">{{ 'people.form.middleName' | translate }}</label><input id="p-mid" [(ngModel)]="profileForm.middleName" /></div>
+            <div class="field"><label for="p-last">{{ 'people.form.lastName' | translate }}</label><input id="p-last" [(ngModel)]="profileForm.lastName" /></div>
+          </div>
+          <div class="grid-2">
+            <div class="field">
+              <label for="p-gender">{{ 'people.form.gender' | translate }}</label>
+              <select id="p-gender" [(ngModel)]="profileForm.gender">
+                <option [ngValue]="null">—</option>
+                @for (g of genders; track g) { <option [ngValue]="g">{{ 'people.gender.' + g | translate }}</option> }
+              </select>
+            </div>
+            <div class="field"><label for="p-dob">{{ 'people.form.dob' | translate }}</label><input id="p-dob" type="date" [(ngModel)]="profileForm.dateOfBirth" /></div>
+            <div class="field">
+              <label for="p-mar">{{ 'people.form.marital' | translate }}</label>
+              <select id="p-mar" [(ngModel)]="profileForm.maritalStatus">
+                <option [ngValue]="null">—</option>
+                @for (m of maritals; track m) { <option [ngValue]="m">{{ 'people.marital.' + m | translate }}</option> }
+              </select>
+            </div>
+            <div class="field"><label for="p-nat">{{ 'people.form.nationality' | translate }}</label><input id="p-nat" maxlength="2" [(ngModel)]="profileForm.nationalityCode" placeholder="PK" /></div>
+            <div class="field"><label for="p-pemail">{{ 'people.form.personalEmail' | translate }}</label><input id="p-pemail" type="email" [(ngModel)]="profileForm.personalEmail" /></div>
+            <div class="field"><label for="p-wphone">{{ 'people.form.workPhone' | translate }}</label><input id="p-wphone" type="tel" [(ngModel)]="profileForm.workPhone" /></div>
+            <div class="field"><label for="p-pphone">{{ 'people.form.personalPhone' | translate }}</label><input id="p-pphone" type="tel" [(ngModel)]="profileForm.personalPhone" /></div>
+          </div>
+          <h4 class="sub">{{ 'people.form.address' | translate }}</h4>
+          <div class="grid-2">
+            <div class="field span-2"><label for="a1">{{ 'people.form.line1' | translate }}</label><input id="a1" [(ngModel)]="profileForm.address!.line1" /></div>
+            <div class="field span-2"><label for="a2">{{ 'people.form.line2' | translate }}</label><input id="a2" [(ngModel)]="profileForm.address!.line2" /></div>
+            <div class="field"><label for="a3">{{ 'people.form.city' | translate }}</label><input id="a3" [(ngModel)]="profileForm.address!.city" /></div>
+            <div class="field"><label for="a4">{{ 'people.form.state' | translate }}</label><input id="a4" [(ngModel)]="profileForm.address!.state" /></div>
+            <div class="field"><label for="a5">{{ 'people.form.postal' | translate }}</label><input id="a5" [(ngModel)]="profileForm.address!.postalCode" /></div>
+            <div class="field"><label for="a6">{{ 'people.form.country' | translate }}</label><input id="a6" maxlength="2" [(ngModel)]="profileForm.address!.countryCode" placeholder="PK" /></div>
+          </div>
+        }
+
+        @if (d === 'job') {
+          <div class="field">
+            <label for="j-dept">{{ 'people.department' | translate }}</label>
+            <select id="j-dept" [(ngModel)]="jobForm.departmentId">
+              @for (x of departments(); track x.id) { <option [value]="x.id">{{ x.name }}</option> }
+            </select>
+          </div>
+          <div class="field">
+            <label for="j-desig">{{ 'people.designation' | translate }}</label>
+            <select id="j-desig" [(ngModel)]="jobForm.designationId">
+              @for (x of designations(); track x.id) { <option [value]="x.id">{{ x.title }}</option> }
+            </select>
+          </div>
+          <div class="field">
+            <label for="j-loc">{{ 'people.location' | translate }}</label>
+            <select id="j-loc" [(ngModel)]="jobForm.locationId">
+              @for (x of locations(); track x.id) { <option [value]="x.id">{{ x.name }}</option> }
+            </select>
+          </div>
+          <div class="field">
+            <label for="j-mgr">{{ 'people.manager' | translate }}</label>
+            <select id="j-mgr" [(ngModel)]="jobForm.managerId">
+              <option [ngValue]="null">{{ 'people.form.noManager' | translate }}</option>
+              @for (m of managers(); track m.id) { <option [ngValue]="m.id">{{ m.fullName }}</option> }
+            </select>
+          </div>
+          <div class="field"><label for="j-date">{{ 'salaries.effectiveFrom' | translate }}</label><input id="j-date" type="date" [(ngModel)]="jobForm.effectiveDate" /></div>
+          <div class="field"><label for="j-rem">{{ 'salaries.remarks' | translate }}</label><input id="j-rem" [(ngModel)]="jobForm.remarks" maxlength="500" /></div>
+          <p class="field-hint">{{ 'people.jobHint' | translate }}</p>
+        }
+
+        @if (d === 'exit') {
+          <div class="notice notice-error">
+            <span class="material-icons-outlined" aria-hidden="true">warning</span>
+            <span>{{ 'people.exitWarning' | translate }}</span>
+          </div>
+          <div class="field"><label for="x-date">{{ 'people.exitDate' | translate }}</label><input id="x-date" type="date" [(ngModel)]="exitForm.exitDate" /></div>
+          <div class="field"><label for="x-reason">{{ 'people.exitReason' | translate }}</label><input id="x-reason" [(ngModel)]="exitForm.reason" maxlength="500" /></div>
+        }
+
+        @if (d === 'confirm') {
+          <p>{{ 'people.confirmBody' | translate }}</p>
+          <div class="field"><label for="c-date">{{ 'people.confirmDate' | translate }}</label><input id="c-date" type="date" [(ngModel)]="confirmDate" /></div>
+        }
+      </div>
+      <footer class="drawer-foot">
+        <button type="button" class="btn btn-quiet" (click)="drawer.set(null)">{{ 'common.cancel' | translate }}</button>
+        <button type="button" class="btn" [class.btn-ink]="d !== 'exit'" [class.btn-danger]="d === 'exit'"
+                [disabled]="saving() || (d === 'exit' && !exitForm.reason.trim())"
+                (click)="d === 'profile' ? saveProfile() : d === 'job' ? saveJob() : d === 'exit' ? saveExit() : saveConfirm()">
+          {{ (saving() ? 'common.saving' : 'common.save') | translate }}
+        </button>
+      </footer>
+    </aside>
+  </div>
+}

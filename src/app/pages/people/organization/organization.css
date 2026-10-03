@@ -1,0 +1,37 @@
+tr.is-dim td {
+  opacity: 0.5;
+}
+.level {
+  display: inline-block;
+  padding: 1px 8px;
+  border-radius: 4px;
+  background: var(--ink);
+  color: var(--brass-soft);
+  font-family: var(--font-serial);
+  font-size: var(--fs-12);
+}
+.field .label {
+  font-size: var(--fs-13);
+  font-weight: 500;
+}
+.days {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.day {
+  min-width: 48px;
+  height: 36px;
+  padding-inline: 8px;
+  border: 1px solid var(--rule-strong);
+  border-radius: var(--radius-control);
+  background: var(--sheet);
+  color: var(--text-muted);
+  font-size: var(--fs-13);
+  cursor: pointer;
+}
+.day.is-on {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--text-on-ink);
+}

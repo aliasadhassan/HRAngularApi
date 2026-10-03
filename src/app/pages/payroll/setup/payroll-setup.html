@@ -1,0 +1,376 @@
+<div class="page">
+  <header class="page-intro">
+    <p>{{ 'payrollSetup.intro' | translate }}</p>
+  </header>
+
+  @if (notInitialized()) {
+    <section class="panel init">
+      <span class="material-icons-outlined" aria-hidden="true">rocket_launch</span>
+      <div>
+        <h3 class="section-title">{{ 'payrollSetup.init.title' | translate }}</h3>
+        <p class="section-help">{{ 'payrollSetup.init.body' | translate }}</p>
+        <div class="init-row">
+          <select class="select-sm" [(ngModel)]="initCurrency" [attr.aria-label]="'payrollSetup.general.currency' | translate">
+            @for (c of currencies; track c) { <option [value]="c">{{ c }}</option> }
+          </select>
+          <button type="button" class="btn btn-ink" [disabled]="saving()" (click)="initialize()">{{ 'payrollSetup.init.action' | translate }}</button>
+        </div>
+      </div>
+    </section>
+  }
+
+  <nav class="tabs">
+    @for (t of tabs; track t) {
+      <button type="button" class="tab" [class.is-active]="tab() === t" (click)="tab.set(t)">
+        {{ 'payrollSetup.tabs.' + t | translate }}
+        @if (t === 'groups') { <span class="tab-count num">{{ groups().length }}</span> }
+        @if (t === 'components') { <span class="tab-count num">{{ components().length }}</span> }
+        @if (t === 'tax') { <span class="tab-count num">{{ regimes().length }}</span> }
+      </button>
+    }
+  </nav>
+
+  <!-- ═══ General ═══ -->
+  @if (tab() === 'general') {
+    <section class="panel">
+      <h3 class="section-title">{{ 'payrollSetup.general.title' | translate }}</h3>
+      <p class="section-help">{{ 'payrollSetup.general.help' | translate }}</p>
+      <div class="grid-2 narrow">
+        <div class="field">
+          <label for="s-cur">{{ 'payrollSetup.general.currency' | translate }}</label>
+          <select id="s-cur" [(ngModel)]="settingsForm.baseCurrency" [disabled]="!settings()">
+            @for (c of currencies; track c) { <option [value]="c">{{ c }}</option> }
+          </select>
+        </div>
+        <div class="field">
+          <label for="s-pro">{{ 'payrollSetup.general.proration' | translate }}</label>
+          <select id="s-pro" [(ngModel)]="settingsForm.prorationMethod" [disabled]="!settings()">
+            @for (p of prorations; track p) { <option [value]="p">{{ 'payrollSetup.proration.' + p | translate }}</option> }
+          </select>
+          <span class="field-hint">{{ 'payrollSetup.prorationHint.' + settingsForm.prorationMethod | translate }}</span>
+        </div>
+        <div class="field">
+          <label for="s-round">{{ 'payrollSetup.general.rounding' | translate }}</label>
+          <select id="s-round" [(ngModel)]="settingsForm.roundingDecimals" [disabled]="!settings()">
+            @for (d of [0, 1, 2, 3, 4]; track d) { <option [ngValue]="d">{{ d }}</option> }
+          </select>
+        </div>
+        <div class="field">
+          <label for="s-prefix">{{ 'payrollSetup.general.prefix' | translate }}</label>
+          <input id="s-prefix" [(ngModel)]="settingsForm.payslipNumberPrefix" maxlength="10" [disabled]="!settings()" />
+          <span class="field-hint mono">{{ settingsForm.payslipNumberPrefix || 'PS' }}-202610-EMP-0001</span>
+        </div>
+        <label class="check span-2">
+          <input type="checkbox" [(ngModel)]="settingsForm.requireApproval" [disabled]="!settings()" />
+          {{ 'payrollSetup.general.requireApproval' | translate }}
+        </label>
+      </div>
+      <footer class="form-foot">
+        <button type="button" class="btn btn-ink btn-small" [disabled]="!settingsDirty() || saving()" (click)="saveSettings()">
+          {{ (saving() ? 'common.saving' : 'common.save') | translate }}
+        </button>
+      </footer>
+    </section>
+  }
+
+  <!-- ═══ Pay groups ═══ -->
+  @if (tab() === 'groups') {
+    <div class="split">
+      <section class="panel panel-flush">
+        <header class="list-head">
+          <h3 class="section-title">{{ 'payrollSetup.groups.title' | translate }}</h3>
+          <button type="button" class="btn btn-ink btn-small" (click)="openGroup()">
+            <span class="material-icons-outlined" aria-hidden="true">add</span>{{ 'payrollSetup.groups.new' | translate }}
+          </button>
+        </header>
+        @for (g of groups(); track g.id) {
+          <button type="button" class="group-row" [class.is-active]="selectedGroupId() === g.id" (click)="selectGroup(g.id)">
+            <span>
+              <span class="cell-main">{{ g.name }} <span class="mono dim">{{ g.code }}</span></span>
+              <span class="cell-sub">{{ 'payrollSetup.frequency.' + g.payFrequency | translate }}, {{ g.countryCode }}, {{ g.currencyCode }}</span>
+            </span>
+            <span class="group-count num">{{ 'payrollSetup.groups.people' | translate: { n: g.employeeCount } }}</span>
+          </button>
+        } @empty {
+          <div class="empty-state"><p>{{ 'payrollSetup.groups.empty' | translate }}</p></div>
+        }
+      </section>
+
+      @if (selectedGroup(); as g) {
+        <section class="panel panel-flush">
+          <header class="list-head">
+            <div>
+              <h3 class="section-title">{{ g.name }}</h3>
+              <p class="section-help">{{ 'payrollSetup.groups.periodsHelp' | translate }}</p>
+            </div>
+            <button type="button" class="btn btn-quiet btn-small" (click)="openGroup(g)">{{ 'common.edit' | translate }}</button>
+          </header>
+          <div class="generate">
+            <label for="p-count">{{ 'payrollSetup.groups.generate' | translate }}</label>
+            <input id="p-count" type="number" min="1" max="60" [(ngModel)]="periodCount" />
+            <span>{{ 'payrollSetup.groups.periodsWord' | translate }}</span>
+            <button type="button" class="btn btn-ink btn-small" [disabled]="saving()" (click)="generatePeriods()">{{ 'payrollSetup.groups.generateAction' | translate }}</button>
+          </div>
+          <div class="table-wrap">
+            <table class="ledger-table">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>{{ 'payroll.runs.period' | translate }}</th>
+                  <th>{{ 'payroll.runs.payDate' | translate }}</th>
+                  <th>{{ 'payroll.runs.status' | translate }}</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (p of periods(); track p.id) {
+                  <tr>
+                    <td class="num dim">{{ p.fiscalYear }}/{{ p.periodNumber }}</td>
+                    <td class="num">
+                      <span class="cell-main">{{ p.periodStart | date: 'MMMM y' : undefined : lang() }}</span>
+                      <span class="cell-sub">{{ p.periodStart | date: 'd MMM' : undefined : lang() }} – {{ p.periodEnd | date: 'd MMM' : undefined : lang() }}</span>
+                    </td>
+                    <td class="num">{{ p.payDate | date: 'd MMM y' : undefined : lang() }}</td>
+                    <td>
+                      <span [class]="p.status === 'Open' ? 'chip chip-moss' : 'chip chip-ink'">{{ 'payrollSetup.periodStatus.' + p.status | translate }}</span>
+                    </td>
+                  </tr>
+                } @empty {
+                  <tr><td colspan="4" class="dim">{{ 'payrollSetup.groups.noPeriods' | translate }}</td></tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </section>
+      }
+    </div>
+  }
+
+  <!-- ═══ Components ═══ -->
+  @if (tab() === 'components') {
+    <section class="panel panel-flush">
+      <header class="list-head">
+        <div>
+          <h3 class="section-title">{{ 'payrollSetup.components.title' | translate }}</h3>
+          <p class="section-help">{{ 'payrollSetup.components.help' | translate }}</p>
+        </div>
+        <button type="button" class="btn btn-ink btn-small" (click)="openComponent()">
+          <span class="material-icons-outlined" aria-hidden="true">add</span>{{ 'payrollSetup.components.new' | translate }}
+        </button>
+      </header>
+      <div class="table-wrap">
+        <table class="ledger-table">
+          <thead>
+            <tr>
+              <th>{{ 'payrollSetup.components.component' | translate }}</th>
+              <th>{{ 'payrollSetup.components.type' | translate }}</th>
+              <th>{{ 'payrollSetup.components.calc' | translate }}</th>
+              <th>{{ 'payrollSetup.components.flags' | translate }}</th>
+              <th class="end">{{ 'payrollSetup.components.order' | translate }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (c of components(); track c.id) {
+              <tr class="is-link" tabindex="0" (click)="openComponent(c)" (keydown.enter)="openComponent(c)" [class.is-dim]="!c.isActive">
+                <td>
+                  <span class="cell-main">{{ c.name }}</span>
+                  <span class="cell-sub mono">{{ c.code }}@if (isSystem(c)) { · {{ 'payrollSetup.components.system' | translate }} }</span>
+                </td>
+                <td><span [class]="'type-pill type-' + c.componentType">{{ 'payrollSetup.componentType.' + c.componentType | translate }}</span></td>
+                <td>
+                  {{ 'payrollSetup.calcType.' + c.defaultCalcType | translate }}
+                  @if (c.defaultBaseComponentId) { <span class="dim">· {{ componentName(c.defaultBaseComponentId) }}</span> }
+                </td>
+                <td class="flags">
+                  @if (c.isTaxable) { <span class="flag">{{ 'payrollSetup.components.taxable' | translate }}</span> }
+                  @if (c.isProrated) { <span class="flag">{{ 'payrollSetup.components.prorated' | translate }}</span> }
+                  @if (!c.showOnPayslip) { <span class="flag">{{ 'payrollSetup.components.hidden' | translate }}</span> }
+                </td>
+                <td class="end num dim">{{ c.sortOrder }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+  }
+
+  <!-- ═══ Tax ═══ -->
+  @if (tab() === 'tax') {
+    <div class="tax-head">
+      <p class="section-help">{{ 'payrollSetup.tax.help' | translate }}</p>
+      <button type="button" class="btn btn-ink btn-small" (click)="openTax()">
+        <span class="material-icons-outlined" aria-hidden="true">add</span>{{ 'payrollSetup.tax.new' | translate }}
+      </button>
+    </div>
+    <div class="regimes">
+      @for (r of regimes(); track r.id) {
+        <section class="panel regime">
+          <header class="regime-head">
+            <div>
+              <h3 class="section-title">{{ r.name }}</h3>
+              <p class="cell-sub">
+                {{ r.countryCode }} · {{ 'payrollSetup.taxMethod.' + r.calcMethod | translate }} ·
+                {{ 'payrollSetup.tax.from' | translate: { date: (r.effectiveFrom | date: 'd MMM y' : undefined : lang()) } }}
+              </p>
+            </div>
+            <span [class]="r.isPlatformDefined ? 'chip chip-ink' : 'chip'">{{ (r.isPlatformDefined ? 'payrollSetup.tax.platform' : 'payrollSetup.tax.yours') | translate }}</span>
+          </header>
+          @if (r.slabs.length) {
+            <table class="slabs num">
+              <thead>
+                <tr>
+                  <th>{{ 'payrollSetup.tax.incomeFrom' | translate }}</th>
+                  <th>{{ 'payrollSetup.tax.incomeTo' | translate }}</th>
+                  <th class="end">{{ 'payrollSetup.tax.fixed' | translate }}</th>
+                  <th class="end">{{ 'payrollSetup.tax.rate' | translate }}</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (s of r.slabs; track $index) {
+                  <tr>
+                    <td>{{ s.fromAmount | amount: lang() }}</td>
+                    <td>{{ s.toAmount === null ? ('payrollSetup.tax.andAbove' | translate) : (s.toAmount | amount: lang()) }}</td>
+                    <td class="end">{{ s.fixedAmount | amount: lang() }}</td>
+                    <td class="end">{{ s.ratePercent }}%</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          } @else {
+            <p class="dim">{{ 'payrollSetup.tax.noTax' | translate }}</p>
+          }
+        </section>
+      } @empty {
+        <div class="panel empty-state"><p>{{ 'payrollSetup.tax.empty' | translate }}</p></div>
+      }
+    </div>
+  }
+</div>
+
+<!-- ═══ Drawers ═══ -->
+@if (drawer(); as d) {
+  <div class="overlay" (click)="drawer.set(null)">
+    <aside class="drawer" role="dialog" aria-modal="true" (click)="$event.stopPropagation()">
+      <header class="drawer-head">
+        <h3>
+          @switch (d) {
+            @case ('group') { {{ (editingId ? 'payrollSetup.groups.edit' : 'payrollSetup.groups.new') | translate }} }
+            @case ('component') { {{ (editingId ? 'payrollSetup.components.edit' : 'payrollSetup.components.new') | translate }} }
+            @case ('tax') { {{ 'payrollSetup.tax.new' | translate }} }
+          }
+        </h3>
+        <button type="button" class="btn-link" (click)="drawer.set(null)" [attr.aria-label]="'common.close' | translate">
+          <span class="material-icons-outlined" aria-hidden="true">close</span>
+        </button>
+      </header>
+
+      <div class="drawer-body">
+        @if (d === 'group') {
+          <div class="field"><label for="g-name">{{ 'payrollSetup.groups.name' | translate }}</label><input id="g-name" [(ngModel)]="groupForm.name" maxlength="100" /></div>
+          <div class="grid-2">
+            <div class="field"><label for="g-code">{{ 'payrollSetup.groups.code' | translate }}</label><input id="g-code" [(ngModel)]="groupForm.code" maxlength="20" /></div>
+            <div class="field">
+              <label for="g-freq">{{ 'payrollSetup.groups.frequency' | translate }}</label>
+              <select id="g-freq" [(ngModel)]="groupForm.payFrequency" [disabled]="!!editingId">
+                @for (f of frequencies; track f) { <option [value]="f">{{ 'payrollSetup.frequency.' + f | translate }}</option> }
+              </select>
+            </div>
+            <div class="field"><label for="g-country">{{ 'payrollSetup.groups.country' | translate }}</label><input id="g-country" [(ngModel)]="groupForm.countryCode" maxlength="2" [disabled]="!!editingId" /></div>
+            <div class="field">
+              <label for="g-cur">{{ 'payrollSetup.general.currency' | translate }}</label>
+              <select id="g-cur" [(ngModel)]="groupForm.currencyCode" [disabled]="!!editingId">
+                @for (c of currencies; track c) { <option [value]="c">{{ c }}</option> }
+              </select>
+            </div>
+            <div class="field"><label for="g-anchor">{{ 'payrollSetup.groups.anchor' | translate }}</label><input id="g-anchor" type="date" [(ngModel)]="groupForm.anchorDate" [disabled]="!!editingId" /></div>
+            <div class="field"><label for="g-offset">{{ 'payrollSetup.groups.offset' | translate }}</label><input id="g-offset" type="number" min="0" max="31" [(ngModel)]="groupForm.payDayOffset" /></div>
+          </div>
+          @if (editingId) { <p class="field-hint">{{ 'payrollSetup.groups.lockedFields' | translate }}</p> }
+        }
+
+        @if (d === 'component') {
+          <div class="grid-2">
+            <div class="field"><label for="c-code">{{ 'payrollSetup.components.code' | translate }}</label><input id="c-code" class="mono" [(ngModel)]="componentForm.code" maxlength="30" /></div>
+            <div class="field"><label for="c-name">{{ 'payrollSetup.components.name' | translate }}</label><input id="c-name" [(ngModel)]="componentForm.name" maxlength="100" /></div>
+            <div class="field">
+              <label for="c-type">{{ 'payrollSetup.components.type' | translate }}</label>
+              <select id="c-type" [(ngModel)]="componentForm.componentType">
+                @for (t of componentTypes; track t) { <option [value]="t">{{ 'payrollSetup.componentType.' + t | translate }}</option> }
+              </select>
+            </div>
+            <div class="field">
+              <label for="c-calc">{{ 'payrollSetup.components.calc' | translate }}</label>
+              <select id="c-calc" [(ngModel)]="componentForm.defaultCalcType">
+                @for (t of calcTypes; track t) { <option [value]="t">{{ 'payrollSetup.calcType.' + t | translate }}</option> }
+              </select>
+            </div>
+            @if (componentForm.defaultCalcType === 'PercentOfComponent') {
+              <div class="field span-2">
+                <label for="c-base">{{ 'payrollSetup.components.base' | translate }}</label>
+                <select id="c-base" [(ngModel)]="componentForm.defaultBaseComponentId">
+                  @for (e of earnings(); track e.id) { <option [value]="e.id">{{ e.name }} ({{ e.code }})</option> }
+                </select>
+              </div>
+            }
+            <div class="field"><label for="c-order">{{ 'payrollSetup.components.order' | translate }}</label><input id="c-order" type="number" [(ngModel)]="componentForm.sortOrder" /></div>
+          </div>
+          <div class="checks">
+            <label class="check"><input type="checkbox" [(ngModel)]="componentForm.isTaxable" />{{ 'payrollSetup.components.taxable' | translate }}</label>
+            <label class="check"><input type="checkbox" [(ngModel)]="componentForm.isProrated" />{{ 'payrollSetup.components.prorated' | translate }}</label>
+            <label class="check"><input type="checkbox" [(ngModel)]="componentForm.isRecurring" />{{ 'payrollSetup.components.recurring' | translate }}</label>
+            <label class="check"><input type="checkbox" [(ngModel)]="componentForm.showOnPayslip" />{{ 'payrollSetup.components.showOnPayslip' | translate }}</label>
+          </div>
+        }
+
+        @if (d === 'tax') {
+          <div class="grid-2">
+            <div class="field span-2"><label for="t-name">{{ 'payrollSetup.tax.name' | translate }}</label><input id="t-name" [(ngModel)]="taxForm.name" maxlength="150" placeholder="PK Salaried FY2027-28" /></div>
+            <div class="field"><label for="t-country">{{ 'payrollSetup.groups.country' | translate }}</label><input id="t-country" [(ngModel)]="taxForm.countryCode" maxlength="2" /></div>
+            <div class="field">
+              <label for="t-method">{{ 'payrollSetup.tax.method' | translate }}</label>
+              <select id="t-method" [(ngModel)]="taxForm.calcMethod">
+                @for (m of taxMethods; track m) { <option [value]="m">{{ 'payrollSetup.taxMethod.' + m | translate }}</option> }
+              </select>
+            </div>
+            <div class="field">
+              <label for="t-year">{{ 'payrollSetup.tax.yearStart' | translate }}</label>
+              <select id="t-year" [(ngModel)]="taxForm.taxYearStartMonth">
+                @for (m of months; track m) { <option [ngValue]="m">{{ m }}</option> }
+              </select>
+            </div>
+            <div class="field"><label for="t-from">{{ 'payrollSetup.tax.effectiveFrom' | translate }}</label><input id="t-from" type="date" [(ngModel)]="taxForm.effectiveFrom" /></div>
+          </div>
+          @if (taxForm.calcMethod !== 'None') {
+            <div class="slab-editor">
+              <h4>{{ 'payrollSetup.tax.slabs' | translate }}</h4>
+              @for (s of taxForm.slabs; track $index; let i = $index) {
+                <div class="slab-row">
+                  <input type="number" [(ngModel)]="s.fromAmount" [attr.aria-label]="'payrollSetup.tax.incomeFrom' | translate" />
+                  <input type="number" [(ngModel)]="s.toAmount" [placeholder]="'payrollSetup.tax.andAbove' | translate" [attr.aria-label]="'payrollSetup.tax.incomeTo' | translate" />
+                  <input type="number" [(ngModel)]="s.fixedAmount" [attr.aria-label]="'payrollSetup.tax.fixed' | translate" />
+                  <input type="number" [(ngModel)]="s.ratePercent" [attr.aria-label]="'payrollSetup.tax.rate' | translate" />
+                  <button type="button" class="icon-btn-sm" (click)="removeSlab(i)" [attr.aria-label]="'common.delete' | translate">
+                    <span class="material-icons-outlined" aria-hidden="true">close</span>
+                  </button>
+                </div>
+              }
+              <div class="slab-legend dim">
+                <span>{{ 'payrollSetup.tax.incomeFrom' | translate }}</span><span>{{ 'payrollSetup.tax.incomeTo' | translate }}</span>
+                <span>{{ 'payrollSetup.tax.fixed' | translate }}</span><span>{{ 'payrollSetup.tax.rate' | translate }} %</span><span></span>
+              </div>
+              <button type="button" class="btn btn-quiet btn-small" (click)="addSlab()">{{ 'payrollSetup.tax.addSlab' | translate }}</button>
+            </div>
+          }
+        }
+      </div>
+
+      <footer class="drawer-foot">
+        <button type="button" class="btn btn-quiet" (click)="drawer.set(null)">{{ 'common.cancel' | translate }}</button>
+        <button type="button" class="btn btn-ink" [disabled]="saving()"
+                (click)="d === 'group' ? saveGroup() : d === 'component' ? saveComponent() : saveTax()">
+          {{ (saving() ? 'common.saving' : 'common.save') | translate }}
+        </button>
+      </footer>
+    </aside>
+  </div>
+}
