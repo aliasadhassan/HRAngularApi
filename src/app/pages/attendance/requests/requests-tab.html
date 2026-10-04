@@ -1,0 +1,141 @@
+<section class="panel panel-flush">
+  <header class="toolbar">
+    <div class="seg" role="group">
+      @for (s of scopes(); track s) {
+        <button type="button" [class.is-on]="scope() === s" (click)="setScope(s)">
+          {{ 'attendance.requests.scope.' + s | translate }}
+          @if (s === 'Approvals' && pendingCount()) { <span class="count num">{{ pendingCount() }}</span> }
+        </button>
+      }
+    </div>
+    <select class="select-sm" [(ngModel)]="status" (change)="page.set(1); load()" [attr.aria-label]="'leave.status' | translate">
+      <option value="">{{ 'leave.anyStatus' | translate }}</option>
+      @for (s of statuses; track s) { <option [value]="s">{{ 'leave.statusName.' + s | translate }}</option> }
+    </select>
+    <p class="section-help grow">{{ (overtime() ? 'attendance.requests.otHelp' : 'attendance.requests.help') | translate }}</p>
+    <button type="button" class="btn btn-ink btn-small" (click)="openSubmit()">
+      <span class="material-icons-outlined" aria-hidden="true">{{ overtime() ? 'more_time' : 'edit_calendar' }}</span>
+      {{ (overtime() ? 'attendance.requests.newOt' : 'attendance.requests.new') | translate }}
+    </button>
+  </header>
+
+  <div class="table-wrap">
+    <table class="ledger-table">
+      <thead>
+        <tr>
+          @if (scope() !== 'Mine') { <th>{{ 'attendance.col.employee' | translate }}</th> }
+          <th>{{ 'leave.date' | translate }}</th>
+          <th>{{ (overtime() ? 'attendance.requests.minutes' : 'attendance.requests.type') | translate }}</th>
+          <th>{{ 'attendance.requests.reason' | translate }}</th>
+          <th>{{ 'leave.status' | translate }}</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (r of data()?.items ?? []; track r.id) {
+          <tr>
+            @if (scope() !== 'Mine') { <td class="cell-main">{{ r.employeeName }}</td> }
+            <td class="num"><span class="cell-main">{{ r.workDate | date: 'd MMM y' : undefined : lang() }}</span><span class="cell-sub">{{ r.workDate | date: 'EEE' : undefined : lang() }}</span></td>
+            <td>
+              @if (r.type === 'Overtime') {
+                <span class="cell-main num">{{ hm(r.approvedMinutes ?? r.overtimeMinutes) }}</span>
+                @if (r.approvedMinutes !== null && r.approvedMinutes !== r.overtimeMinutes) { <span class="cell-sub num">{{ 'attendance.requests.claimed' | translate: { v: hm(r.overtimeMinutes) } }}</span> }
+                @if (r.overtimeRate) { <span class="cell-sub num">× {{ r.overtimeRate }}</span> }
+              } @else {
+                <span class="cell-main">{{ 'attendance.requestType.' + r.type | translate }}</span>
+                <span class="cell-sub num">{{ r.requestedIn ? (r.requestedIn | date: 'HH:mm') : '—' }} → {{ r.requestedOut ? (r.requestedOut | date: 'HH:mm') : '—' }}</span>
+              }
+            </td>
+            <td class="reason">{{ r.reason ?? '—' }}</td>
+            <td>
+              <span [class]="chip[r.status]">{{ 'leave.statusName.' + r.status | translate }}</span>
+              @if (r.status === 'Pending') {
+                <span class="cell-sub">{{ 'leave.waitingFor' | translate: { who: r.approverName ?? ('leave.approver.' + r.approverType | translate) } }}</span>
+              } @else if (r.decidedByName) {
+                <span class="cell-sub">{{ r.decidedByName }}@if (r.decisionComment) { · {{ r.decisionComment }} }</span>
+              }
+            </td>
+            <td class="row-actions">
+              @if (r.status === 'Pending') {
+                @if (scope() === 'Mine') {
+                  <button type="button" class="btn btn-quiet btn-small" [disabled]="busy() === r.id" (click)="cancel(r)">{{ 'leave.cancel' | translate }}</button>
+                } @else if (decidingId !== r.id) {
+                  <button type="button" class="btn btn-quiet btn-small" (click)="startDecide(r, false)">{{ 'leave.reject' | translate }}</button>
+                  <button type="button" class="btn btn-ink btn-small" (click)="startDecide(r, true)">{{ 'leave.approve' | translate }}</button>
+                }
+              }
+            </td>
+          </tr>
+          @if (decidingId === r.id) {
+            <tr class="decide-row">
+              <td [attr.colspan]="scope() !== 'Mine' ? 6 : 5">
+                <div class="decide">
+                  @if (decision.approve && r.type === 'Overtime') {
+                    <label class="mini">{{ 'attendance.requests.approvedMinutes' | translate }}<input type="number" min="1" [(ngModel)]="decision.minutes" /></label>
+                  }
+                  <input class="grow" [(ngModel)]="decision.comment" maxlength="500"
+                         [placeholder]="(decision.approve ? 'attendance.requests.commentOptional' : 'leave.rejectReason') | translate" />
+                  <button type="button" class="btn btn-quiet btn-small" (click)="decidingId = null">{{ 'common.cancel' | translate }}</button>
+                  <button type="button" class="btn btn-small" [class.btn-ink]="decision.approve" [class.btn-danger]="!decision.approve"
+                          [disabled]="busy() === r.id || (!decision.approve && !decision.comment.trim())" (click)="decide(r)">
+                    {{ (decision.approve ? 'leave.approve' : 'leave.reject') | translate }}
+                  </button>
+                </div>
+              </td>
+            </tr>
+          }
+        } @empty {
+          <tr><td colspan="6" class="dim">{{ (loading() ? 'common.loading' : scope() === 'Approvals' ? 'leave.inboxEmptyBody' : 'leave.noRequests') | translate }}</td></tr>
+        }
+      </tbody>
+    </table>
+  </div>
+  @if (pages() > 1) {
+    <footer class="pager">
+      <span class="num dim">{{ 'attendance.pageOf' | translate: { page: page(), pages: pages(), total: data()?.totalCount } }}</span>
+      <div class="pager-buttons">
+        <button type="button" class="icon-btn-sm" [disabled]="page() <= 1" (click)="goPage(page() - 1)" [attr.aria-label]="'admin.users.prev' | translate"><span class="material-icons-outlined flip" aria-hidden="true">chevron_left</span></button>
+        <button type="button" class="icon-btn-sm" [disabled]="page() >= pages()" (click)="goPage(page() + 1)" [attr.aria-label]="'admin.users.next' | translate"><span class="material-icons-outlined flip" aria-hidden="true">chevron_right</span></button>
+      </div>
+    </footer>
+  }
+</section>
+
+@if (submitting()) {
+  <div class="overlay" (click)="submitting.set(false)">
+    <aside class="drawer" role="dialog" aria-modal="true" (click)="$event.stopPropagation()">
+      <header class="drawer-head">
+        <h3>{{ (overtime() ? 'attendance.requests.newOt' : 'attendance.requests.new') | translate }}</h3>
+        <button type="button" class="btn-link" (click)="submitting.set(false)" [attr.aria-label]="'common.close' | translate"><span class="material-icons-outlined" aria-hidden="true">close</span></button>
+      </header>
+      <div class="drawer-body">
+        <div class="field"><label for="r-date">{{ 'leave.date' | translate }}</label><input id="r-date" type="date" [(ngModel)]="form.workDate" /></div>
+        @if (overtime()) {
+          <div class="field">
+            <label for="r-min">{{ 'attendance.requests.minutes' | translate }}</label>
+            <input id="r-min" type="number" min="1" [(ngModel)]="form.minutes" />
+            <span class="field-hint">{{ 'attendance.requests.minutesHint' | translate }}</span>
+          </div>
+          <div class="field"><label for="r-reason">{{ 'leave.reason' | translate }}</label><textarea id="r-reason" rows="3" [(ngModel)]="form.reason" maxlength="1000"></textarea></div>
+        } @else {
+          <div class="field">
+            <label for="r-type">{{ 'attendance.requests.type' | translate }}</label>
+            <select id="r-type" [(ngModel)]="form.type">
+              @for (t of types; track t) { <option [value]="t">{{ 'attendance.requestType.' + t | translate }}</option> }
+            </select>
+            <span class="field-hint">{{ 'attendance.requestHint.' + form.type | translate }}</span>
+          </div>
+          <div class="grid-2">
+            <div class="field"><label for="r-in">{{ 'attendance.col.in' | translate }}</label><input id="r-in" type="time" [(ngModel)]="form.inTime" /></div>
+            <div class="field"><label for="r-out">{{ 'attendance.col.out' | translate }}</label><input id="r-out" type="time" [(ngModel)]="form.outTime" /></div>
+          </div>
+          <div class="field"><label for="r-reason2">{{ 'attendance.requests.reason' | translate }}</label><textarea id="r-reason2" rows="3" [(ngModel)]="form.reason" maxlength="1000"></textarea></div>
+        }
+      </div>
+      <footer class="drawer-foot">
+        <button type="button" class="btn btn-quiet" (click)="submitting.set(false)">{{ 'common.cancel' | translate }}</button>
+        <button type="button" class="btn btn-ink" [disabled]="!validSubmit() || saving()" (click)="submit()">{{ (saving() ? 'common.saving' : 'leave.send') | translate }}</button>
+      </footer>
+    </aside>
+  </div>
+}

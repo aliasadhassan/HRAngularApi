@@ -1,0 +1,247 @@
+<div class="page">
+  <header class="page-intro">
+    <p>{{ 'attendanceSetup.intro' | translate }}</p>
+  </header>
+
+  <nav class="tabs">
+    @for (t of tabs; track t) {
+      @if (t !== 'devices' || canSeeDevices) {
+        <button type="button" class="tab" [class.is-active]="tab() === t" (click)="tab.set(t)">{{ 'attendanceSetup.tabs.' + t | translate }}</button>
+      }
+    }
+  </nav>
+
+  <!-- ═══ Shifts ═══ -->
+  @if (tab() === 'shifts') {
+    <section class="panel panel-flush">
+      <header class="list-head">
+        <p class="section-help">{{ 'attendanceSetup.shifts.help' | translate }}</p>
+        <button type="button" class="btn btn-ink btn-small" (click)="openShift()"><span class="material-icons-outlined" aria-hidden="true">add</span>{{ 'attendanceSetup.shifts.new' | translate }}</button>
+      </header>
+      <div class="table-wrap">
+        <table class="ledger-table">
+          <thead>
+            <tr>
+              <th>{{ 'attendanceSetup.shifts.shift' | translate }}</th>
+              <th>{{ 'attendanceSetup.shifts.timing' | translate }}</th>
+              <th class="end">{{ 'attendanceSetup.shifts.net' | translate }}</th>
+              <th class="end">{{ 'attendanceSetup.shifts.grace' | translate }}</th>
+              <th class="end">{{ 'attendanceSetup.shifts.people' | translate }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (s of shifts(); track s.id) {
+              <tr class="is-link" tabindex="0" (click)="openShift(s)" (keydown.enter)="openShift(s)" [class.is-dim]="!s.isActive">
+                <td><span class="swatch" [style.background]="s.color || 'var(--moss)'"></span><span class="cell-main">{{ s.name }}</span> <span class="mono dim">{{ s.code }}</span></td>
+                <td class="num">
+                  {{ time(s.startTime) }} – {{ time(s.endTime) }}
+                  @if (s.crossesMidnight) { <span class="flag">{{ 'attendanceSetup.shifts.overnight' | translate }}</span> }
+                  @if (s.isFlexible) { <span class="flag">{{ 'attendanceSetup.shifts.flexible' | translate }}</span> }
+                </td>
+                <td class="end num">{{ hm(s.netMinutes) }}</td>
+                <td class="end num dim">{{ s.graceInMinutes }}m</td>
+                <td class="end num">{{ s.assignedEmployees }}</td>
+              </tr>
+            } @empty { <tr><td colspan="5" class="dim">{{ 'attendanceSetup.shifts.empty' | translate }}</td></tr> }
+          </tbody>
+        </table>
+      </div>
+    </section>
+  }
+
+  <!-- ═══ Policies ═══ -->
+  @if (tab() === 'policies') {
+    <div class="tax-head">
+      <p class="section-help">{{ 'attendanceSetup.policies.help' | translate }}</p>
+      <button type="button" class="btn btn-ink btn-small" (click)="openPolicy()"><span class="material-icons-outlined" aria-hidden="true">add</span>{{ 'attendanceSetup.policies.new' | translate }}</button>
+    </div>
+    <div class="cards">
+      @for (p of policies(); track p.id) {
+        <section class="panel policy" tabindex="0" (click)="openPolicy(p)" (keydown.enter)="openPolicy(p)">
+          <header class="policy-head">
+            <div>
+              <h3 class="section-title">{{ p.name }}</h3>
+              <p class="cell-sub">{{ p.locationName ?? ('attendanceSetup.policies.allLocations' | translate) }}</p>
+            </div>
+            <span [class]="p.isActive ? 'chip chip-moss' : 'chip chip-muted'">{{ (p.isActive ? 'admin.status.Active' : 'structure.inactive') | translate }}</span>
+          </header>
+          <div class="rule-row num"><span>{{ 'attendanceSetup.policies.fullDay' | translate }}</span><b>{{ hm(p.fullDayMinutes) }}</b></div>
+          <div class="rule-row num"><span>{{ 'attendanceSetup.policies.halfDay' | translate }}</span><b>{{ hm(p.halfDayMinutes) }}</b></div>
+          <div class="rule-row">
+            <span>{{ 'attendanceSetup.policies.methods' | translate }}</span>
+            <span class="flags">
+              @for (m of methodList(p.allowedMethods); track m) { <span class="flag">{{ 'attendance.method.' + m | translate }}</span> }
+              @if (p.requireGeofence) { <span class="flag">{{ 'attendanceSetup.policies.geofenceN' | translate: { n: p.geoRadiusMeters } }}</span> }
+            </span>
+          </div>
+          <div class="rule-row"><span>{{ 'attendanceSetup.policies.approver' | translate }}</span><span>{{ 'leave.approver.' + p.requestApprover | translate }}</span></div>
+          <div class="rule-row num">
+            <span>{{ 'attendanceSetup.policies.overtime' | translate }}</span>
+            @if (p.overtimeEnabled) {
+              <span>{{ p.overtimeRateWorkday }}× / {{ p.overtimeRateWeeklyOff }}× / {{ p.overtimeRateHoliday }}×</span>
+            } @else {
+              <span class="dim">{{ 'attendanceSetup.policies.off' | translate }}</span>
+            }
+          </div>
+        </section>
+      } @empty {
+        <div class="panel empty-state"><p>{{ 'attendanceSetup.policies.empty' | translate }}</p></div>
+      }
+    </div>
+  }
+
+  <!-- ═══ Devices ═══ -->
+  @if (tab() === 'devices') {
+    <section class="panel panel-flush">
+      <header class="list-head">
+        <p class="section-help">{{ 'attendanceSetup.devices.help' | translate }}</p>
+        <button type="button" class="btn btn-ink btn-small" (click)="openDevice()" [disabled]="!locations().length"><span class="material-icons-outlined" aria-hidden="true">add</span>{{ 'attendanceSetup.devices.new' | translate }}</button>
+      </header>
+      <div class="table-wrap">
+        <table class="ledger-table">
+          <thead>
+            <tr>
+              <th>{{ 'attendanceSetup.devices.device' | translate }}</th>
+              <th>{{ 'people.location' | translate }}</th>
+              <th>{{ 'attendanceSetup.devices.lastSync' | translate }}</th>
+              <th class="end">{{ 'leave.status' | translate }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (d of devices(); track d.id) {
+              <tr class="is-link" tabindex="0" (click)="openDevice(d)" (keydown.enter)="openDevice(d)" [class.is-dim]="!d.isActive">
+                <td><span class="cell-main">{{ d.name }}</span><span class="cell-sub mono">{{ d.serialNumber }}@if (d.vendor) { · {{ d.vendor }} }</span></td>
+                <td>{{ d.locationName }}</td>
+                <td class="num">{{ d.lastSyncedAt ? (d.lastSyncedAt | date: 'd MMM, HH:mm' : undefined : lang()) : ('attendanceSetup.devices.never' | translate) }}</td>
+                <td class="end"><span [class]="d.isActive ? 'chip chip-moss' : 'chip chip-muted'">{{ (d.isActive ? 'admin.status.Active' : 'structure.inactive') | translate }}</span></td>
+              </tr>
+            } @empty { <tr><td colspan="4" class="dim">{{ 'attendanceSetup.devices.empty' | translate }}</td></tr> }
+          </tbody>
+        </table>
+      </div>
+    </section>
+  }
+</div>
+
+@if (drawer(); as d) {
+  <div class="overlay" (click)="drawer.set(null)">
+    <aside class="drawer" [class.wide]="d === 'policy'" role="dialog" aria-modal="true" (click)="$event.stopPropagation()">
+      <header class="drawer-head">
+        <h3>{{ 'attendanceSetup.drawer.' + d | translate }}</h3>
+        <button type="button" class="btn-link" (click)="drawer.set(null)" [attr.aria-label]="'common.close' | translate"><span class="material-icons-outlined" aria-hidden="true">close</span></button>
+      </header>
+      <div class="drawer-body">
+        @if (d === 'shift') {
+          <div class="grid-2">
+            <div class="field"><label for="s-name">{{ 'org.name' | translate }}</label><input id="s-name" [(ngModel)]="shiftForm.name" maxlength="100" placeholder="General" /></div>
+            <div class="field"><label for="s-code">{{ 'org.code' | translate }}</label><input id="s-code" [(ngModel)]="shiftForm.code" maxlength="20" placeholder="GEN" /></div>
+            <div class="field"><label for="s-start">{{ 'attendanceSetup.shifts.start' | translate }}</label><input id="s-start" type="time" [(ngModel)]="shiftForm.startTime" /></div>
+            <div class="field"><label for="s-end">{{ 'attendanceSetup.shifts.end' | translate }}</label><input id="s-end" type="time" [(ngModel)]="shiftForm.endTime" /></div>
+            <div class="field"><label for="s-break">{{ 'attendanceSetup.shifts.break' | translate }}</label><input id="s-break" type="number" min="0" max="240" [(ngModel)]="shiftForm.breakMinutes" /></div>
+            <div class="field"><label for="s-gin">{{ 'attendanceSetup.shifts.graceIn' | translate }}</label><input id="s-gin" type="number" min="0" max="120" [(ngModel)]="shiftForm.graceInMinutes" /></div>
+            <div class="field"><label for="s-gout">{{ 'attendanceSetup.shifts.graceOut' | translate }}</label><input id="s-gout" type="number" min="0" max="120" [(ngModel)]="shiftForm.graceOutMinutes" /></div>
+          </div>
+          @let pv = shiftPreview();
+          <p class="notice notice-info">
+            <span class="material-icons-outlined" aria-hidden="true">{{ pv.overnight ? 'bedtime' : 'schedule' }}</span>
+            <span>{{ 'attendanceSetup.shifts.preview' | translate: { net: hm(pv.net) } }}@if (pv.overnight) { {{ 'attendanceSetup.shifts.overnightHint' | translate }} }</span>
+          </p>
+          <div class="field">
+            <span class="label">{{ 'leaveSetup.types.color' | translate }}</span>
+            <div class="colors">
+              @for (c of colors; track c) {
+                <button type="button" class="color" [style.background]="c" [class.is-on]="shiftForm.color === c" (click)="shiftForm.color = c" [attr.aria-label]="c"></button>
+              }
+            </div>
+          </div>
+          <div class="checks">
+            <label class="check"><input type="checkbox" [(ngModel)]="shiftForm.isFlexible" />{{ 'attendanceSetup.shifts.flexibleHint' | translate }}</label>
+            <label class="check"><input type="checkbox" [(ngModel)]="shiftForm.isActive" />{{ 'admin.status.Active' | translate }}</label>
+          </div>
+        }
+
+        @if (d === 'policy') {
+          <div class="grid-2">
+            <div class="field"><label for="p-name">{{ 'org.name' | translate }}</label><input id="p-name" [(ngModel)]="policyForm.name" maxlength="150" placeholder="Head office" /></div>
+            <div class="field">
+              <label for="p-loc">{{ 'people.location' | translate }}</label>
+              <select id="p-loc" [(ngModel)]="policyForm.locationId">
+                <option [ngValue]="null">{{ 'attendanceSetup.policies.allLocations' | translate }}</option>
+                @for (l of locations(); track l.id) { <option [ngValue]="l.id">{{ l.name }}</option> }
+              </select>
+            </div>
+          </div>
+          <label class="check"><input type="checkbox" [(ngModel)]="policyForm.isActive" />{{ 'admin.status.Active' | translate }}</label>
+
+          <h4 class="sub">{{ 'attendanceSetup.policies.daySection' | translate }}</h4>
+          <div class="rule-grid">
+            <label>{{ 'attendanceSetup.policies.fullDayMin' | translate }}<input type="number" min="1" max="1440" [(ngModel)]="policyForm.fullDayMinutes" /></label>
+            <label>{{ 'attendanceSetup.policies.halfDayMin' | translate }}<input type="number" min="1" [(ngModel)]="policyForm.halfDayMinutes" /></label>
+            <label>{{ 'attendanceSetup.policies.latesPerHalf' | translate }}<input type="number" min="1" [(ngModel)]="policyForm.latesPerHalfDay" /></label>
+          </div>
+
+          <h4 class="sub">{{ 'attendanceSetup.policies.clockSection' | translate }}</h4>
+          <div class="checks three">
+            @for (m of methods; track m) {
+              <label class="check"><input type="checkbox" [checked]="policyMethods.has(m)" (change)="toggleMethod(m)" />{{ 'attendance.method.' + m | translate }}</label>
+            }
+          </div>
+          <label class="check"><input type="checkbox" [(ngModel)]="policyForm.requireGeofence" />{{ 'attendanceSetup.policies.geofence' | translate }}</label>
+          @if (policyForm.requireGeofence) {
+            <div class="rule-edit">
+              <div class="rule-grid">
+                <label>{{ 'attendanceSetup.policies.lat' | translate }}<input type="number" step="0.000001" [(ngModel)]="policyForm.geoLatitude" /></label>
+                <label>{{ 'attendanceSetup.policies.lng' | translate }}<input type="number" step="0.000001" [(ngModel)]="policyForm.geoLongitude" /></label>
+                <label>{{ 'attendanceSetup.policies.radius' | translate }}<input type="number" min="10" [(ngModel)]="policyForm.geoRadiusMeters" /></label>
+              </div>
+              <button type="button" class="btn btn-quiet btn-small geo-btn" (click)="useMyLocation()"><span class="material-icons-outlined" aria-hidden="true">my_location</span>{{ 'attendanceSetup.policies.useMine' | translate }}</button>
+            </div>
+          }
+
+          <h4 class="sub">{{ 'attendanceSetup.policies.requestSection' | translate }}</h4>
+          <div class="rule-grid">
+            <label>{{ 'attendanceSetup.policies.approver' | translate }}
+              <select [(ngModel)]="policyForm.requestApprover">@for (a of approvers; track a) { <option [value]="a">{{ 'leave.approver.' + a | translate }}</option> }</select>
+            </label>
+            <label>{{ 'attendanceSetup.policies.window' | translate }}<input type="number" min="1" max="90" [(ngModel)]="policyForm.correctionWindowDays" /></label>
+            <label>{{ 'attendanceSetup.policies.maxPerMonth' | translate }}<input type="number" min="1" [(ngModel)]="policyForm.maxCorrectionsPerMonth" /></label>
+          </div>
+
+          <h4 class="sub">{{ 'attendanceSetup.policies.overtime' | translate }}</h4>
+          <label class="check"><input type="checkbox" [(ngModel)]="policyForm.overtimeEnabled" />{{ 'attendanceSetup.policies.otEnabled' | translate }}</label>
+          @if (policyForm.overtimeEnabled) {
+            <div class="rule-grid">
+              <label>{{ 'attendanceSetup.policies.otMin' | translate }}<input type="number" min="0" [(ngModel)]="policyForm.overtimeMinMinutes" /></label>
+              <label>{{ 'attendanceSetup.policies.otMax' | translate }}<input type="number" min="1" [(ngModel)]="policyForm.overtimeMaxMinutesPerDay" /></label>
+              <span></span>
+              <label>{{ 'attendanceSetup.policies.rateWorkday' | translate }}<input type="number" min="1" max="5" step="0.25" [(ngModel)]="policyForm.overtimeRateWorkday" /></label>
+              <label>{{ 'attendanceSetup.policies.rateOff' | translate }}<input type="number" min="1" max="5" step="0.25" [(ngModel)]="policyForm.overtimeRateWeeklyOff" /></label>
+              <label>{{ 'attendanceSetup.policies.rateHoliday' | translate }}<input type="number" min="1" max="5" step="0.25" [(ngModel)]="policyForm.overtimeRateHoliday" /></label>
+            </div>
+            <label class="check"><input type="checkbox" [(ngModel)]="policyForm.overtimeRequiresApproval" />{{ 'attendanceSetup.policies.otApproval' | translate }}</label>
+          }
+        }
+
+        @if (d === 'device') {
+          <div class="field"><label for="d-name">{{ 'org.name' | translate }}</label><input id="d-name" [(ngModel)]="deviceForm.name" maxlength="100" placeholder="Main gate" /></div>
+          <div class="grid-2">
+            <div class="field"><label for="d-serial">{{ 'attendanceSetup.devices.serial' | translate }}</label><input id="d-serial" class="mono" [(ngModel)]="deviceForm.serialNumber" maxlength="100" /></div>
+            <div class="field"><label for="d-vendor">{{ 'attendanceSetup.devices.vendor' | translate }}</label><input id="d-vendor" [(ngModel)]="deviceForm.vendor" maxlength="100" placeholder="ZKTeco" /></div>
+          </div>
+          <div class="field">
+            <label for="d-loc">{{ 'people.location' | translate }}</label>
+            <select id="d-loc" [(ngModel)]="deviceForm.locationId">
+              @for (l of locations(); track l.id) { <option [value]="l.id">{{ l.name }}</option> }
+            </select>
+          </div>
+          <label class="check"><input type="checkbox" [(ngModel)]="deviceForm.isActive" />{{ 'admin.status.Active' | translate }}</label>
+          <p class="field-hint">{{ 'attendanceSetup.devices.importHint' | translate }}</p>
+        }
+      </div>
+      <footer class="drawer-foot">
+        <button type="button" class="btn btn-quiet" (click)="drawer.set(null)">{{ 'common.cancel' | translate }}</button>
+        <button type="button" class="btn btn-ink" [disabled]="!valid() || saving()" (click)="save()">{{ (saving() ? 'common.saving' : 'common.save') | translate }}</button>
+      </footer>
+    </aside>
+  </div>
+}
