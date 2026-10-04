@@ -1,0 +1,133 @@
+/* ── Today card ── */
+.today {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 24px;
+  border-top: 3px solid var(--brass);
+}
+.eyebrow {
+  margin: 0 0 4px;
+  font-size: var(--fs-12);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.today-shift {
+  margin: 0 0 10px;
+  font-family: var(--font-display);
+  font-size: var(--fs-20);
+  font-weight: 600;
+}
+.today-shift .num { font-family: var(--font-ui); font-size: var(--fs-14); font-weight: 400; margin-inline-start: 8px; }
+.punch-line { display: flex; flex-wrap: wrap; gap: 6px; }
+.punch {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border: 1px solid var(--rule-strong);
+  border-radius: 999px;
+  font-size: var(--fs-13);
+}
+.punch .material-icons-outlined { font-size: 15px; color: var(--moss); }
+.punch.is-ignored { text-decoration: line-through; opacity: 0.5; }
+
+.today-figures { display: flex; align-items: center; gap: 20px; }
+.figure { display: flex; flex-direction: column; align-items: flex-end; }
+.fig-label { font-size: var(--fs-12); color: var(--text-muted); }
+.fig-value { font-family: var(--font-display); font-size: var(--fs-28); line-height: 1.1; }
+.figure.late .fig-value { color: var(--amber); }
+
+.today-action { display: flex; flex-direction: column; align-items: stretch; gap: 6px; min-width: 170px; }
+.clock-btn { height: 48px; justify-content: center; font-size: var(--fs-16); }
+.tiny { font-size: 15px; vertical-align: -3px; }
+
+/* ── Day overview (HR) ── */
+.overview { display: flex; align-items: center; gap: 24px; flex-wrap: wrap; padding-block: 14px; }
+.ov-date { display: flex; align-items: center; gap: 6px; }
+.ov-date .select-sm { min-width: 0; }
+.ov-stats { display: flex; gap: 22px; flex: 1; flex-wrap: wrap; }
+.stat { display: flex; flex-direction: column; }
+.stat b { font-family: var(--font-display); font-size: var(--fs-20); font-weight: 600; color: var(--moss); }
+.stat span { font-size: var(--fs-12); color: var(--text-muted); }
+.stat.bad b { color: var(--oxblood); }
+.stat.warn b { color: var(--amber); }
+.stat.muted b { color: var(--text); }
+
+/* ── Timesheet ── */
+.sheet-filter { gap: 10px; }
+.sheet-filter .select-sm { min-width: 0; height: 36px; }
+.mini { display: inline-flex; align-items: center; gap: 6px; font-size: var(--fs-13); color: var(--text-muted); }
+.late-cell { color: var(--amber); font-weight: 600; }
+:host-context([dir='rtl']) .flip { transform: scaleX(-1); display: inline-block; }
+
+/* ── Day drawer ── */
+.day-head { display: flex; align-items: center; gap: 10px; }
+.day-figures {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin: 0;
+  padding: 12px 0;
+  border-block: 3px double var(--rule-strong);
+}
+.day-figures div { display: flex; flex-direction: column; }
+.day-figures dt { font-size: var(--fs-12); color: var(--text-muted); }
+.day-figures dd { margin: 0; font-family: var(--font-display); font-size: var(--fs-20); }
+.sub {
+  font-family: var(--font-ui);
+  font-size: var(--fs-13);
+  font-weight: 600;
+  color: var(--text-muted);
+  margin: 6px 0 -4px;
+}
+.punch-list { list-style: none; margin: 0; padding: 0; }
+.punch-list li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 9px 0;
+  border-bottom: 1px dashed var(--rule);
+  font-size: var(--fs-13);
+}
+.punch-list li.is-ignored .p-time { text-decoration: line-through; opacity: 0.5; }
+.p-time { font-weight: 600; min-width: 46px; }
+.p-meta { flex: 1; display: flex; flex-direction: column; }
+.flag {
+  padding: 1px 6px;
+  border: 1px solid var(--rule-strong);
+  border-radius: 4px;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+.ignore-form { display: flex; gap: 6px; }
+.ignore-form input {
+  height: 32px;
+  width: 150px;
+  padding-inline: 8px;
+  border: 1px solid var(--rule-strong);
+  border-radius: 6px;
+  background: var(--sheet);
+  color: var(--text);
+}
+.rule-edit {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-panel);
+  background: var(--vellum);
+}
+.inline-actions { display: flex; justify-content: flex-end; gap: 8px; }
+.notice { margin: 0; }
+
+@media (max-width: 899px) {
+  .today { grid-template-columns: 1fr; }
+  .today-figures { justify-content: flex-start; }
+  .figure { align-items: flex-start; }
+}
+@media (max-width: 599px) {
+  .day-figures { grid-template-columns: 1fr 1fr; }
+}

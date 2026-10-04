@@ -6,6 +6,7 @@ import { CurrentUserService } from './current-user';
 export const P = {
   dashboardView: 'dashboard.view',
   employeesView: 'employees.view',
+  employeesEdit: 'employees.edit',
   leavesViewOwn: 'leaves.view.own',
   leavesViewAll: 'leaves.view.all',
   payrollViewOwn: 'payroll.view.own',

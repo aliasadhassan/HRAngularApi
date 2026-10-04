@@ -74,7 +74,7 @@ export class SidebarComponent {
     {
       title: 'nav.timeAttendance',
       items: [
-        { icon: 'schedule', label: 'nav.attendance', route: '/app/attendance', permission: P.employeesView },
+        { icon: 'schedule', label: 'nav.attendance', route: '/app/attendance' },   // har employee clock in karta hai; data scope backend karta hai
         { icon: 'event_available', label: 'nav.leaves', route: '/app/leaves', permission: [P.leavesViewOwn, P.leavesViewAll] },
         { icon: 'manage_history', label: 'nav.attendanceSetup', route: '/app/attendance-setup', permission: P.settingsManage },
         { icon: 'event_note', label: 'nav.leaveSetup', route: '/app/leave-setup', permission: P.settingsManage }

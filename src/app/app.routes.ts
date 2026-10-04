@@ -49,10 +49,6 @@ const soon = (
  * Consolidation: ek kaam ke chhote pages ek page ke tabs hain (56 → 19 planned pages).
  */
 const PLANNED: Route[] = [
-  // Time & attendance (schema: HRCoreWebApi "attendance" schema — ek page ke tabs = ek group of tables)
-  soon('attendance', 'nav.attendance', undefined, ['timesheet', 'roster', 'overtime', 'attendanceRequests']),
-  soon('attendance-setup', 'nav.attendanceSetup', P.settingsManage, ['shifts', 'policies', 'devices']),
-
   // People
   soon('assets', 'nav.assets', undefined, ['inventory', 'assignments', 'returns', 'history']),
 
@@ -102,6 +98,8 @@ export const routes: Routes = [
       { path: 'employees', component: EmployeeDirectoryComponent, canActivate: [permissionGuard], data: { titleKey: 'nav.employees', permission: P.employeesView } },
       { path: 'employees/:id', component: EmployeeProfileComponent, canActivate: [permissionGuard], data: { titleKey: 'nav.employees', permission: P.employeesView } },
       { path: 'organization', component: OrganizationComponent, canActivate: [permissionGuard], data: { titleKey: 'nav.organization', permission: P.employeesView } },
+      { path: 'attendance', loadComponent: () => import('./pages/attendance/attendance').then(m => m.AttendanceComponent), data: { titleKey: 'nav.attendance' } },
+      { path: 'attendance-setup', loadComponent: () => import('./pages/attendance/setup/attendance-setup').then(m => m.AttendanceSetupComponent), canActivate: [permissionGuard], data: { titleKey: 'nav.attendanceSetup', permission: P.settingsManage } },
       { path: 'leaves', component: LeavesComponent, data: { titleKey: 'nav.leaves' } },
       { path: 'leave-setup', component: LeaveSetupComponent, canActivate: [permissionGuard], data: { titleKey: 'nav.leaveSetup', permission: P.settingsManage } },
       { path: 'me/payslips', component: MyPayslipsComponent, data: { titleKey: 'nav.myPayslips' } },

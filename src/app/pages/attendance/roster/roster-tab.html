@@ -1,0 +1,160 @@
+<section class="panel panel-flush">
+  <header class="toolbar roster-bar">
+    <div class="week-nav">
+      <button type="button" class="icon-btn-sm" (click)="move(-1)" [attr.aria-label]="'admin.users.prev' | translate"><span class="material-icons-outlined flip" aria-hidden="true">chevron_left</span></button>
+      <span class="range num">{{ days()[0] | date: 'd MMM' : undefined : lang() }} – {{ days()[days().length - 1] | date: 'd MMM y' : undefined : lang() }}</span>
+      <button type="button" class="icon-btn-sm" (click)="move(1)" [attr.aria-label]="'admin.users.next' | translate"><span class="material-icons-outlined flip" aria-hidden="true">chevron_right</span></button>
+      <button type="button" class="btn btn-quiet btn-small" (click)="thisWeek()">{{ 'attendance.roster.thisWeek' | translate }}</button>
+    </div>
+    <div class="seg" role="group">
+      <button type="button" [class.is-on]="span() === 7" (click)="setSpan(7)">{{ 'attendance.roster.week' | translate }}</button>
+      <button type="button" [class.is-on]="span() === 14" (click)="setSpan(14)">{{ 'attendance.roster.twoWeeks' | translate }}</button>
+    </div>
+    @if (canViewAll()) {
+      <select class="select-sm" [(ngModel)]="departmentId" (change)="load()" [attr.aria-label]="'people.department' | translate">
+        <option value="">{{ 'attendance.allDepartments' | translate }}</option>
+        @for (d of departments(); track d.id) { <option [value]="d.id">{{ d.name }}</option> }
+      </select>
+    }
+    <input class="select-sm search-sm" type="search" [ngModel]="query()" (ngModelChange)="query.set($event)" [placeholder]="'attendance.roster.search' | translate" />
+    @if (canManage()) {
+      <button type="button" class="btn btn-ink btn-small push" (click)="openAssign()" [disabled]="!shifts().length || !rows().length">
+        <span class="material-icons-outlined" aria-hidden="true">event_repeat</span>{{ 'attendance.roster.assign' | translate }}
+      </button>
+    }
+  </header>
+
+  <div class="table-wrap">
+    <table class="roster" [class.compact]="span() === 14">
+      <thead>
+        <tr>
+          <th class="who">{{ 'attendance.col.employee' | translate }}</th>
+          @for (d of days(); track d) {
+            <th class="day" [class.is-today]="d === today">
+              <span class="dow">{{ d | date: 'EEE' : undefined : lang() }}</span>
+              <span class="num">{{ d | date: 'd' }}</span>
+            </th>
+          }
+        </tr>
+      </thead>
+      <tbody>
+        @for (r of visible(); track r.employeeId) {
+          <tr>
+            <td class="who"><span class="cell-main">{{ r.employeeName }}</span><span class="cell-sub">{{ r.employeeCode }} · {{ r.departmentName }}</span></td>
+            @for (d of r.days; track d.date) {
+              <td class="slot" [class.is-today]="d.date === today">
+                <button type="button" class="slot-btn" [class.is-off]="d.dayType !== 'Workday'" [class.is-holiday]="d.dayType === 'Holiday'"
+                        [class.is-override]="d.source === 'Override'" [disabled]="!canManage()" (click)="openCell(r, d)"
+                        [style.--c]="d.shiftColor || shiftColor(d.shiftId)"
+                        [title]="d.startTime ? (d.startTime.slice(0, 5) + ' – ' + (d.endTime ?? '').slice(0, 5)) : ''">
+                  @if (d.dayType === 'Workday') {
+                    <span class="mono">{{ d.shiftCode ?? '•' }}</span>
+                  } @else {
+                    {{ 'attendance.roster.' + (d.dayType === 'Holiday' ? 'holiday' : 'off') | translate }}
+                  }
+                </button>
+              </td>
+            }
+          </tr>
+        } @empty {
+          <tr><td [attr.colspan]="days().length + 1" class="dim">{{ (loading() ? 'common.loading' : 'attendance.roster.empty') | translate }}</td></tr>
+        }
+      </tbody>
+    </table>
+  </div>
+  <footer class="legend">
+    <span><i class="dot override"></i>{{ 'attendance.roster.legendOverride' | translate }}</span>
+    <span><i class="dot off"></i>{{ 'attendance.roster.off' | translate }}</span>
+    <span><i class="dot holiday"></i>{{ 'attendance.roster.holiday' | translate }}</span>
+  </footer>
+</section>
+
+@if (cell(); as c) {
+  <div class="overlay" (click)="cell.set(null)">
+    <aside class="drawer" role="dialog" aria-modal="true" (click)="$event.stopPropagation()">
+      <header class="drawer-head">
+        <div>
+          <h3>{{ c.row.employeeName }}</h3>
+          <p class="cell-sub">{{ c.day.date | date: 'EEEE, d MMMM y' : undefined : lang() }}</p>
+        </div>
+        <button type="button" class="btn-link" (click)="cell.set(null)" [attr.aria-label]="'common.close' | translate"><span class="material-icons-outlined" aria-hidden="true">close</span></button>
+      </header>
+      <div class="drawer-body">
+        <p class="section-help">{{ 'attendance.roster.source.' + c.day.source | translate }}</p>
+        <div class="shift-pick">
+          @for (s of shifts(); track s.id) {
+            <label class="pick" [class.is-on]="cellForm.shiftId === s.id">
+              <input type="radio" name="cell-shift" [value]="s.id" [(ngModel)]="cellForm.shiftId" />
+              <span class="swatch" [style.background]="s.color || 'var(--moss)'"></span>
+              <span class="cell-main">{{ s.name }}</span>
+              <span class="num dim">{{ s.startTime.slice(0, 5) }} – {{ s.endTime.slice(0, 5) }}</span>
+            </label>
+          }
+          <label class="pick" [class.is-on]="cellForm.shiftId === null">
+            <input type="radio" name="cell-shift" [value]="null" [(ngModel)]="cellForm.shiftId" />
+            <span class="swatch off"></span>
+            <span class="cell-main">{{ 'attendance.roster.dayOff' | translate }}</span>
+          </label>
+        </div>
+        <div class="field"><label for="c-note">{{ 'attendance.day.note' | translate }}</label><input id="c-note" [(ngModel)]="cellForm.note" maxlength="200" /></div>
+      </div>
+      <footer class="drawer-foot">
+        @if (c.day.source === 'Override') {
+          <button type="button" class="btn btn-quiet" [disabled]="saving()" (click)="resetCell()">{{ 'attendance.roster.reset' | translate }}</button>
+        }
+        <button type="button" class="btn btn-ink" [disabled]="saving()" (click)="saveCell()">{{ (saving() ? 'common.saving' : 'common.save') | translate }}</button>
+      </footer>
+    </aside>
+  </div>
+}
+
+@if (assigning()) {
+  <div class="overlay" (click)="assigning.set(false)">
+    <aside class="drawer" role="dialog" aria-modal="true" (click)="$event.stopPropagation()">
+      <header class="drawer-head">
+        <h3>{{ 'attendance.roster.assign' | translate }}</h3>
+        <button type="button" class="btn-link" (click)="assigning.set(false)" [attr.aria-label]="'common.close' | translate"><span class="material-icons-outlined" aria-hidden="true">close</span></button>
+      </header>
+      <div class="drawer-body">
+        <div class="field">
+          <label for="a-shift">{{ 'attendance.col.shift' | translate }}</label>
+          <select id="a-shift" [(ngModel)]="assignForm.shiftId">
+            @for (s of shifts(); track s.id) { <option [value]="s.id">{{ s.name }} ({{ s.startTime.slice(0, 5) }} – {{ s.endTime.slice(0, 5) }})</option> }
+          </select>
+        </div>
+        <div class="grid-2">
+          <div class="field"><label for="a-from">{{ 'leave.from' | translate }}</label><input id="a-from" type="date" [(ngModel)]="assignForm.from" /></div>
+          <div class="field"><label for="a-to">{{ 'attendance.roster.until' | translate }}</label><input id="a-to" type="date" [(ngModel)]="assignForm.to" [min]="assignForm.from" /></div>
+        </div>
+        <label class="check"><input type="checkbox" [(ngModel)]="assignForm.useCustomOff" />{{ 'attendance.roster.customOff' | translate }}</label>
+        @if (assignForm.useCustomOff) {
+          <div class="week-bits">
+            @for (w of weekBits; track w.bit) {
+              <button type="button" class="bit" [class.is-on]="offBits.has(w.bit)" (click)="toggleOff(w.bit)">{{ 'attendance.week.' + w.key | translate }}</button>
+            }
+          </div>
+          <p class="field-hint">{{ 'attendance.roster.customOffHint' | translate }}</p>
+        } @else {
+          <p class="field-hint">{{ 'attendance.roster.locationWeek' | translate }}</p>
+        }
+
+        <div class="pick-head">
+          <h4 class="sub">{{ 'attendance.roster.employeesN' | translate: { n: picked.size } }}</h4>
+          <button type="button" class="btn-link" (click)="toggleAll()">{{ (picked.size === rows().length ? 'attendance.roster.none' : 'attendance.roster.all') | translate }}</button>
+        </div>
+        <div class="emp-list">
+          @for (r of rows(); track r.employeeId) {
+            <label class="check"><input type="checkbox" [checked]="picked.has(r.employeeId)" (change)="togglePick(r.employeeId)" />{{ r.employeeName }} <span class="dim">{{ r.employeeCode }}</span></label>
+          }
+        </div>
+        <p class="field-hint">{{ 'attendance.roster.assignHint' | translate }}</p>
+      </div>
+      <footer class="drawer-foot">
+        <button type="button" class="btn btn-quiet" (click)="assigning.set(false)">{{ 'common.cancel' | translate }}</button>
+        <button type="button" class="btn btn-ink" [disabled]="!assignForm.shiftId || !assignForm.from || !picked.size || (assignForm.useCustomOff && offBits.size === 7) || saving()" (click)="saveAssign()">
+          {{ (saving() ? 'common.saving' : 'attendance.roster.assign') | translate }}
+        </button>
+      </footer>
+    </aside>
+  </div>
+}

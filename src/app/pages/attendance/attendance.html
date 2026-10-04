@@ -1,0 +1,275 @@
+<div class="page">
+  <header class="page-intro">
+    <p>{{ 'attendance.intro' | translate }}</p>
+  </header>
+
+  <!-- ═══ Today ═══ -->
+  @if (notLinked()) {
+    <div class="notice notice-info">
+      <span class="material-icons-outlined" aria-hidden="true">link_off</span>
+      <span>{{ notLinked() }}</span>
+    </div>
+  }
+  @if (today(); as t) {
+    <section class="panel today">
+      <div class="today-main">
+        <p class="eyebrow">{{ t.workDate | date: 'EEEE, d MMMM' : undefined : lang() }}</p>
+        <h2 class="today-shift">
+          @if (t.dayType === 'Workday') {
+            {{ t.shiftName ?? ('attendance.today.workday' | translate) }}
+            @if (t.scheduledStart && t.scheduledEnd) {
+              <span class="num dim">{{ t.scheduledStart | date: 'HH:mm' }} – {{ t.scheduledEnd | date: 'HH:mm' }}</span>
+            }
+          } @else {
+            {{ 'attendance.dayType.' + t.dayType | translate }}
+          }
+        </h2>
+        <div class="punch-line">
+          @for (p of t.punches; track p.id) {
+            <span class="punch" [class.is-ignored]="p.isIgnored" [title]="p.note ?? ''">
+              <span class="material-icons-outlined" aria-hidden="true">{{ $first ? 'login' : 'logout' }}</span>
+              <span class="num">{{ p.punchedAt | date: 'HH:mm' }}</span>
+            </span>
+          } @empty {
+            <span class="dim">{{ 'attendance.today.noPunch' | translate }}</span>
+          }
+        </div>
+      </div>
+      <div class="today-figures">
+        <div class="figure">
+          <span class="fig-label">{{ 'attendance.col.worked' | translate }}</span>
+          <span class="fig-value num">{{ hm(runningMinutes()) }}</span>
+        </div>
+        @if (t.day; as d) {
+          @if (d.lateMinutes) {
+            <div class="figure late">
+              <span class="fig-label">{{ 'attendance.col.late' | translate }}</span>
+              <span class="fig-value num">{{ hm(d.lateMinutes) }}</span>
+            </div>
+          }
+          <span [class]="chip[d.status]">{{ 'attendance.status.' + d.status | translate }}</span>
+        }
+      </div>
+      <div class="today-action">
+        <button type="button" class="btn clock-btn" [class.btn-ink]="t.nextAction === 'In'" [class.btn-brass]="t.nextAction !== 'In'"
+                [disabled]="clocking() || !canClock()" (click)="clock()">
+          <span class="material-icons-outlined" aria-hidden="true">{{ t.nextAction === 'In' ? 'login' : 'logout' }}</span>
+          {{ (clocking() ? 'common.saving' : t.nextAction === 'In' ? 'attendance.today.clockIn' : 'attendance.today.clockOut') | translate }}
+        </button>
+        @if (!canClock()) {
+          <span class="field-hint">{{ 'attendance.today.notAllowed' | translate }}</span>
+        } @else if (t.requiresLocation) {
+          <span class="field-hint"><span class="material-icons-outlined tiny" aria-hidden="true">location_on</span>{{ 'attendance.today.needsLocation' | translate }}</span>
+        }
+      </div>
+    </section>
+  }
+
+  <nav class="tabs">
+    @for (t of tabs; track t) {
+      <button type="button" class="tab" [class.is-active]="tab() === t" (click)="setTab(t)">{{ 'attendance.tabs.' + t | translate }}</button>
+    }
+  </nav>
+
+  <!-- ═══ Timesheet ═══ -->
+  @if (tab() === 'timesheet') {
+    @if (canViewAll) {
+      <section class="panel overview">
+        <div class="ov-date">
+          <button type="button" class="icon-btn-sm" (click)="shiftSummary(-1)" [attr.aria-label]="'admin.users.prev' | translate"><span class="material-icons-outlined flip" aria-hidden="true">chevron_left</span></button>
+          <input type="date" class="select-sm" [(ngModel)]="summaryDate" (change)="loadSummary()" [attr.aria-label]="'leave.date' | translate" />
+          <button type="button" class="icon-btn-sm" (click)="shiftSummary(1)" [attr.aria-label]="'admin.users.next' | translate"><span class="material-icons-outlined flip" aria-hidden="true">chevron_right</span></button>
+        </div>
+        @if (summary(); as s) {
+          <div class="ov-stats num">
+            <div class="stat"><b>{{ count('Present') }}</b><span>{{ 'attendance.status.Present' | translate }}</span></div>
+            <div class="stat bad"><b>{{ count('Absent') }}</b><span>{{ 'attendance.status.Absent' | translate }}</span></div>
+            <div class="stat warn"><b>{{ s.late }}</b><span>{{ 'attendance.overview.late' | translate }}</span></div>
+            <div class="stat"><b>{{ count('HalfDay') + count('Incomplete') }}</b><span>{{ 'attendance.overview.partial' | translate }}</span></div>
+            <div class="stat"><b>{{ count('OnLeave') }}</b><span>{{ 'attendance.status.OnLeave' | translate }}</span></div>
+            <div class="stat muted"><b>{{ s.total }}</b><span>{{ 'attendance.overview.total' | translate }}</span></div>
+          </div>
+        }
+        @if (canManage) {
+          <button type="button" class="btn btn-quiet btn-small" [disabled]="processing()" (click)="process()" [title]="'attendance.overview.processHint' | translate">
+            <span class="material-icons-outlined" aria-hidden="true">sync</span>{{ 'attendance.overview.process' | translate }}
+          </button>
+        }
+      </section>
+    }
+
+    <section class="panel panel-flush">
+      <header class="toolbar sheet-filter">
+        <label class="mini">{{ 'leave.from' | translate }}<input type="date" class="select-sm" [(ngModel)]="filter.from" (change)="applyFilter()" /></label>
+        <label class="mini">{{ 'leave.to' | translate }}<input type="date" class="select-sm" [(ngModel)]="filter.to" (change)="applyFilter()" /></label>
+        <select class="select-sm" [(ngModel)]="filter.status" (change)="applyFilter()" [attr.aria-label]="'leave.status' | translate">
+          <option value="">{{ 'leave.anyStatus' | translate }}</option>
+          @for (s of statuses; track s) { <option [value]="s">{{ 'attendance.status.' + s | translate }}</option> }
+        </select>
+        @if (canViewAll) {
+          <select class="select-sm" [(ngModel)]="filter.departmentId" (change)="applyFilter()" [attr.aria-label]="'people.department' | translate">
+            <option value="">{{ 'attendance.allDepartments' | translate }}</option>
+            @for (d of departments(); track d.id) { <option [value]="d.id">{{ d.name }}</option> }
+          </select>
+        }
+        <label class="check"><input type="checkbox" [(ngModel)]="filter.lateOnly" (change)="applyFilter()" />{{ 'attendance.lateOnly' | translate }}</label>
+      </header>
+      <div class="table-wrap">
+        <table class="ledger-table">
+          <thead>
+            <tr>
+              <th>{{ 'attendance.col.employee' | translate }}</th>
+              <th>{{ 'leave.date' | translate }}</th>
+              <th>{{ 'attendance.col.shift' | translate }}</th>
+              <th>{{ 'attendance.col.in' | translate }}</th>
+              <th>{{ 'attendance.col.out' | translate }}</th>
+              <th class="end">{{ 'attendance.col.worked' | translate }}</th>
+              <th class="end">{{ 'attendance.col.late' | translate }}</th>
+              <th class="end">{{ 'attendance.col.overtime' | translate }}</th>
+              <th class="end">{{ 'leave.status' | translate }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (d of sheet()?.items ?? []; track d.id) {
+              <tr class="is-link" tabindex="0" (click)="openDay(d)" (keydown.enter)="openDay(d)">
+                <td><span class="cell-main">{{ d.employeeName }}</span><span class="cell-sub">{{ d.employeeCode }} · {{ d.departmentName }}</span></td>
+                <td class="num"><span class="cell-main">{{ d.workDate | date: 'd MMM' : undefined : lang() }}</span><span class="cell-sub">{{ d.workDate | date: 'EEE' : undefined : lang() }}</span></td>
+                <td class="mono">{{ d.shiftCode ?? '—' }}</td>
+                <td class="num">{{ d.firstIn ? (d.firstIn | date: 'HH:mm') : '—' }}</td>
+                <td class="num">{{ d.lastOut ? (d.lastOut | date: 'HH:mm') : '—' }}</td>
+                <td class="end num">{{ hm(d.workedMinutes) }}</td>
+                <td class="end num" [class.late-cell]="d.lateMinutes">{{ hm(d.lateMinutes) }}</td>
+                <td class="end num">{{ hm(d.overtimeMinutes) }}</td>
+                <td class="end">
+                  <span [class]="chip[d.status]">{{ 'attendance.status.' + d.status | translate }}</span>
+                  @if (d.isManuallyEdited) { <span class="material-icons-outlined tiny dim" [title]="'attendance.day.edited' | translate">edit_note</span> }
+                </td>
+              </tr>
+            } @empty {
+              <tr><td colspan="9" class="dim">{{ (loading() ? 'common.loading' : 'attendance.empty') | translate }}</td></tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      @if (pages() > 1) {
+        <footer class="pager">
+          <span class="num dim">{{ 'attendance.pageOf' | translate: { page: page(), pages: pages(), total: sheet()?.totalCount } }}</span>
+          <div class="pager-buttons">
+            <button type="button" class="icon-btn-sm" [disabled]="page() <= 1" (click)="goPage(page() - 1)" [attr.aria-label]="'admin.users.prev' | translate"><span class="material-icons-outlined flip" aria-hidden="true">chevron_left</span></button>
+            <button type="button" class="icon-btn-sm" [disabled]="page() >= pages()" (click)="goPage(page() + 1)" [attr.aria-label]="'admin.users.next' | translate"><span class="material-icons-outlined flip" aria-hidden="true">chevron_right</span></button>
+          </div>
+        </footer>
+      }
+    </section>
+  }
+
+  @if (tab() === 'roster') {
+    <app-roster-tab [canManage]="canManage" [canViewAll]="canViewAll" />
+  }
+  @if (tab() === 'overtime') {
+    <app-requests-tab [overtime]="true" [canViewAll]="canViewAll" />
+  }
+  @if (tab() === 'requests') {
+    <app-requests-tab #requestsTab [overtime]="false" [canViewAll]="canViewAll" />
+  }
+</div>
+
+<!-- ═══ Day drawer ═══ -->
+@if (detail(); as det) {
+  <div class="overlay" (click)="closeDay()">
+    <aside class="drawer" role="dialog" aria-modal="true" (click)="$event.stopPropagation()">
+      <header class="drawer-head">
+        <div>
+          <h3>{{ det.day.employeeName }}</h3>
+          <p class="cell-sub">{{ det.day.workDate | date: 'EEEE, d MMMM y' : undefined : lang() }}</p>
+        </div>
+        <button type="button" class="btn-link" (click)="closeDay()" [attr.aria-label]="'common.close' | translate"><span class="material-icons-outlined" aria-hidden="true">close</span></button>
+      </header>
+      <div class="drawer-body">
+        <div class="day-head">
+          <span [class]="chip[det.day.status]">{{ 'attendance.status.' + det.day.status | translate }}</span>
+          <span class="dim">
+            @if (det.day.dayType === 'Workday') {
+              {{ det.day.shiftCode ?? '' }}
+              @if (det.day.scheduledStart && det.day.scheduledEnd) { {{ det.day.scheduledStart | date: 'HH:mm' }} – {{ det.day.scheduledEnd | date: 'HH:mm' }} }
+            } @else { {{ 'attendance.dayType.' + det.day.dayType | translate }} }
+          </span>
+        </div>
+        <dl class="day-figures num">
+          <div><dt>{{ 'attendance.col.worked' | translate }}</dt><dd>{{ hm(det.day.workedMinutes) }}</dd></div>
+          <div><dt>{{ 'attendance.col.late' | translate }}</dt><dd>{{ hm(det.day.lateMinutes) }}</dd></div>
+          <div><dt>{{ 'attendance.col.early' | translate }}</dt><dd>{{ hm(det.day.earlyLeaveMinutes) }}</dd></div>
+          <div><dt>{{ 'attendance.col.overtime' | translate }}</dt><dd>{{ hm(det.day.overtimeMinutes) }}</dd></div>
+        </dl>
+        @if (det.day.isManuallyEdited) {
+          <p class="notice notice-info"><span class="material-icons-outlined" aria-hidden="true">edit_note</span><span>{{ 'attendance.day.edited' | translate }}@if (det.day.remarks) { · {{ det.day.remarks }} }</span></p>
+        }
+
+        <h4 class="sub">{{ 'attendance.day.punches' | translate }}</h4>
+        <ul class="punch-list">
+          @for (p of det.punches; track p.id) {
+            <li [class.is-ignored]="p.isIgnored">
+              <span class="num p-time">{{ p.punchedAt | date: 'HH:mm' }}</span>
+              <span class="p-meta">
+                <span>{{ 'attendance.source.' + p.source | translate }}@if (p.deviceName) { · {{ p.deviceName }} }</span>
+                @if (p.note) { <span class="cell-sub">{{ p.note }}</span> }
+              </span>
+              @if (p.isIgnored) {
+                <span class="flag">{{ 'attendance.day.ignored' | translate }}</span>
+              } @else if (canManage) {
+                @if (ignoringId === p.id) {
+                  <span class="ignore-form">
+                    <input [(ngModel)]="ignoreReason" maxlength="200" [placeholder]="'attendance.day.ignoreReason' | translate" />
+                    <button type="button" class="btn btn-quiet btn-small" [disabled]="!ignoreReason.trim() || saving()" (click)="ignore(p.id)">{{ 'attendance.day.ignore' | translate }}</button>
+                  </span>
+                } @else {
+                  <button type="button" class="icon-btn-sm" (click)="ignoringId = p.id; ignoreReason = ''" [attr.aria-label]="'attendance.day.ignore' | translate"><span class="material-icons-outlined" aria-hidden="true">block</span></button>
+                }
+              }
+            </li>
+          } @empty {
+            <li class="dim">{{ 'attendance.today.noPunch' | translate }}</li>
+          }
+        </ul>
+
+        @if (drawerMode() === 'punch') {
+          <div class="rule-edit">
+            <div class="grid-2">
+              <div class="field"><label for="mp-time">{{ 'attendance.day.time' | translate }}</label><input id="mp-time" type="time" [(ngModel)]="punchForm.time" /></div>
+              <div class="field"><label for="mp-note">{{ 'attendance.day.note' | translate }}</label><input id="mp-note" [(ngModel)]="punchForm.note" maxlength="200" /></div>
+            </div>
+            <div class="inline-actions">
+              <button type="button" class="btn btn-quiet btn-small" (click)="drawerMode.set('view')">{{ 'common.cancel' | translate }}</button>
+              <button type="button" class="btn btn-ink btn-small" [disabled]="!punchForm.time || !punchForm.note.trim() || saving()" (click)="savePunch()">{{ 'attendance.day.addPunch' | translate }}</button>
+            </div>
+          </div>
+        }
+        @if (drawerMode() === 'override') {
+          <div class="rule-edit">
+            <div class="field">
+              <label for="ov-status">{{ 'leave.status' | translate }}</label>
+              <select id="ov-status" [(ngModel)]="overrideForm.status">
+                @for (s of statuses; track s) { <option [value]="s">{{ 'attendance.status.' + s | translate }}</option> }
+              </select>
+            </div>
+            <div class="field"><label for="ov-rem">{{ 'attendance.day.remarks' | translate }}</label><input id="ov-rem" [(ngModel)]="overrideForm.remarks" maxlength="500" /></div>
+            <p class="field-hint">{{ 'attendance.day.overrideHint' | translate }}</p>
+            <div class="inline-actions">
+              <button type="button" class="btn btn-quiet btn-small" (click)="drawerMode.set('view')">{{ 'common.cancel' | translate }}</button>
+              <button type="button" class="btn btn-ink btn-small" [disabled]="!overrideForm.remarks.trim() || saving()" (click)="saveOverride()">{{ 'common.save' | translate }}</button>
+            </div>
+          </div>
+        }
+      </div>
+      <footer class="drawer-foot">
+        @if (isMine(det.day)) {
+          <button type="button" class="btn btn-quiet" (click)="requestCorrection()"><span class="material-icons-outlined" aria-hidden="true">edit_calendar</span>{{ 'attendance.day.requestCorrection' | translate }}</button>
+        }
+        @if (canManage && drawerMode() === 'view') {
+          <button type="button" class="btn btn-quiet" (click)="startOverride()">{{ 'attendance.day.override' | translate }}</button>
+          <button type="button" class="btn btn-ink" (click)="startPunch()"><span class="material-icons-outlined" aria-hidden="true">add</span>{{ 'attendance.day.addPunch' | translate }}</button>
+        }
+      </footer>
+    </aside>
+  </div>
+}

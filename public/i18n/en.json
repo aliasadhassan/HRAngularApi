@@ -1116,5 +1116,236 @@
     "pwdMismatch": "Passwords don't match.",
     "pwdChanged": "Password changed. Please sign in again.",
     "sso": "You sign in with Microsoft, so your password is managed by your Microsoft account."
+  },
+  "attendance": {
+    "intro": "Clock in for the day, see your timesheet and shifts, and ask for corrections or overtime. Managers see their team; HR sees everyone.",
+    "tabs": {
+      "timesheet": "Timesheet",
+      "roster": "Roster",
+      "overtime": "Overtime",
+      "requests": "Corrections & requests"
+    },
+    "today": {
+      "workday": "Workday",
+      "noPunch": "No punches yet.",
+      "clockIn": "Clock in",
+      "clockOut": "Clock out",
+      "inDone": "Clocked in. Have a good day.",
+      "outDone": "Clocked out.",
+      "notAllowed": "Your attendance policy doesn't allow web clock-in.",
+      "needsLocation": "Your location is checked when you clock in."
+    },
+    "dayType": {
+      "Workday": "Workday",
+      "WeeklyOff": "Weekly off",
+      "Holiday": "Holiday"
+    },
+    "status": {
+      "Present": "Present",
+      "Absent": "Absent",
+      "HalfDay": "Half day",
+      "OnLeave": "On leave",
+      "Holiday": "Holiday",
+      "WeeklyOff": "Weekly off",
+      "Incomplete": "Missing punch"
+    },
+    "method": {
+      "Web": "Web",
+      "Mobile": "Mobile",
+      "Biometric": "Biometric"
+    },
+    "source": {
+      "Web": "Web",
+      "Mobile": "Mobile app",
+      "Biometric": "Biometric device",
+      "Manual": "Added by HR",
+      "Request": "Approved request"
+    },
+    "requestType": {
+      "Correction": "Missed punch / correction",
+      "WorkFromHome": "Work from home",
+      "OnDuty": "On duty (outside office)",
+      "Overtime": "Overtime"
+    },
+    "requestHint": {
+      "Correction": "Forgot to clock in or out? Enter the right times and they'll be added once approved.",
+      "WorkFromHome": "You worked from home. Enter your working hours for that day.",
+      "OnDuty": "You were at a client or travelling for work. Enter your hours for that day."
+    },
+    "col": {
+      "employee": "Employee",
+      "shift": "Shift",
+      "in": "In",
+      "out": "Out",
+      "worked": "Worked",
+      "late": "Late",
+      "early": "Left early",
+      "overtime": "Overtime"
+    },
+    "overview": {
+      "late": "Late",
+      "partial": "Half / missing",
+      "total": "Employees",
+      "process": "Recalculate day",
+      "processHint": "Re-reads the roster and punches for this date for everyone. Use after changing shifts or when a device synced late.",
+      "processed": "Recalculated {{n}} employees."
+    },
+    "allDepartments": "All departments",
+    "lateOnly": "Late only",
+    "empty": "No attendance in these dates.",
+    "pageOf": "Page {{page}} of {{pages}} · {{total}} rows",
+    "day": {
+      "punches": "Punches",
+      "ignore": "Ignore",
+      "ignored": "Ignored",
+      "ignoreReason": "Why ignore?",
+      "addPunch": "Add punch",
+      "time": "Time",
+      "note": "Note",
+      "override": "Set status",
+      "remarks": "Remarks",
+      "overrideHint": "A status you set stays even if punches change later.",
+      "edited": "Status set by HR",
+      "requestCorrection": "Request correction"
+    },
+    "roster": {
+      "thisWeek": "This week",
+      "week": "Week",
+      "twoWeeks": "2 weeks",
+      "search": "Find employee",
+      "assign": "Assign shift",
+      "empty": "No employees in this view.",
+      "off": "Off",
+      "holiday": "Holiday",
+      "dayOff": "Day off",
+      "legendOverride": "Changed for this day",
+      "reset": "Back to regular shift",
+      "until": "Until (optional)",
+      "customOff": "Set weekly off days for these people",
+      "customOffHint": "Highlighted days are off.",
+      "locationWeek": "Weekly off days follow each person's location work week.",
+      "employeesN": "Employees ({{n}})",
+      "all": "Select all",
+      "none": "Clear",
+      "assignHint": "Each person's current shift ends the day before the new one starts.",
+      "assigned": "Shift assigned to {{n}} employees.",
+      "source": {
+        "Override": "This day was changed by hand.",
+        "Assignment": "From the assigned shift.",
+        "WorkWeek": "From the location's work week (no shift assigned)."
+      }
+    },
+    "week": {
+      "mon": "Mon",
+      "tue": "Tue",
+      "wed": "Wed",
+      "thu": "Thu",
+      "fri": "Fri",
+      "sat": "Sat",
+      "sun": "Sun"
+    },
+    "requests": {
+      "scope": {
+        "Mine": "Mine",
+        "Approvals": "Waiting for me",
+        "All": "All"
+      },
+      "help": "Missed punches, work from home and on-duty days.",
+      "otHelp": "Overtime counts in payroll only after it is approved.",
+      "new": "New request",
+      "newOt": "Claim overtime",
+      "type": "Type",
+      "minutes": "Minutes",
+      "reason": "Reason",
+      "minutesHint": "Leave empty to claim the overtime calculated for that day.",
+      "claimed": "claimed {{v}}",
+      "approvedMinutes": "Approve minutes",
+      "commentOptional": "Comment (optional)",
+      "approvedMsg": "Approved {{name}}'s request.",
+      "rejectedMsg": "Rejected {{name}}'s request.",
+      "cancelledMsg": "Request cancelled."
+    },
+    "errors": {
+      "load": "Couldn't load attendance.",
+      "clock": "Couldn't clock in.",
+      "location": "Couldn't get your location. Allow location access in the browser and try again."
+    }
+  },
+  "attendanceSetup": {
+    "intro": "Shifts, attendance rules and biometric devices. Changes apply from the next calculation; past days keep their numbers until recalculated.",
+    "tabs": {
+      "shifts": "Shifts",
+      "policies": "Policies",
+      "devices": "Devices"
+    },
+    "shifts": {
+      "help": "Working hours people are rostered on. A shift that ends before it starts runs overnight.",
+      "new": "New shift",
+      "shift": "Shift",
+      "timing": "Timing",
+      "net": "Net hours",
+      "grace": "Grace",
+      "people": "People",
+      "overnight": "Overnight",
+      "flexible": "Flexible",
+      "empty": "No shifts yet. Without one, people follow their location's work week.",
+      "start": "Starts",
+      "end": "Ends",
+      "break": "Break (minutes)",
+      "graceIn": "Late grace (minutes)",
+      "graceOut": "Early-leave grace (minutes)",
+      "preview": "{{net}} of work after the break.",
+      "overnightHint": " Ends the next morning.",
+      "flexibleHint": "Flexible (no late marks, only hours count)"
+    },
+    "policies": {
+      "help": "Rules for full and half days, how people may clock in, who approves requests and how overtime is paid. A location policy wins over the company-wide one.",
+      "new": "New policy",
+      "allLocations": "All locations",
+      "empty": "No policy yet. Defaults apply: 6 hours is a full day, 4 hours a half day, web and mobile clock-in.",
+      "fullDay": "Full day",
+      "halfDay": "Half day",
+      "methods": "Clock in from",
+      "geofenceN": "Within {{n}} m",
+      "approver": "Requests approved by",
+      "overtime": "Overtime",
+      "off": "Off",
+      "daySection": "Day rules",
+      "fullDayMin": "Full day (minutes)",
+      "halfDayMin": "Half day (minutes)",
+      "latesPerHalf": "Lates per half-day cut",
+      "clockSection": "Clock-in",
+      "geofence": "Only inside an office area (geofence)",
+      "lat": "Latitude",
+      "lng": "Longitude",
+      "radius": "Radius (m)",
+      "useMine": "Use my current location",
+      "requestSection": "Correction requests",
+      "window": "Days allowed to correct",
+      "maxPerMonth": "Max per month",
+      "otEnabled": "Pay overtime",
+      "otMin": "Minimum minutes",
+      "otMax": "Max minutes per day",
+      "rateWorkday": "Rate on workdays",
+      "rateOff": "Rate on weekly off",
+      "rateHoliday": "Rate on holidays",
+      "otApproval": "Overtime needs approval before payroll"
+    },
+    "devices": {
+      "help": "Biometric machines. Their punches are imported against the employee code.",
+      "new": "Add device",
+      "device": "Device",
+      "lastSync": "Last sync",
+      "never": "Never",
+      "empty": "No devices registered.",
+      "serial": "Serial number",
+      "vendor": "Make",
+      "importHint": "Punches from this device are matched to people by employee code."
+    },
+    "drawer": {
+      "shift": "Shift",
+      "policy": "Attendance policy",
+      "device": "Biometric device"
+    }
   }
 }
