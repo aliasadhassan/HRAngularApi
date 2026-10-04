@@ -6,7 +6,6 @@ import { DashboardComponent } from './pages/dashboard/dashboard';
 import { EmployeeDirectoryComponent } from './pages/people/directory/employee-directory';
 import { EmployeeProfileComponent } from './pages/people/profile/employee-profile';
 import { OrganizationComponent } from './pages/people/organization/organization';
-import { AttendanceComponent } from './pages/attendance/attendance';
 import { LeavesComponent } from './pages/leave/leaves/leaves';
 import { LeaveSetupComponent } from './pages/leave/setup/leave-setup';
 import { MyPayslipsComponent } from './pages/payroll/my-payslips/my-payslips';
@@ -31,88 +30,59 @@ import { CompanyComponent } from './pages/admin/company/company';
 /**
  * Abhi bana nahi — "coming soon" page. Asli component banne par isko PLANNED se nikaal kar
  * upar `app` ke children mein asli route likho. data.comingSoon = true se sidebar/QA pehchan sakte hain.
+ * data.tabs = is page ke planned tabs (coming-soon page pe dikhte hain) — chhote pages alag nahi, tab bante hain.
  */
-const soon = (path: string, titleKey: string, permission?: string | readonly string[]): Route => ({
+const soon = (
+  path: string,
+  titleKey: string,
+  permission?: string | readonly string[],
+  tabs?: readonly string[]
+): Route => ({
   path,
   component: ComingSoonComponent,
   ...(permission ? { canActivate: [permissionGuard] } : {}),
-  data: { titleKey, permission, comingSoon: true }
+  data: { titleKey, permission, tabs, comingSoon: true }
 });
 
-/** Sidebar mein naam hai, page baad mein. Order sidebar jaisa. */
+/**
+ * Sidebar mein naam hai, page baad mein. Order sidebar jaisa.
+ * Consolidation: ek kaam ke chhote pages ek page ke tabs hain (56 → 19 planned pages).
+ */
 const PLANNED: Route[] = [
+  // Time & attendance (schema: HRCoreWebApi "attendance" schema — ek page ke tabs = ek group of tables)
+  soon('attendance', 'nav.attendance', undefined, ['timesheet', 'roster', 'overtime', 'attendanceRequests']),
+  soon('attendance-setup', 'nav.attendanceSetup', P.settingsManage, ['shifts', 'policies', 'devices']),
+
   // People
-  soon('employee-requests', 'nav.employeeRequests'),
+  soon('assets', 'nav.assets', undefined, ['inventory', 'assignments', 'returns', 'history']),
 
-  // Workforce
-  soon('workforce/time-tracking', 'nav.timeTracking'),
-  soon('workforce/shifts', 'nav.shiftManagement'),
-  soon('workforce/scheduling', 'nav.workforceScheduling'),
-  soon('workforce/overtime', 'nav.overtime'),
-  soon('workforce/expenses', 'nav.expenseManagement'),
-  soon('workforce/travel', 'nav.businessTravel'),
-  soon('workforce/planning', 'nav.workforcePlanning'),
-
-  // Payroll
-  soon('payroll/components', 'nav.salaryComponents', P.payrollRun),
-  soon('payroll/allowances', 'nav.allowances', P.payrollRun),
-  soon('payroll/deductions', 'nav.deductions', P.payrollRun),
-  soon('payroll/loans', 'nav.loansAdvances', P.payrollViewAll),
-  soon('payroll/benefits', 'nav.benefits', P.payrollViewAll),
-  soon('payroll/compensation', 'nav.compensationRewards', P.payrollRun),
+  // Payroll (components / allowances / deductions = Payroll setup ka Components tab)
+  soon('payroll/loans', 'nav.loansAdvances', P.payrollViewAll, ['loans', 'loanRequests', 'repayments']),
+  soon('payroll/benefits', 'nav.benefitsRewards', P.payrollViewAll, ['benefitPlans', 'enrolments', 'increments', 'bonuses']),
+  soon('expenses', 'nav.expensesTravel', undefined, ['claims', 'travel', 'advances', 'expensePolicies']),
 
   // Talent
-  soon('talent/recruitment', 'nav.recruitment'),
-  soon('talent/job-requisitions', 'nav.jobRequisitions'),
-  soon('talent/onboarding', 'nav.onboarding'),
-  soon('talent/offboarding', 'nav.offboarding'),
-  soon('talent/performance', 'nav.performance'),
-  soon('talent/goals', 'nav.goals'),
-  soon('talent/learning', 'nav.learningTraining'),
-  soon('talent/skills', 'nav.skillsCompetencies'),
-  soon('talent/career', 'nav.careerSuccession'),
+  soon('talent/recruitment', 'nav.recruitment', undefined, ['requisitions', 'jobs', 'candidates', 'headcount']),
+  soon('talent/lifecycle', 'nav.onboardingExit', undefined, ['onboarding', 'offboarding', 'checklists']),
+  soon('talent/performance', 'nav.performance', undefined, ['reviews', 'goals', 'cycles']),
+  soon('talent/learning', 'nav.learningGrowth', undefined, ['courses', 'skills', 'career']),
 
   // Employee experience
-  soon('employee/self-service', 'nav.employeeSelfService'),
-  soon('manager/self-service', 'nav.managerSelfService'),
-  soon('employee-experience/helpdesk', 'nav.hrHelpdesk'),
-  soon('employee-experience/surveys', 'nav.surveys'),
-  soon('employee-experience/recognition', 'nav.recognitionRewards'),
-  soon('employee-experience/grievances', 'nav.grievances'),
-
-  // Assets
-  soon('assets', 'nav.assetManagement'),
-  soon('assets/assignment', 'nav.assetAssignment'),
-  soon('assets/returns', 'nav.assetReturn'),
-  soon('assets/history', 'nav.assetHistory'),
+  soon('requests', 'nav.requestsHelpdesk', undefined, ['myRequests', 'teamApprovals', 'helpdesk']),
+  soon('engagement', 'nav.engagement', undefined, ['surveys', 'recognition']),
 
   // Reporting
-  soon('reports', 'nav.reportsDashboard'),
-  soon('reports/employees', 'nav.employeeReport'),
-  soon('reports/payroll', 'nav.payrollReport'),
-  soon('reports/loans', 'nav.loansReport'),
-  soon('reports/allowances', 'nav.allowancesReport'),
-  soon('reports/deductions', 'nav.deductionsReport'),
-  soon('reports/leaves', 'nav.leaveReport'),
-  soon('reports/attendance', 'nav.attendanceReport'),
-  soon('reports/recruitment', 'nav.recruitmentReport'),
-  soon('reports/attrition', 'nav.attritionReport'),
-  soon('reports/performance', 'nav.performanceReport'),
-  soon('reports/builder', 'nav.reportBuilder'),
-  soon('reports/designer', 'nav.reportDesigner'),
-  soon('reports/scheduled', 'nav.scheduledReports'),
+  soon('reports', 'nav.reports', undefined, ['peopleReports', 'payReports', 'timeReports', 'talentReports']),
+  soon('reports/builder', 'nav.reportBuilder', undefined, ['builder', 'savedReports', 'scheduled']),
 
   // Compliance
-  soon('compliance', 'nav.complianceManagement'),
-  soon('compliance/policies', 'nav.policyManagement'),
-  soon('compliance/health-safety', 'nav.healthSafety'),
-  soon('compliance/disciplinary', 'nav.disciplinaryActions'),
-  soon('compliance/audit', 'nav.audit'),
+  soon('compliance/policies', 'nav.policiesCompliance', undefined, ['policies', 'acknowledgements', 'statutory']),
+  soon('compliance/health-safety', 'nav.healthSafety', undefined, ['incidents', 'inspections']),
+  soon('compliance/relations', 'nav.employeeRelations', undefined, ['grievances', 'disciplinary']),
+  soon('compliance/audit', 'nav.audit', undefined, ['activity', 'dataChanges']),
 
   // AI
-  soon('ai/assistant', 'nav.aiAssistant'),
-  soon('ai/insights', 'nav.aiInsights'),
-  soon('ai/recruitment', 'nav.aiRecruitment')
+  soon('ai', 'nav.aiAssistant', undefined, ['chat', 'insights', 'aiRecruitment'])
 ];
 
 export const routes: Routes = [
@@ -130,11 +100,8 @@ export const routes: Routes = [
       { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
       { path: 'dashboard', component: DashboardComponent, data: { titleKey: 'nav.dashboard' } },
       { path: 'employees', component: EmployeeDirectoryComponent, canActivate: [permissionGuard], data: { titleKey: 'nav.employees', permission: P.employeesView } },
-      // ⚠ employees/:id se PEHLE — warna 'documents' ko employee id samjha jayega
-      soon('employees/documents', 'nav.employeeDocuments', P.employeesView),
       { path: 'employees/:id', component: EmployeeProfileComponent, canActivate: [permissionGuard], data: { titleKey: 'nav.employees', permission: P.employeesView } },
       { path: 'organization', component: OrganizationComponent, canActivate: [permissionGuard], data: { titleKey: 'nav.organization', permission: P.employeesView } },
-      { path: 'attendance', component: AttendanceComponent, data: { titleKey: 'nav.attendance' } },
       { path: 'leaves', component: LeavesComponent, data: { titleKey: 'nav.leaves' } },
       { path: 'leave-setup', component: LeaveSetupComponent, canActivate: [permissionGuard], data: { titleKey: 'nav.leaveSetup', permission: P.settingsManage } },
       { path: 'me/payslips', component: MyPayslipsComponent, data: { titleKey: 'nav.myPayslips' } },
