@@ -28,6 +28,7 @@ export class LoginComponent implements OnDestroy {
   hidePassword = true;
   isSubmitting = false;
   today = new Date();
+  isArabic = false;
 
   lockoutSeconds = 0;
   ssoOnly = false;
@@ -146,5 +147,8 @@ export class LoginComponent implements OnDestroy {
 
   ngOnDestroy(): void {
     this.clearLockoutTimer();
+  }
+  toggleLanguage(): void {
+    this.isArabic = !this.isArabic;
   }
 }
