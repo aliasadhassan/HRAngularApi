@@ -73,12 +73,13 @@
     "employeeRelations": "Employee Relations"
   },
   "topbar": {
-    "switchLanguage": "العربية",
     "notifications": "Notifications",
     "myProfile": "My Profile",
     "settings": "Settings",
     "logout": "Logout",
-    "openMenu": "Open menu"
+    "openMenu": "Open menu",
+    "language": "Language",
+    "chooseLanguage": "Choose language"
   },
   "comingSoon": {
     "body": "This section is being built and will be available soon.",
@@ -1347,5 +1348,11 @@
       "policy": "Attendance policy",
       "device": "Biometric device"
     }
+  },
+  "alert": {
+    "success": "Done",
+    "error": "Something went wrong",
+    "info": "Note",
+    "dismiss": "Dismiss"
   }
 }

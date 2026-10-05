@@ -73,12 +73,13 @@
     "employeeRelations": "علاقات الموظفين"
   },
   "topbar": {
-    "switchLanguage": "English",
     "notifications": "الإشعارات",
     "myProfile": "ملفي الشخصي",
     "settings": "الإعدادات",
     "logout": "تسجيل الخروج",
-    "openMenu": "فتح القائمة"
+    "openMenu": "فتح القائمة",
+    "language": "اللغة",
+    "chooseLanguage": "اختر اللغة"
   },
   "comingSoon": {
     "body": "هذا القسم قيد الإنشاء وسيكون متاحاً قريباً.",
@@ -1347,5 +1348,11 @@
       "policy": "سياسة الحضور",
       "device": "جهاز بصمة"
     }
+  },
+  "alert": {
+    "success": "تم",
+    "error": "حدث خطأ ما",
+    "info": "ملاحظة",
+    "dismiss": "إغلاق"
   }
 }
