@@ -1,136 +1,218 @@
-<div class="auth-wrapper">
-  <div class="ledger-panel">
-    <div class="brand">
-      <div class="brand-mark">H</div>
-      <div class="brand-name">HR Cloud</div>
-    </div>
+<div class="auth-wrapper" [class.rtl]="isArabic" [attr.dir]="isArabic ? 'rtl' : 'ltr'">
 
-    <div class="thesis">
-      <div class="eyebrow">Every entry, accounted for</div>
-      <h1>The ledger never stops moving.</h1>
-      <p>Attendance, payroll, and approvals flow through one record — live, auditable, and always in balance.</p>
-    </div>
+  <!-- MARKETING / PRODUCT SIDE -->
+  <section class="hero-panel" aria-label="HR Cloud">
+    <picture class="hero-art">
+      <img
+        [src]="isArabic ? '/assets/images/auth/auth-hero-rtl.png' : '/assets/images/auth/auth-hero-ltr.png'"
+        [alt]="isArabic ? 'منصة HR Cloud لإدارة الموارد البشرية' : 'HR Cloud human resources platform'" />
+    </picture>
+  </section>
 
-    <div class="ledger-strip">
-      <div class="ledger-track">
-        <div class="ledger-row"><span class="tag">IN</span><span class="id">EMP-0417</span><span class="action">clocked in — Warehouse Floor 2</span><span class="time">1:12 AM</span></div>
-        <div class="ledger-row"><span class="tag">OUT</span><span class="id">EMP-0298</span><span class="action">shift closed — Distribution B</span><span class="time">5:02 PM</span></div>
-        <div class="ledger-row"><span class="tag">RUN</span><span class="id">PR-2026-07</span><span class="action">payroll batch processed</span><span class="time">8:24 PM</span></div>
-        <div class="ledger-row"><span class="tag">IN</span><span class="id">EMP-0552</span><span class="action">clocked in — Ops Center</span><span class="time">12:06 AM</span></div>
-        <div class="ledger-row"><span class="tag">APR</span><span class="id">LV-1183</span><span class="action">leave request approved</span><span class="time">7:54 PM</span></div>
-        <div class="ledger-row"><span class="tag">OUT</span><span class="id">EMP-0114</span><span class="action">shift closed — Warehouse Floor 1</span><span class="time">11:20 AM</span></div>
-        <div class="ledger-row"><span class="tag">IN</span><span class="id">EMP-0339</span><span class="action">clocked in — Logistics</span><span class="time">7:41 AM</span></div>
-        <div class="ledger-row"><span class="tag">RUN</span><span class="id">PR-2026-07</span><span class="action">tax withholding verified</span><span class="time">5:53 PM</span></div>
-        <div class="ledger-row"><span class="tag">APR</span><span class="id">EX-0902</span><span class="action">expense claim approved</span><span class="time">4:11 PM</span></div>
-        <div class="ledger-row"><span class="tag">IN</span><span class="id">EMP-0071</span><span class="action">clocked in — Admin</span><span class="time">5:09 AM</span></div>
-        <div class="ledger-row"><span class="tag">IN</span><span class="id">EMP-0417</span><span class="action">clocked in — Warehouse Floor 2</span><span class="time">1:12 AM</span></div>
-        <div class="ledger-row"><span class="tag">OUT</span><span class="id">EMP-0298</span><span class="action">shift closed — Distribution B</span><span class="time">5:02 PM</span></div>
-        <div class="ledger-row"><span class="tag">RUN</span><span class="id">PR-2026-07</span><span class="action">payroll batch processed</span><span class="time">8:24 PM</span></div>
-        <div class="ledger-row"><span class="tag">IN</span><span class="id">EMP-0552</span><span class="action">clocked in — Ops Center</span><span class="time">12:06 AM</span></div>
-        <div class="ledger-row"><span class="tag">APR</span><span class="id">LV-1183</span><span class="action">leave request approved</span><span class="time">7:54 PM</span></div>
-        <div class="ledger-row"><span class="tag">OUT</span><span class="id">EMP-0114</span><span class="action">shift closed — Warehouse Floor 1</span><span class="time">11:20 AM</span></div>
-        <div class="ledger-row"><span class="tag">IN</span><span class="id">EMP-0339</span><span class="action">clocked in — Logistics</span><span class="time">7:41 AM</span></div>
-        <div class="ledger-row"><span class="tag">RUN</span><span class="id">PR-2026-07</span><span class="action">tax withholding verified</span><span class="time">5:53 PM</span></div>
-        <div class="ledger-row"><span class="tag">APR</span><span class="id">EX-0902</span><span class="action">expense claim approved</span><span class="time">4:11 PM</span></div>
-        <div class="ledger-row"><span class="tag">IN</span><span class="id">EMP-0071</span><span class="action">clocked in — Admin</span><span class="time">5:09 AM</span></div>
-      </div>
-    </div>
-
-    <div class="panel-footer">© 2026 HR Cloud — hr-cloud.online</div>
-  </div>
-
-  <div class="form-panel">
+  <!-- LOGIN SIDE -->
+  <section class="form-panel">
     <div class="auth-card">
-      <div class="stamp-date">{{ today | date:'EEE, MMM d, y' }}</div>
-      <h2>Sign in</h2>
-      <p class="auth-sub">Enter your workspace credentials to continue.</p>
+
+      <!-- <div class="language-row">
+        <button type="button" class="language-btn" (click)="toggleLanguage()">
+          <span class="material-icons">language</span>
+          {{ isArabic ? 'English' : 'العربية' }}
+          <span class="material-icons chevron">expand_more</span>
+        </button>
+      </div> -->
+
+      <div class="brand-block">
+        <div class="brand-mark">H</div>
+        <div class="brand-name">HR Cloud</div>
+        <div class="brand-subtitle">
+          {{ isArabic ? 'الموارد البشرية والرواتب' : 'People and payroll' }}
+        </div>
+      </div>
+
+      <div class="welcome">
+        <h1>{{ isArabic ? 'مرحباً بعودتك' : 'Welcome back' }}</h1>
+        <p>
+          {{ isArabic
+            ? 'سجّل الدخول إلى مساحة العمل الخاصة بك للمتابعة.'
+            : 'Sign in to your workspace to continue.' }}
+        </p>
+      </div>
+
+      <div class="auth-methods">
+        <button
+          type="button"
+          class="method-btn active"
+          [attr.aria-label]="isArabic ? 'البريد الإلكتروني للعمل' : 'Work email'">
+          <span class="material-icons">mail_outline</span>
+          <span>{{ isArabic ? 'البريد الإلكتروني للعمل' : 'Work email' }}</span>
+        </button>
+
+        <button
+          type="button"
+          class="method-btn"
+          [disabled]="isSubmitting"
+          (click)="signInWithSSO()"
+          [attr.aria-label]="isArabic ? 'تسجيل الدخول باستخدام Microsoft' : 'Sign in with Microsoft'">
+          <span class="ms-logo" aria-hidden="true">
+            <i></i><i></i><i></i><i></i>
+          </span>
+          <span>Microsoft</span>
+        </button>
+      </div>
 
       <form [formGroup]="loginForm" (ngSubmit)="login()" autocomplete="off" novalidate>
+
         <div class="form-group">
-          <label for="login-email">Work email</label>
-          <input
-            id="login-email"
-            type="email"
-            placeholder="you@company.com"
-            formControlName="email"
-            autocomplete="username" />
+          <label for="login-email">
+            {{ isArabic ? 'البريد الإلكتروني للعمل' : 'Work email' }}
+          </label>
+
+          <div class="input-shell">
+            <span class="material-icons input-icon">mail_outline</span>
+            <input
+              id="login-email"
+              type="email"
+              [placeholder]="isArabic ? 'you@company.com' : 'you@company.com'"
+              formControlName="email"
+              autocomplete="username" />
+          </div>
+
           @if (loginForm.get('email')?.touched && loginForm.get('email')?.errors?.['required']) {
-            <small class="error">Email is required</small>
+            <small class="error">
+              {{ isArabic ? 'البريد الإلكتروني مطلوب' : 'Email is required' }}
+            </small>
           }
           @if (loginForm.get('email')?.touched && loginForm.get('email')?.errors?.['email']) {
-            <small class="error">Please enter a valid email address</small>
+            <small class="error">
+              {{ isArabic ? 'يرجى إدخال بريد إلكتروني صحيح' : 'Please enter a valid email address' }}
+            </small>
           }
         </div>
 
-        <div class="form-group password-group">
-          <label for="login-password">Password</label>
+        <div class="form-group">
+          <label for="login-password">
+            {{ isArabic ? 'كلمة المرور' : 'Password' }}
+          </label>
 
-          <div class="password-input-wrapper">
+          <div class="input-shell password-shell">
+            <span class="material-icons input-icon">lock_outline</span>
+
             <input
               id="login-password"
               [type]="hidePassword ? 'password' : 'text'"
-              placeholder="••••••••"
+              [placeholder]="isArabic ? 'أدخل كلمة المرور الخاصة بك' : 'Enter your password'"
               formControlName="password"
               autocomplete="current-password" />
 
             <button
               type="button"
               class="eye-btn"
-              [attr.aria-label]="hidePassword ? 'Show password' : 'Hide password'"
+              [attr.aria-label]="hidePassword
+                ? (isArabic ? 'إظهار كلمة المرور' : 'Show password')
+                : (isArabic ? 'إخفاء كلمة المرور' : 'Hide password')"
               (click)="togglePasswordVisibility()">
-              <span class="eye-icon" [class.hide]="hidePassword"></span>
+              <span class="material-icons">
+                {{ hidePassword ? 'visibility_off' : 'visibility' }}
+              </span>
             </button>
           </div>
 
           @if (loginForm.get('password')?.touched && loginForm.get('password')?.errors?.['required']) {
-            <small class="error">Password is required</small>
+            <small class="error">
+              {{ isArabic ? 'كلمة المرور مطلوبة' : 'Password is required' }}
+            </small>
           }
           @if (loginForm.get('password')?.touched && loginForm.get('password')?.errors?.['minlength']) {
-            <small class="error">Password must be at least 6 characters</small>
+            <small class="error">
+              {{ isArabic ? 'يجب أن تتكون كلمة المرور من 6 أحرف على الأقل' : 'Password must be at least 6 characters' }}
+            </small>
           }
         </div>
 
         <div class="row-between">
           <label class="checkbox-wrap">
-            <input type="checkbox" /> Keep me signed in
+            <input type="checkbox" />
+            <span>{{ isArabic ? 'البقاء مسجلاً للدخول' : 'Keep me signed in' }}</span>
           </label>
-          <a routerLink="/forgot-password" class="forgot-link" [class.disabled]="isSubmitting">Forgot password?</a>
+
+          <a
+            routerLink="/forgot-password"
+            class="forgot-link"
+            [class.disabled]="isSubmitting">
+            {{ isArabic ? 'نسيت كلمة المرور؟' : 'Forgot password?' }}
+          </a>
         </div>
 
         @if (error) {
           <div class="login-error" [class.login-error--locked]="isLockedOut" role="alert">
             {{ error }}
             @if (isLockedOut) {
-              <span class="login-error__timer">Try again in {{ lockoutDisplay }}</span>
+              <span class="login-error__timer">
+                {{ isArabic ? 'حاول مرة أخرى خلال' : 'Try again in' }}
+                {{ lockoutDisplay }}
+              </span>
             }
           </div>
         }
 
-        <button type="submit" [disabled]="isSubmitting || isLockedOut">
+        <button
+          type="submit"
+          class="submit-btn"
+          [disabled]="isSubmitting || isLockedOut">
+
           @if (isLockedOut) {
-            Locked · {{ lockoutDisplay }}
+            {{ isArabic ? 'مقفل' : 'Locked' }} · {{ lockoutDisplay }}
           } @else if (isSubmitting) {
-            Signing in…
+            {{ isArabic ? 'جارٍ تسجيل الدخول…' : 'Signing in…' }}
           } @else {
-            Sign in
+            {{ isArabic ? 'تسجيل الدخول' : 'Sign in' }}
+            <span class="material-icons arrow-icon">
+              {{ isArabic ? 'arrow_back' : 'arrow_forward' }}
+            </span>
           }
         </button>
       </form>
 
-      <div class="divider">or continue with</div>
+      <div class="divider">
+        <span>{{ isArabic ? 'أو المتابعة باستخدام' : 'or continue with' }}</span>
+      </div>
+
       <button
         type="button"
         class="sso-btn"
         [class.sso-highlight]="ssoOnly"
         [disabled]="isSubmitting"
         (click)="signInWithSSO()">
-        Sign in with Microsoft
+
+        <span class="ms-logo" aria-hidden="true">
+          <i></i><i></i><i></i><i></i>
+        </span>
+
+        <span>
+          {{ isArabic ? 'تسجيل الدخول باستخدام Microsoft' : 'Sign in with Microsoft' }}
+        </span>
       </button>
 
       <p class="link-text">
-        Don't have an account?
-        <a routerLink="/register" class="register-link" [class.disabled]="isSubmitting">Register</a>
+        {{ isArabic ? 'ليس لديك حساب؟' : "Don't have an account?" }}
+        <a
+          routerLink="/register"
+          class="register-link"
+          [class.disabled]="isSubmitting">
+          {{ isArabic ? 'إنشاء حساب' : 'Register' }}
+        </a>
       </p>
+
+      <div class="trust-row">
+        <span><span class="material-icons">verified_user</span>{{ isArabic ? 'آمن ومشفر' : 'Secure & encrypted' }}</span>
+        <span><span class="material-icons">hub</span>{{ isArabic ? 'SSO مع Entra ID' : 'SSO with Entra ID' }}</span>
+        <span><span class="material-icons">lock_outline</span>{{ isArabic ? 'وصول حسب الأدوار' : 'Role-based access' }}</span>
+      </div>
+
+      <div class="copyright">
+        © 2026 HR Cloud. {{ isArabic ? 'جميع الحقوق محفوظة.' : 'All rights reserved.' }}
+      </div>
+
     </div>
-  </div>
+  </section>
 </div>
