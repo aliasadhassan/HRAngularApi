@@ -1,0 +1,613 @@
+<div class="page">
+  <header class="page-intro">
+    <p>{{ 'loans.intro' | translate }}</p>
+    <div class="intro-actions">
+      @if (canEditPolicy) {
+        <button type="button" class="btn btn-quiet" (click)="openPolicy()">
+          <span class="material-icons-outlined" aria-hidden="true">rule</span>{{ 'loans.policy.title' | translate }}
+        </button>
+      }
+      @if (canApprove && tab() === 'loans') {
+        <button type="button" class="btn btn-ink" (click)="openNewLoan()">
+          <span class="material-icons-outlined" aria-hidden="true">add</span>{{ 'loans.newLoan' | translate }}
+        </button>
+      }
+    </div>
+  </header>
+
+  @if (canSeeAll) {
+    <nav class="tabs">
+      @if (my()?.employeeId) {
+        <button type="button" class="tab" [class.is-active]="tab() === 'mine'" (click)="setTab('mine')">{{ 'loans.tabs.mine' | translate }}</button>
+      }
+      <button type="button" class="tab" [class.is-active]="tab() === 'requests'" (click)="setTab('requests')">
+        {{ 'loans.tabs.requests' | translate }}
+        @if (pendingCount()) { <span class="tab-count num alert-count">{{ pendingCount() }}</span> }
+      </button>
+      <button type="button" class="tab" [class.is-active]="tab() === 'loans'" (click)="setTab('loans')">{{ 'loans.tabs.loans' | translate }}</button>
+      <button type="button" class="tab" [class.is-active]="tab() === 'repayments'" (click)="setTab('repayments')">{{ 'loans.tabs.repayments' | translate }}</button>
+    </nav>
+  }
+
+  <!-- ═══ Mine ═══ -->
+  @if (tab() === 'mine') {
+    @if (loadError()) {
+      <div class="notice notice-error">
+        <span class="material-icons-outlined" aria-hidden="true">error_outline</span>
+        <span>{{ loadError() }}</span>
+      </div>
+    }
+
+    @if (my(); as m) {
+      @if (!m.employeeId) {
+        <div class="notice notice-info">
+          <span class="material-icons-outlined" aria-hidden="true">link_off</span>
+          <span>{{ 'loans.notLinked' | translate }}</span>
+        </div>
+      } @else {
+        <section class="limits">
+          @for (type of loanTypes; track type) {
+            @let lim = limit(type);
+            <article class="limit" [class.is-off]="!lim?.enabled || !lim?.eligible">
+              <header class="l-head">
+                <span class="material-icons-outlined" aria-hidden="true">{{ type === 'Loan' ? 'account_balance' : 'bolt' }}</span>
+                <h3>{{ 'loans.type.' + type | translate }}</h3>
+              </header>
+              @if (!lim?.enabled) {
+                <p class="l-note">{{ 'loans.notOffered' | translate }}</p>
+              } @else {
+                <p class="l-label">{{ 'loans.upTo' | translate }}</p>
+                <p class="l-figure num">
+                  <span class="l-cur">{{ m.currencyCode }}</span>
+                  {{ lim!.maxAmount | amount: lang() }}
+                </p>
+                <p class="l-meta">{{ 'loans.maxInstallments' | translate: { n: lim!.maxInstallments } }}</p>
+                @if (!lim!.eligible) {
+                  <p class="l-note">{{ lim!.notEligibleReason }}</p>
+                } @else {
+                  <button type="button" class="btn btn-ink btn-small" (click)="openRequest(type)">{{ 'loans.requestType.' + type | translate }}</button>
+                }
+              }
+            </article>
+          }
+          @if (m.monthlyGross) {
+            <p class="gross-note num">{{ 'loans.basedOnGross' | translate: { cur: m.currencyCode, amount: (m.monthlyGross | amount: lang()) } }}</p>
+          }
+        </section>
+
+        @if (myOpenLoans().length) {
+          <section class="open-loans">
+            @for (l of myOpenLoans(); track l.id) {
+              <article class="panel loan-card">
+                <header class="lc-head">
+                  <span class="cell-main">{{ 'loans.type.' + l.loanType | translate }}</span>
+                  <span [class]="loanChip[l.status]">{{ 'loans.status.' + l.status | translate }}</span>
+                </header>
+                <div class="lc-figure num">
+                  <span class="lc-out">{{ l.outstandingAmount | amount: lang() }}</span>
+                  <span class="lc-of">{{ 'loans.leftOf' | translate: { cur: l.currencyCode, amount: (l.principalAmount | amount: lang()) } }}</span>
+                </div>
+                <span class="bar" aria-hidden="true"><span [style.width.%]="progress(l)"></span></span>
+                <dl class="lc-facts">
+                  <div><dt>{{ 'loans.installment' | translate }}</dt><dd class="num">{{ l.installmentAmount | amount: lang() }}</dd></div>
+                  <div><dt>{{ 'loans.installmentsLeft' | translate }}</dt><dd class="num">{{ l.installmentsLeft }}</dd></div>
+                  <div><dt>{{ 'loans.startsFrom' | translate }}</dt><dd>{{ l.startDate | date: 'MMM y' : undefined : lang() }}</dd></div>
+                </dl>
+              </article>
+            }
+          </section>
+        }
+
+        <section class="panel panel-flush">
+          <header class="list-head"><h3 class="section-title">{{ 'loans.myRequests' | translate }}</h3></header>
+          <div class="table-wrap">
+            <table class="ledger-table">
+              <thead>
+                <tr>
+                  <th>{{ 'loans.typeCol' | translate }}</th>
+                  <th class="end">{{ 'loans.amount' | translate }}</th>
+                  <th class="end">{{ 'loans.installments' | translate }}</th>
+                  <th>{{ 'loans.startsFrom' | translate }}</th>
+                  <th>{{ 'loans.statusCol' | translate }}</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (r of m.requests; track r.id) {
+                  <tr>
+                    <td>
+                      <span class="cell-main">{{ 'loans.type.' + r.loanType | translate }}</span>
+                      <span class="cell-sub">{{ r.createdAt | date: 'd MMM y' : undefined : lang() }}</span>
+                    </td>
+                    <td class="end num">
+                      {{ r.requestedAmount | amount: lang() }}
+                      @if (r.approvedAmount !== null && r.approvedAmount !== r.requestedAmount) {
+                        <span class="cell-sub">{{ 'loans.approvedAmount' | translate: { amount: (r.approvedAmount | amount: lang()) } }}</span>
+                      }
+                    </td>
+                    <td class="end num">{{ r.requestedInstallments }}</td>
+                    <td>{{ r.preferredStartDate | date: 'MMM y' : undefined : lang() }}</td>
+                    <td>
+                      <span [class]="requestChip[r.status]">{{ 'loans.requestStatus.' + r.status | translate }}</span>
+                      @if (r.decisionComment) { <span class="cell-sub">“{{ r.decisionComment }}”</span> }
+                    </td>
+                    <td class="end">
+                      @if (r.canCancel) {
+                        <button type="button" class="btn-link" [disabled]="busy() === r.id" (click)="cancelRequest(r)">{{ 'loans.cancelRequest' | translate }}</button>
+                      }
+                    </td>
+                  </tr>
+                } @empty {
+                  <tr><td colspan="6" class="dim">{{ 'loans.noRequests' | translate }}</td></tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        @if (myPastLoans().length) {
+          <section class="panel panel-flush">
+            <header class="list-head"><h3 class="section-title">{{ 'loans.pastLoans' | translate }}</h3></header>
+            <div class="table-wrap">
+              <table class="ledger-table">
+                <tbody>
+                  @for (l of myPastLoans(); track l.id) {
+                    <tr>
+                      <td>{{ 'loans.type.' + l.loanType | translate }}</td>
+                      <td class="end num">{{ l.currencyCode }} {{ l.principalAmount | amount: lang() }}</td>
+                      <td>{{ l.startDate | date: 'MMM y' : undefined : lang() }}</td>
+                      <td><span [class]="loanChip[l.status]">{{ 'loans.status.' + l.status | translate }}</span></td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          </section>
+        }
+      }
+    }
+  }
+
+  <!-- ═══ Requests ═══ -->
+  @if (tab() === 'requests') {
+    <section class="panel panel-flush">
+      <div class="toolbar">
+        <select class="select-sm" [ngModel]="requestStatus()" (ngModelChange)="requestStatus.set($event); loadRequests()" [attr.aria-label]="'loans.statusCol' | translate">
+          <option value="">{{ 'loans.anyStatus' | translate }}</option>
+          @for (s of ['Pending', 'Approved', 'Rejected', 'Cancelled']; track s) { <option [value]="s">{{ 'loans.requestStatus.' + s | translate }}</option> }
+        </select>
+      </div>
+      <div class="table-wrap">
+        <table class="ledger-table">
+          <thead>
+            <tr>
+              <th>{{ 'people.employee' | translate }}</th>
+              <th>{{ 'loans.typeCol' | translate }}</th>
+              <th class="end">{{ 'loans.amount' | translate }}</th>
+              <th class="end">{{ 'loans.installments' | translate }}</th>
+              <th>{{ 'loans.startsFrom' | translate }}</th>
+              <th>{{ 'loans.statusCol' | translate }}</th>
+              @if (canApprove) { <th></th> }
+            </tr>
+          </thead>
+          <tbody>
+            @for (r of requests(); track r.id) {
+              <tr>
+                <td>
+                  <span class="cell-main">{{ r.employeeName }}</span>
+                  <span class="cell-sub">{{ r.employeeCode }}@if (r.departmentName) { · {{ r.departmentName }} }</span>
+                </td>
+                <td>
+                  {{ 'loans.type.' + r.loanType | translate }}
+                  @if (r.reason) { <span class="cell-sub reason">“{{ r.reason }}”</span> }
+                </td>
+                <td class="end num">
+                  <span class="cell-main">{{ r.currencyCode }} {{ r.requestedAmount | amount: lang() }}</span>
+                  @if (r.approvedAmount !== null && r.approvedAmount !== r.requestedAmount) {
+                    <span class="cell-sub">{{ 'loans.approvedAmount' | translate: { amount: (r.approvedAmount | amount: lang()) } }}</span>
+                  }
+                </td>
+                <td class="end num">
+                  {{ r.requestedInstallments }}
+                  <span class="cell-sub">{{ 'loans.perMonth' | translate: { amount: (r.suggestedInstallment | amount: lang()) } }}</span>
+                </td>
+                <td>{{ r.preferredStartDate | date: 'MMM y' : undefined : lang() }}</td>
+                <td>
+                  <span [class]="requestChip[r.status]">{{ 'loans.requestStatus.' + r.status | translate }}</span>
+                  @if (r.decisionComment) { <span class="cell-sub">“{{ r.decisionComment }}”</span> }
+                </td>
+                @if (canApprove) {
+                  <td class="end actions">
+                    @if (r.status === 'Pending') {
+                      @if (rejectingId === r.id) {
+                        <input class="reject-input" [(ngModel)]="rejectComment" [placeholder]="'loans.rejectReason' | translate" maxlength="500" />
+                        <button type="button" class="btn btn-danger btn-small" [disabled]="!rejectComment.trim() || busy() === r.id" (click)="confirmReject(r)">{{ 'loans.reject' | translate }}</button>
+                        <button type="button" class="btn-link" (click)="rejectingId = null">{{ 'common.cancel' | translate }}</button>
+                      } @else {
+                        <button type="button" class="btn btn-quiet btn-small" [disabled]="busy() === r.id" (click)="startReject(r)">{{ 'loans.reject' | translate }}</button>
+                        <button type="button" class="btn btn-ink btn-small" [disabled]="busy() === r.id" (click)="openApprove(r)">{{ 'loans.approve' | translate }}</button>
+                      }
+                    }
+                  </td>
+                }
+              </tr>
+            } @empty {
+              <tr>
+                <td [attr.colspan]="canApprove ? 7 : 6">
+                  <div class="empty-state">
+                    <span class="material-icons-outlined" aria-hidden="true">task_alt</span>
+                    <h3>{{ (requestStatus() === 'Pending' ? 'loans.inboxEmptyTitle' : 'loans.noRequests') | translate }}</h3>
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+  }
+
+  <!-- ═══ Loans ═══ -->
+  @if (tab() === 'loans') {
+    <section class="panel panel-flush">
+      <div class="toolbar">
+        <select class="select-sm" [ngModel]="loanStatus()" (ngModelChange)="loanStatus.set($event); loadLoans()" [attr.aria-label]="'loans.statusCol' | translate">
+          <option value="">{{ 'loans.anyStatus' | translate }}</option>
+          @for (s of ['Active', 'Paused', 'Closed', 'Cancelled']; track s) { <option [value]="s">{{ 'loans.status.' + s | translate }}</option> }
+        </select>
+        <select class="select-sm" [ngModel]="loanType()" (ngModelChange)="loanType.set($event); loadLoans()" [attr.aria-label]="'loans.typeCol' | translate">
+          <option value="">{{ 'loans.anyType' | translate }}</option>
+          @for (t of loanTypes; track t) { <option [value]="t">{{ 'loans.type.' + t | translate }}</option> }
+        </select>
+      </div>
+      <div class="table-wrap">
+        <table class="ledger-table">
+          <thead>
+            <tr>
+              <th>{{ 'people.employee' | translate }}</th>
+              <th>{{ 'loans.typeCol' | translate }}</th>
+              <th class="end">{{ 'loans.principal' | translate }}</th>
+              <th class="end">{{ 'loans.installment' | translate }}</th>
+              <th class="w-progress">{{ 'loans.outstanding' | translate }}</th>
+              <th>{{ 'loans.statusCol' | translate }}</th>
+              @if (canApprove) { <th></th> }
+            </tr>
+          </thead>
+          <tbody>
+            @for (l of loans(); track l.id) {
+              <tr>
+                <td>
+                  <span class="cell-main">{{ l.employeeName }}</span>
+                  <span class="cell-sub">{{ l.employeeCode }}@if (l.departmentName) { · {{ l.departmentName }} }</span>
+                </td>
+                <td>
+                  {{ 'loans.type.' + l.loanType | translate }}
+                  <span class="cell-sub">{{ 'loans.fromMonth' | translate: { month: (l.startDate | date: 'MMM y' : undefined : lang()) } }}</span>
+                </td>
+                <td class="end num">{{ l.currencyCode }} {{ l.principalAmount | amount: lang() }}</td>
+                <td class="end num">
+                  {{ l.installmentAmount | amount: lang() }}
+                  <span class="cell-sub">{{ 'loans.nLeft' | translate: { n: l.installmentsLeft } }}</span>
+                </td>
+                <td>
+                  <span class="num">{{ l.outstandingAmount | amount: lang() }}</span>
+                  <span class="bar bar-sm" aria-hidden="true"><span [style.width.%]="progress(l)"></span></span>
+                </td>
+                <td><span [class]="loanChip[l.status]">{{ 'loans.status.' + l.status | translate }}</span></td>
+                @if (canApprove) {
+                  <td class="end actions">
+                    @if (l.status === 'Active' || l.status === 'Paused') {
+                      @if (confirmCancelId === l.id) {
+                        <button type="button" class="btn btn-danger btn-small" [disabled]="busy() === l.id" (click)="changeStatus(l, 'cancel')">{{ 'loans.confirmCancel' | translate }}</button>
+                        <button type="button" class="btn-link" (click)="confirmCancelId = null">{{ 'common.cancel' | translate }}</button>
+                      } @else {
+                        <button type="button" class="icon-btn" [disabled]="busy() === l.id" (click)="openInstallment(l)" [title]="'loans.changeInstallment' | translate" [attr.aria-label]="'loans.changeInstallment' | translate">
+                          <span class="material-icons-outlined" aria-hidden="true">edit</span>
+                        </button>
+                        @if (l.status === 'Active') {
+                          <button type="button" class="icon-btn" [disabled]="busy() === l.id" (click)="changeStatus(l, 'pause')" [title]="'loans.pause' | translate" [attr.aria-label]="'loans.pause' | translate">
+                            <span class="material-icons-outlined" aria-hidden="true">pause</span>
+                          </button>
+                        } @else {
+                          <button type="button" class="icon-btn" [disabled]="busy() === l.id" (click)="changeStatus(l, 'resume')" [title]="'loans.resume' | translate" [attr.aria-label]="'loans.resume' | translate">
+                            <span class="material-icons-outlined" aria-hidden="true">play_arrow</span>
+                          </button>
+                        }
+                        <button type="button" class="icon-btn danger" [disabled]="busy() === l.id" (click)="changeStatus(l, 'cancel')" [title]="'loans.cancelLoan' | translate" [attr.aria-label]="'loans.cancelLoan' | translate">
+                          <span class="material-icons-outlined" aria-hidden="true">block</span>
+                        </button>
+                      }
+                    }
+                  </td>
+                }
+              </tr>
+            } @empty {
+              <tr>
+                <td [attr.colspan]="canApprove ? 7 : 6">
+                  <div class="empty-state">
+                    <span class="material-icons-outlined" aria-hidden="true">account_balance</span>
+                    <h3>{{ 'loans.noLoans' | translate }}</h3>
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+  }
+
+  <!-- ═══ Repayments ═══ -->
+  @if (tab() === 'repayments') {
+    <section class="panel panel-flush">
+      <div class="toolbar">
+        <label class="month-filter">{{ 'loans.from' | translate }} <input type="month" class="select-sm" [(ngModel)]="repFrom" (ngModelChange)="loadRepayments()" /></label>
+        <label class="month-filter">{{ 'loans.to' | translate }} <input type="month" class="select-sm" [(ngModel)]="repTo" (ngModelChange)="loadRepayments()" /></label>
+        @if (repayments().length) {
+          <span class="rep-total num">{{ 'loans.totalRecovered' | translate: { amount: (repTotal() | amount: lang()) } }}</span>
+        }
+      </div>
+      <div class="table-wrap">
+        <table class="ledger-table">
+          <thead>
+            <tr>
+              <th>{{ 'people.employee' | translate }}</th>
+              <th>{{ 'loans.typeCol' | translate }}</th>
+              <th>{{ 'loans.period' | translate }}</th>
+              <th>{{ 'loans.payslip' | translate }}</th>
+              <th class="end">{{ 'loans.amount' | translate }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (r of repayments(); track r.id) {
+              <tr>
+                <td class="cell-main">{{ r.employeeName }}</td>
+                <td>{{ 'loans.type.' + r.loanType | translate }}</td>
+                <td class="num">{{ r.periodStart | date: 'd MMM' : undefined : lang() }} – {{ r.periodEnd | date: 'd MMM y' : undefined : lang() }}</td>
+                <td class="num">{{ r.payslipNumber }}</td>
+                <td class="end num">{{ r.currencyCode }} {{ r.amount | amount: lang() }}</td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="5">
+                  <div class="empty-state">
+                    <span class="material-icons-outlined" aria-hidden="true">receipt_long</span>
+                    <h3>{{ 'loans.noRepayments' | translate }}</h3>
+                    <p>{{ 'loans.noRepaymentsBody' | translate }}</p>
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+  }
+</div>
+
+@if (drawer(); as d) {
+  <div class="overlay" (click)="closeDrawer()">
+    <aside class="drawer" role="dialog" aria-modal="true" (click)="$event.stopPropagation()">
+      <header class="drawer-head">
+        <h3>
+          @switch (d) {
+            @case ('request') { {{ 'loans.requestType.' + requestForm.loanType | translate }} }
+            @case ('approve') { {{ 'loans.approveTitle' | translate: { name: approveTarget?.employeeName } }} }
+            @case ('newLoan') { {{ 'loans.newLoan' | translate }} }
+            @case ('installment') { {{ 'loans.changeInstallment' | translate }} }
+            @case ('policy') { {{ 'loans.policy.title' | translate }} }
+          }
+        </h3>
+        <button type="button" class="btn-link" (click)="closeDrawer()" [attr.aria-label]="'common.close' | translate">
+          <span class="material-icons-outlined" aria-hidden="true">close</span>
+        </button>
+      </header>
+
+      <div class="drawer-body">
+        @switch (d) {
+          <!-- Employee request -->
+          @case ('request') {
+            @let lim = requestLimit();
+            <div class="grid-2">
+              <div class="field">
+                <label for="r-amount">{{ 'loans.amount' | translate }} ({{ my()?.currencyCode }})</label>
+                <input id="r-amount" type="number" min="1" [max]="lim?.maxAmount ?? null" [(ngModel)]="requestForm.amount" />
+                @if (lim?.maxAmount !== null) { <span class="field-hint num">{{ 'loans.maxN' | translate: { amount: (lim?.maxAmount | amount: lang()) } }}</span> }
+              </div>
+              <div class="field">
+                <label for="r-inst">{{ 'loans.installments' | translate }}</label>
+                <input id="r-inst" type="number" min="1" [max]="lim?.maxInstallments ?? 1" [(ngModel)]="requestForm.installments" />
+                <span class="field-hint num">{{ 'loans.maxInstallments' | translate: { n: lim?.maxInstallments } }}</span>
+              </div>
+            </div>
+            <div class="field">
+              <label for="r-month">{{ 'loans.firstDeduction' | translate }}</label>
+              <input id="r-month" type="month" [min]="minMonth" [(ngModel)]="requestForm.month" />
+            </div>
+            @if (requestInstallment(); as inst) {
+              <div class="calc-card" [class.bad]="requestProblem()">
+                <span class="c-num num">{{ inst | amount: lang() : 'full' : 0 }}</span>
+                <span>
+                  <span class="cell-main">{{ 'loans.perMonthLong' | translate: { n: requestForm.installments } }}</span>
+                  @if (requestProblem(); as p) { <span class="cell-sub">{{ p | translate: { amount: (lim?.maxAmount | amount: lang()), n: lim?.maxInstallments } }}</span> }
+                </span>
+              </div>
+            }
+            <div class="field">
+              <label for="r-reason">{{ 'loans.reason' | translate }}</label>
+              <textarea id="r-reason" rows="3" [(ngModel)]="requestForm.reason" maxlength="1000"></textarea>
+            </div>
+          }
+
+          <!-- HR approve -->
+          @case ('approve') {
+            @if (approveTarget; as r) {
+              <div class="request-summary">
+                <span class="cell-main">{{ 'loans.type.' + r.loanType | translate }} · {{ r.currencyCode }} {{ r.requestedAmount | amount: lang() }}</span>
+                <span class="cell-sub">{{ 'loans.askedFor' | translate: { n: r.requestedInstallments, month: (r.preferredStartDate | date: 'MMM y' : undefined : lang()) } }}</span>
+                @if (r.reason) { <span class="cell-sub reason">“{{ r.reason }}”</span> }
+              </div>
+              <p class="field-hint">{{ 'loans.approveHint' | translate }}</p>
+              <div class="grid-2">
+                <div class="field">
+                  <label for="a-amount">{{ 'loans.amount' | translate }}</label>
+                  <input id="a-amount" type="number" min="1" [max]="r.requestedAmount" [(ngModel)]="approveForm.amount" />
+                </div>
+                <div class="field">
+                  <label for="a-inst">{{ 'loans.installment' | translate }}</label>
+                  <input id="a-inst" type="number" min="1" [(ngModel)]="approveForm.installmentAmount" />
+                  @if (approveInstallments(); as n) { <span class="field-hint num">{{ 'loans.nInstallments' | translate: { n } }}</span> }
+                </div>
+              </div>
+              <div class="field">
+                <label for="a-month">{{ 'loans.firstDeduction' | translate }}</label>
+                <input id="a-month" type="month" [(ngModel)]="approveForm.month" />
+              </div>
+              <div class="field">
+                <label for="a-comment">{{ 'loans.comment' | translate }}</label>
+                <input id="a-comment" [(ngModel)]="approveForm.comment" maxlength="500" />
+              </div>
+            }
+          }
+
+          <!-- HR new loan -->
+          @case ('newLoan') {
+            <div class="field picker">
+              <label for="n-emp">{{ 'people.employee' | translate }}</label>
+              <input id="n-emp" autocomplete="off" [ngModel]="employeeQuery" (ngModelChange)="onEmployeeQuery($event)" [placeholder]="'loans.searchEmployee' | translate" />
+              @if (employeeHits().length) {
+                <ul class="hits" role="listbox">
+                  @for (e of employeeHits(); track e.employeeId) {
+                    <li><button type="button" (click)="pickEmployee(e)"><span class="cell-main">{{ e.fullName }}</span><span class="cell-sub">{{ e.employeeCode }}@if (e.departmentName) { · {{ e.departmentName }} }</span></button></li>
+                  }
+                </ul>
+              }
+            </div>
+            <div class="field">
+              <label for="n-type">{{ 'loans.typeCol' | translate }}</label>
+              <select id="n-type" [(ngModel)]="loanForm.loanType">
+                @for (t of loanTypes; track t) { <option [value]="t">{{ 'loans.type.' + t | translate }}</option> }
+              </select>
+            </div>
+            <div class="grid-2">
+              <div class="field">
+                <label for="n-amount">{{ 'loans.amount' | translate }}</label>
+                <input id="n-amount" type="number" min="1" [(ngModel)]="loanForm.amount" />
+              </div>
+              <div class="field">
+                <label for="n-inst">{{ 'loans.installment' | translate }}</label>
+                <input id="n-inst" type="number" min="1" [(ngModel)]="loanForm.installmentAmount" />
+                @if (newLoanInstallments(); as n) { <span class="field-hint num">{{ 'loans.nInstallments' | translate: { n } }}</span> }
+              </div>
+            </div>
+            <div class="field">
+              <label for="n-month">{{ 'loans.firstDeduction' | translate }}</label>
+              <input id="n-month" type="month" [(ngModel)]="loanForm.month" />
+            </div>
+            <div class="field">
+              <label for="n-remarks">{{ 'loans.remarks' | translate }}</label>
+              <input id="n-remarks" [(ngModel)]="loanForm.remarks" maxlength="500" />
+            </div>
+            <p class="field-hint">{{ 'loans.newLoanHint' | translate }}</p>
+          }
+
+          <!-- HR installment -->
+          @case ('installment') {
+            @if (installmentTarget; as l) {
+              <div class="request-summary">
+                <span class="cell-main">{{ l.employeeName }} · {{ 'loans.type.' + l.loanType | translate }}</span>
+                <span class="cell-sub num">{{ 'loans.outstandingN' | translate: { cur: l.currencyCode, amount: (l.outstandingAmount | amount: lang()) } }}</span>
+              </div>
+              <div class="field">
+                <label for="i-amount">{{ 'loans.installment' | translate }}</label>
+                <input id="i-amount" type="number" min="1" [max]="l.outstandingAmount" [(ngModel)]="installmentAmount" />
+                @if (installmentsAfterChange(); as n) { <span class="field-hint num">{{ 'loans.nInstallments' | translate: { n } }}</span> }
+              </div>
+            }
+          }
+
+          <!-- Policy -->
+          @case ('policy') {
+            @if (policyForm; as p) {
+              <fieldset class="policy-group">
+                <legend><label class="check"><input type="checkbox" [(ngModel)]="p.loansEnabled" />{{ 'loans.policy.loansEnabled' | translate }}</label></legend>
+                @if (p.loansEnabled) {
+                  <div class="grid-2">
+                    <div class="field">
+                      <label for="p-mult">{{ 'loans.policy.salaryMultiple' | translate }}</label>
+                      <input id="p-mult" type="number" min="1" max="24" [(ngModel)]="p.maxLoanSalaryMultiple" />
+                    </div>
+                    <div class="field">
+                      <label for="p-max">{{ 'loans.policy.maxAmount' | translate }}</label>
+                      <input id="p-max" type="number" min="1" [(ngModel)]="p.maxLoanAmount" />
+                    </div>
+                    <div class="field">
+                      <label for="p-linst">{{ 'loans.policy.maxInstallments' | translate }}</label>
+                      <input id="p-linst" type="number" min="1" max="120" [(ngModel)]="p.maxLoanInstallments" />
+                    </div>
+                    <div class="field">
+                      <label for="p-svc">{{ 'loans.policy.minService' | translate }}</label>
+                      <input id="p-svc" type="number" min="0" max="120" [(ngModel)]="p.minServiceMonths" />
+                    </div>
+                  </div>
+                  <div class="field">
+                    <label for="p-lcomp">{{ 'loans.policy.loanComponent' | translate }}</label>
+                    <select id="p-lcomp" [(ngModel)]="p.loanDeductionComponentId">
+                      <option [ngValue]="null">{{ 'loans.policy.componentDefault' | translate }}</option>
+                      @for (c of deductionComponents(); track c.id) { <option [ngValue]="c.id">{{ c.name }} ({{ c.code }})</option> }
+                    </select>
+                  </div>
+                  <label class="check"><input type="checkbox" [(ngModel)]="p.allowMultipleActive" />{{ 'loans.policy.allowMultiple' | translate }}</label>
+                }
+              </fieldset>
+
+              <fieldset class="policy-group">
+                <legend><label class="check"><input type="checkbox" [(ngModel)]="p.advancesEnabled" />{{ 'loans.policy.advancesEnabled' | translate }}</label></legend>
+                @if (p.advancesEnabled) {
+                  <div class="grid-2">
+                    <div class="field">
+                      <label for="p-pct">{{ 'loans.policy.advancePercent' | translate }}</label>
+                      <input id="p-pct" type="number" min="1" max="100" [(ngModel)]="p.maxAdvancePercent" />
+                    </div>
+                    <div class="field">
+                      <label for="p-ainst">{{ 'loans.policy.maxInstallments' | translate }}</label>
+                      <input id="p-ainst" type="number" min="1" max="12" [(ngModel)]="p.maxAdvanceInstallments" />
+                    </div>
+                  </div>
+                  <div class="field">
+                    <label for="p-acomp">{{ 'loans.policy.advanceComponent' | translate }}</label>
+                    <select id="p-acomp" [(ngModel)]="p.advanceDeductionComponentId">
+                      <option [ngValue]="null">{{ 'loans.policy.componentDefault' | translate }}</option>
+                      @for (c of deductionComponents(); track c.id) { <option [ngValue]="c.id">{{ c.name }} ({{ c.code }})</option> }
+                    </select>
+                  </div>
+                }
+              </fieldset>
+            }
+          }
+        }
+      </div>
+
+      <footer class="drawer-foot">
+        <button type="button" class="btn btn-quiet" (click)="closeDrawer()">{{ 'common.cancel' | translate }}</button>
+        @switch (d) {
+          @case ('request') {
+            <button type="button" class="btn btn-ink" [disabled]="!canSendRequest() || saving()" (click)="sendRequest()">{{ (saving() ? 'common.saving' : 'loans.send') | translate }}</button>
+          }
+          @case ('approve') {
+            <button type="button" class="btn btn-ink" [disabled]="!approveForm.amount || !approveForm.installmentAmount || saving()" (click)="confirmApprove()">{{ (saving() ? 'common.saving' : 'loans.approve') | translate }}</button>
+          }
+          @case ('newLoan') {
+            <button type="button" class="btn btn-ink" [disabled]="!canCreateLoan() || saving()" (click)="createLoan()">{{ (saving() ? 'common.saving' : 'loans.createLoan') | translate }}</button>
+          }
+          @case ('installment') {
+            <button type="button" class="btn btn-ink" [disabled]="!installmentAmount || saving()" (click)="saveInstallment()">{{ (saving() ? 'common.saving' : 'common.save') | translate }}</button>
+          }
+          @case ('policy') {
+            <button type="button" class="btn btn-ink" [disabled]="saving()" (click)="savePolicy()">{{ (saving() ? 'common.saving' : 'common.save') | translate }}</button>
+          }
+        }
+      </footer>
+    </aside>
+  </div>
+}
