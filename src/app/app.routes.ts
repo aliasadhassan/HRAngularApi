@@ -53,7 +53,6 @@ const PLANNED: Route[] = [
   soon('assets', 'nav.assets', undefined, ['inventory', 'assignments', 'returns', 'history']),
 
   // Payroll (components / allowances / deductions = Payroll setup ka Components tab)
-  soon('payroll/loans', 'nav.loansAdvances', P.payrollViewAll, ['loans', 'loanRequests', 'repayments']),
   soon('payroll/benefits', 'nav.benefitsRewards', P.payrollViewAll, ['benefitPlans', 'enrolments', 'increments', 'bonuses']),
   soon('expenses', 'nav.expensesTravel', undefined, ['claims', 'travel', 'advances', 'expensePolicies']),
 
@@ -102,6 +101,7 @@ export const routes: Routes = [
       { path: 'attendance-setup', loadComponent: () => import('./pages/attendance/setup/attendance-setup').then(m => m.AttendanceSetupComponent), canActivate: [permissionGuard], data: { titleKey: 'nav.attendanceSetup', permission: P.settingsManage } },
       { path: 'leaves', component: LeavesComponent, data: { titleKey: 'nav.leaves' } },
       { path: 'leave-setup', component: LeaveSetupComponent, canActivate: [permissionGuard], data: { titleKey: 'nav.leaveSetup', permission: P.settingsManage } },
+      { path: 'payroll/loans', loadComponent: () => import('./pages/payroll/loans/loans').then(m => m.LoansComponent), canActivate: [permissionGuard], data: { titleKey: 'nav.loansAdvances', permission: [P.payrollViewOwn, P.payrollViewAll, P.payrollApprove] } },
       { path: 'me/payslips', component: MyPayslipsComponent, data: { titleKey: 'nav.myPayslips' } },
       { path: 'me/payslips/:id', component: PayslipComponent, data: { titleKey: 'payroll.payslip.title', self: true } },
       { path: 'settings', component: MySettingsComponent, data: { titleKey: 'nav.mySettings' } },

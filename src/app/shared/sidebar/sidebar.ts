@@ -88,7 +88,7 @@ export class SidebarComponent {
         { icon: 'request_quote', label: 'nav.employeeSalaries', route: '/app/payroll/salaries', permission: P.payrollViewAll },
         { icon: 'account_tree', label: 'nav.salaryStructure', route: '/app/payroll/structure', permission: P.payrollRun },
         { icon: 'tune', label: 'nav.payrollSetup', route: '/app/payroll/setup', permission: P.payrollRun },
-        { icon: 'account_balance', label: 'nav.loansAdvances', route: '/app/payroll/loans', permission: P.payrollViewAll },
+        { icon: 'account_balance', label: 'nav.loansAdvances', route: '/app/payroll/loans', permission: [P.payrollViewOwn, P.payrollViewAll, P.payrollApprove] },   // employee bhi request karta hai
         { icon: 'redeem', label: 'nav.benefitsRewards', route: '/app/payroll/benefits', permission: P.payrollViewAll },
         { icon: 'receipt', label: 'nav.expensesTravel', route: '/app/expenses' }
       ]

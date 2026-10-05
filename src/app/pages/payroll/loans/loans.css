@@ -1,0 +1,312 @@
+.intro-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.alert-count {
+  background: var(--oxblood) !important;
+  border-color: var(--oxblood) !important;
+  color: #fff !important;
+}
+
+/* ── Limits (mine) ─────────────────────────────── */
+.limits {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 14px;
+}
+.limit {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 18px 20px;
+  border: 1px solid var(--rule);
+  border-top: 3px solid var(--brass);
+  border-radius: var(--radius-panel);
+  background: var(--sheet);
+}
+.limit.is-off {
+  border-top-color: var(--rule-strong);
+}
+.l-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.l-head h3 {
+  margin: 0;
+  font-size: var(--fs-16);
+}
+.l-head .material-icons-outlined {
+  font-size: 20px;
+  color: var(--brass);
+}
+.l-label,
+.l-meta,
+.l-note {
+  margin: 0;
+  font-size: var(--fs-13);
+  color: var(--text-muted);
+}
+.l-note {
+  font-style: italic;
+}
+.l-figure {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: var(--fs-40);
+  line-height: 1.05;
+}
+.l-cur {
+  font-family: var(--font-ui);
+  font-size: var(--fs-13);
+  color: var(--text-muted);
+}
+.limit .btn {
+  margin-top: 8px;
+}
+.gross-note {
+  grid-column: 1 / -1;
+  margin: 0;
+  font-size: var(--fs-12);
+  color: var(--text-muted);
+}
+
+/* ── Open loans (mine) ─────────────────────────── */
+.open-loans {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 14px;
+}
+.loan-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: var(--ink);
+  color: var(--text-on-ink);
+  border-color: var(--ink);
+}
+.lc-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.lc-figure {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.lc-out {
+  font-family: var(--font-display);
+  font-size: var(--fs-40);
+  line-height: 1;
+  color: var(--brass);
+}
+.lc-of {
+  font-size: var(--fs-13);
+  color: rgba(236, 238, 230, 0.7);
+}
+.loan-card .bar {
+  background: rgba(236, 238, 230, 0.15);
+}
+.lc-facts {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin: 0;
+}
+.lc-facts dt {
+  font-size: var(--fs-12);
+  color: rgba(236, 238, 230, 0.6);
+}
+.lc-facts dd {
+  margin: 0;
+  font-weight: 600;
+}
+
+/* ── Progress bar ──────────────────────────────── */
+.bar {
+  display: block;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--vellum);
+  overflow: hidden;
+}
+.bar > span {
+  display: block;
+  height: 100%;
+  background: var(--moss);
+}
+.bar-sm {
+  height: 4px;
+  margin-top: 4px;
+  max-width: 140px;
+}
+.w-progress {
+  min-width: 140px;
+}
+
+/* ── Tables ────────────────────────────────────── */
+.list-head {
+  padding: 16px 20px 12px;
+  border-bottom: 1px solid var(--rule);
+}
+.reason {
+  font-style: italic;
+  max-width: 260px;
+  white-space: normal;
+}
+.actions {
+  white-space: nowrap;
+}
+.actions > * + * {
+  margin-inline-start: 6px;
+}
+.btn-link.danger {
+  color: var(--oxblood);
+}
+.reject-input {
+  height: 32px;
+  min-width: 200px;
+  padding-inline: 10px;
+  border: 1px solid var(--rule-strong);
+  border-radius: 6px;
+}
+.month-filter {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--fs-13);
+  color: var(--text-muted);
+}
+.rep-total {
+  margin-inline-start: auto;
+  font-weight: 600;
+}
+
+/* ── Drawer bits ───────────────────────────────── */
+.calc-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  border-radius: var(--radius-panel);
+  background: var(--ink);
+  color: var(--text-on-ink);
+}
+.calc-card .cell-sub {
+  color: rgba(236, 238, 230, 0.75);
+}
+.calc-card.bad {
+  background: var(--oxblood-soft);
+  color: var(--oxblood);
+}
+.calc-card.bad .cell-sub {
+  color: var(--oxblood);
+}
+.c-num {
+  font-family: var(--font-display);
+  font-size: var(--fs-28);
+  line-height: 1;
+  color: var(--brass);
+}
+.calc-card.bad .c-num {
+  color: var(--oxblood);
+}
+.request-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 14px;
+  border-inline-start: 3px solid var(--amber);
+  background: var(--vellum);
+  border-radius: 4px;
+}
+textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--rule-strong);
+  border-radius: var(--radius-control);
+  font: inherit;
+  resize: vertical;
+}
+.picker {
+  position: relative;
+}
+.hits {
+  position: absolute;
+  inset-inline: 0;
+  top: 100%;
+  z-index: 5;
+  margin: 4px 0 0;
+  padding: 4px;
+  list-style: none;
+  background: var(--sheet);
+  border: 1px solid var(--rule-strong);
+  border-radius: var(--radius-control);
+  box-shadow: 0 10px 24px rgba(19, 33, 26, 0.12);
+}
+.hits button {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: 4px;
+  background: none;
+  text-align: start;
+  cursor: pointer;
+}
+.hits button:hover,
+.hits button:focus-visible {
+  background: var(--vellum);
+}
+.policy-group {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 0;
+  padding: 14px 16px;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-panel);
+}
+.policy-group legend {
+  padding-inline: 6px;
+  font-weight: 600;
+}
+
+/* Paise aur naam ek line mein rahein */
+.ledger-table td.num,
+.ledger-table .cell-main {
+  white-space: nowrap;
+}
+.loan-card .lc-head .cell-main {
+  color: var(--text-on-ink);
+}
+.icon-btn {
+  display: inline-grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border: 1px solid var(--rule);
+  border-radius: 6px;
+  background: var(--sheet);
+  color: var(--text-muted);
+  cursor: pointer;
+}
+.icon-btn .material-icons-outlined {
+  font-size: 17px;
+}
+.icon-btn:hover:not(:disabled) {
+  border-color: var(--rule-strong);
+  color: var(--ink);
+}
+.icon-btn.danger:hover:not(:disabled) {
+  border-color: var(--oxblood);
+  color: var(--oxblood);
+}
