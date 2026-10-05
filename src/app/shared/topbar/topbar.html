@@ -11,9 +11,42 @@
   <h1 class="page-title">{{ titleKey() | translate }}</h1>
 
   <div class="actions">
-    <button type="button" class="lang-btn" (click)="language.toggle()">
-      {{ 'topbar.switchLanguage' | translate }}
-    </button>
+    <div class="lang">
+      <button
+        type="button"
+        class="lang-btn"
+        (click)="toggleLang($event)"
+        [attr.aria-expanded]="langOpen()"
+        aria-haspopup="menu"
+        [attr.aria-label]="'topbar.chooseLanguage' | translate"
+      >
+        <span class="material-icons-outlined" aria-hidden="true">translate</span>
+        <span class="lang-current" [attr.lang]="language.current().code">{{ language.current().nativeName }}</span>
+        <span class="material-icons-outlined chevron" aria-hidden="true">expand_more</span>
+      </button>
+
+      @if (langOpen()) {
+        <div class="menu lang-menu" role="menu" (click)="$event.stopPropagation()">
+          <div class="menu-label">{{ 'topbar.language' | translate }}</div>
+          @for (l of language.options; track l.code) {
+            <button
+              type="button"
+              role="menuitemradio"
+              class="lang-item"
+              [class.is-on]="language.language() === l.code"
+              [attr.aria-checked]="language.language() === l.code"
+              (click)="pickLanguage(l.code)"
+            >
+              <span class="lang-mark" aria-hidden="true">{{ l.short }}</span>
+              <span class="lang-name" [attr.lang]="l.code">{{ l.nativeName }}</span>
+              @if (language.language() === l.code) {
+                <span class="material-icons-outlined check" aria-hidden="true">check</span>
+              }
+            </button>
+          }
+        </div>
+      }
+    </div>
 
     <button type="button" class="icon-btn" [attr.aria-label]="'topbar.notifications' | translate">
       <span class="material-icons-outlined" aria-hidden="true">notifications</span>

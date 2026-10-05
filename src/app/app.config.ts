@@ -24,9 +24,13 @@ import { provideTranslateHttpLoader } from '@ngx-translate/http-loader';
 import { LanguageService } from './core/i18n/language.service';
 import { registerLocaleData } from '@angular/common';
 import localeAr from '@angular/common/locales/ar';
+import localeZh from '@angular/common/locales/zh';
+import localeTr from '@angular/common/locales/tr';
 
-// Date/number pipes ke liye Arabic locale data (warna 'ar' pe pipe error deta hai)
+// Date/number pipes ke liye locale data (warna 'ar'/'zh'/'tr' pe pipe error deta hai)
 registerLocaleData(localeAr);
+registerLocaleData(localeZh);
+registerLocaleData(localeTr);
 
 const initializeApp = () => {
   const authService = inject(AuthService);

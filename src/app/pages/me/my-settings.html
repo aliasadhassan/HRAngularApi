@@ -41,12 +41,11 @@
       </div>
       <div class="body">
         <div class="langs">
-          <button type="button" class="lang" [class.is-on]="language.language() === 'en'" (click)="setLanguage('en')">
-            <span class="lang-name">English</span><span class="lang-dir">LTR</span>
-          </button>
-          <button type="button" class="lang ar" [class.is-on]="language.language() === 'ar'" (click)="setLanguage('ar')">
-            <span class="lang-name">العربية</span><span class="lang-dir">RTL</span>
-          </button>
+          @for (l of language.options; track l.code) {
+            <button type="button" [class]="'lang ' + l.code" [class.is-on]="language.language() === l.code" (click)="setLanguage(l.code)" [attr.lang]="l.code">
+              <span class="lang-name">{{ l.nativeName }}</span><span class="lang-dir">{{ l.rtl ? 'RTL' : 'LTR' }}</span>
+            </button>
+          }
         </div>
       </div>
     </section>

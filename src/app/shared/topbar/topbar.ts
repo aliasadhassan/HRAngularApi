@@ -4,7 +4,7 @@ import { NavigationEnd, Router, RouterLink } from '@angular/router';
 import { TranslatePipe } from '@ngx-translate/core';
 import { filter, map, startWith } from 'rxjs';
 import { AuthService } from '../../auth/auth';
-import { LanguageService } from '../../core/i18n/language.service';
+import { AppLanguage, LanguageService } from '../../core/i18n/language.service';
 import { LayoutService } from '../../core/layout/layout.service';
 import { CurrentUserService } from '../../core/auth/current-user';
 
@@ -22,6 +22,7 @@ export class TopbarComponent {
   readonly layout = inject(LayoutService);
   readonly user = inject(CurrentUserService).get();
   readonly menuOpen = signal(false);
+  readonly langOpen = signal(false);
 
   /** Page ka title route ke `data.titleKey` se — har page khud apna naam batata hai. */
   readonly titleKey = toSignal(
@@ -39,17 +40,30 @@ export class TopbarComponent {
 
   toggleMenu(event: Event): void {
     event.stopPropagation();
+    this.langOpen.set(false);
     this.menuOpen.update(open => !open);
+  }
+
+  toggleLang(event: Event): void {
+    event.stopPropagation();
+    this.menuOpen.set(false);
+    this.langOpen.update(open => !open);
+  }
+
+  pickLanguage(lang: AppLanguage): void {
+    this.langOpen.set(false);
+    if (lang !== this.language.language()) this.language.use(lang).subscribe();
   }
 
   @HostListener('document:click')
   closeMenu(): void {
     this.menuOpen.set(false);
+    this.langOpen.set(false);
   }
 
   @HostListener('document:keydown.escape')
   onEscape(): void {
-    this.menuOpen.set(false);
+    this.closeMenu();
     this.layout.closeMobile();
   }
 

@@ -1,6 +1,29 @@
 @if (alert(); as a) {
-  <div [class]="'alert ' + a.type + (visible() ? ' show' : '')" role="alert">
-    <span>{{ a.message }}</span>
-    <button type="button" class="close" (click)="close()" aria-label="Close">×</button>
-  </div>
+  @for (_ of [a.id]; track _) {
+    <div
+      [class]="'slip ' + a.type"
+      [class.show]="visible()"
+      [class.paused]="paused()"
+      [attr.role]="a.type === 'error' ? 'alert' : 'status'"
+      [attr.aria-live]="a.type === 'error' ? 'assertive' : 'polite'"
+      (mouseenter)="pause()"
+      (mouseleave)="resume()"
+      (focusin)="pause()"
+      (focusout)="resume()"
+    >
+      <span class="seal" aria-hidden="true">
+        <span class="material-icons-outlined">{{ icon() }}</span>
+      </span>
+      <div class="body">
+        <span class="title">{{ 'alert.' + a.type | translate }}</span>
+        <p class="message">{{ a.message }}</p>
+      </div>
+      <button type="button" class="close" (click)="close()" [attr.aria-label]="'alert.dismiss' | translate">
+        <span class="material-icons-outlined" aria-hidden="true">close</span>
+      </button>
+      @if (a.duration) {
+        <span class="timer" aria-hidden="true" [style.animation-duration.ms]="a.duration"></span>
+      }
+    </div>
+  }
 }
