@@ -8,8 +8,6 @@
   box-sizing: border-box;
 }
 
-@import "material-icons/iconfont/material-icons.css";
-
 .auth-wrapper {
   --ink: #0f211a;
   --ink-2: #173127;
