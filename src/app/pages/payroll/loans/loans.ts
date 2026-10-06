@@ -1,3 +1,4 @@
+import { ActivatedRoute } from '@angular/router';
 import { Component, computed, inject, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -105,6 +106,10 @@ export class LoansComponent {
 
     this.loadMine();
     if (this.canSeeAll) this.loadPendingCount();
+
+    // Dashboard se ?tab=requests
+    const tab = inject(ActivatedRoute).snapshot.queryParamMap.get('tab') as Tab | null;
+    if (tab && (['mine', 'requests', 'loans', 'repayments'] as Tab[]).includes(tab)) this.setTab(tab);
   }
 
   // ───── Loading ─────

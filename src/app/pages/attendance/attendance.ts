@@ -1,3 +1,4 @@
+import { ActivatedRoute } from '@angular/router';
 import { Component, DestroyRef, computed, inject, signal, viewChild } from '@angular/core';
 import { Observable } from 'rxjs';
 import { DatePipe } from '@angular/common';
@@ -98,6 +99,10 @@ export class AttendanceComponent {
       this.people.getDepartments().subscribe({ next: d => this.departments.set(d.filter(x => x.isActive)) });
     }
     const timer = setInterval(() => this.now.set(new Date()), 30_000);
+
+    // Dashboard se ?tab=requests
+    const tab = inject(ActivatedRoute).snapshot.queryParamMap.get('tab') as Tab | null;
+    if (tab && this.tabs.includes(tab)) this.setTab(tab);
     inject(DestroyRef).onDestroy(() => clearInterval(timer));
   }
 

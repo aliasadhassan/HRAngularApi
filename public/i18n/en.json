@@ -173,31 +173,29 @@
       "deductions": "Deductions",
       "tax": "Tax withheld",
       "employerCost": "Employer cost",
-      "reference": "Run reference",
+      "reference": "Pay group",
       "review": "Review and approve"
     },
     "today": {
       "title": "Today",
       "open": "Open attendance",
       "ofTotal": "of {{total}} at work",
-      "barLabel": "{{present}} in office, {{remote}} remote, {{leave}} on leave, {{absent}} absent",
+      "barLabel": "{{present}} in office, {{remote}} remote, {{leave}} on leave, {{absent}} not in yet",
       "present": "In office",
       "remote": "Remote",
       "onLeave": "On leave",
-      "absent": "Absent",
+      "absent": "Not in yet",
       "away": "Away today",
-      "until": "until {{date}}"
+      "until": "until {{date}}",
+      "nobodyAway": "Everyone is in today."
     },
     "away": {
-      "annual": "Annual leave",
-      "sick": "Sick leave",
-      "training": "Training",
-      "unplanned": "Not checked in"
+      "remote": "Working remotely"
     },
     "ledger": {
       "label": "Workforce summary",
       "headcount": "Headcount",
-      "headcountChange": "+{{count}} this quarter",
+      "headcountChange": "{{count}} this month",
       "joined": "Joined this month",
       "attrition": "Attrition",
       "last12": "Last 12 months",
@@ -207,42 +205,45 @@
     "attendance": {
       "title": "Attendance",
       "sub": "Share of employees at work, last 14 working days",
-      "rate": "Attendance %"
+      "rate": "Attendance %",
+      "empty": "No attendance recorded in the last few weeks."
     },
     "cost": {
       "title": "Payroll by department",
-      "sub": "Gross monthly cost"
-    },
-    "dept": {
-      "engineering": "Engineering",
-      "sales": "Sales",
-      "operations": "Operations",
-      "finance": "Finance",
-      "design": "Design",
-      "people": "People"
+      "sub": "Gross pay plus employer contributions, latest run",
+      "unassigned": "No department"
     },
     "tasks": {
       "title": "Needs your attention",
       "empty": "Nothing waiting on you. New requests will appear here.",
       "approve": "Approve",
-      "decline": "Decline",
       "review": "Review",
-      "payrollReady": "This month's payroll for {{count}} employees is calculated and ready for approval",
-      "annualLeave": "Annual leave, {{days}} days",
-      "sickLeave": "Sick leave, {{days}} day",
-      "increment": "Increment to PKR {{amount}} from next month",
-      "contractEnds": "Contract ends in {{days}} days"
+      "approved": "Approved {{name}}'s request.",
+      "payrollReady": "Payroll for {{count}} employees is calculated and ready for approval",
+      "leave": "{{type}}, {{days}} days from {{date}}",
+      "attendanceRequest": "{{type}} on {{date}}",
+      "probationEnds": "Probation ends on {{date}} ({{days}} days)",
+      "loanRequest": "Loan request, {{currency}} {{amount}}",
+      "advanceRequest": "Salary advance request, {{currency}} {{amount}}"
     },
     "upcoming": {
       "title": "Coming up",
       "payday": "Salaries paid",
       "leave": "{{name}} starts leave",
       "anniversary": "{{name}}, {{years}} years with the company",
-      "contract": "{{name}}'s contract ends",
-      "joiner": "{{name}} joins Engineering",
+      "joiner": "{{name}} joins",
+      "holiday": "{{name}}",
+      "probation": "{{name}}'s probation ends",
+      "empty": "Nothing in the next 30 days.",
       "today": "Today",
       "tomorrow": "Tomorrow",
       "inDays": "In {{days}} days"
+    },
+    "retry": "Try again",
+    "loading": "Loading your dashboard…",
+    "errors": {
+      "load": "Could not load the dashboard.",
+      "approve": "Could not approve this request."
     }
   },
   "payroll": {

@@ -664,3 +664,8 @@
     grid-column: 2;
   }
 }
+
+.loading {
+  margin: 0;
+  padding: 24px 0;
+}

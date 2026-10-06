@@ -1,5 +1,6 @@
-@let p = data.payroll;
-@let s = data.stats;
+@let p = run();
+@let s = stats();
+@let a = attendance();
 
 <div class="dash">
   <!-- Salaam -->
@@ -24,9 +25,22 @@
     </div>
   </header>
 
+  @if (loadError()) {
+    <div class="notice notice-error">
+      <span class="material-icons-outlined" aria-hidden="true">error_outline</span>
+      <span>{{ loadError() }}</span>
+      <button type="button" class="btn btn-small btn-quiet" (click)="load()">{{ 'dashboard.retry' | translate }}</button>
+    </div>
+  }
+
+  @if (loading() && !people()) {
+    <p class="loading muted">{{ 'dashboard.loading' | translate }}</p>
+  }
+
+  @if (people() && a && s) {
   <!-- Banknote + aaj ki haazri -->
-  <div class="row row-hero" [class.solo]="!canSeePayroll">
-    @if (canSeePayroll) {
+  <div class="row row-hero" [class.solo]="!showNote()">
+    @if (showNote() && p) {
     <article class="note" [attr.aria-label]="'dashboard.note.label' | translate">
       <svg class="note-art" viewBox="0 0 640 400" preserveAspectRatio="xMaxYMid slice" aria-hidden="true">
         <g class="rosettes">
@@ -46,17 +60,17 @@
       <div class="note-body">
         <div class="note-head">
           <h3 class="note-title">
-            {{ 'dashboard.note.title' | translate: { period: (p.periodStart | date: 'MMMM y' : undefined : lang()) } }}
+            {{ 'dashboard.note.title' | translate: { period: (periodStart() | date: 'MMMM y' : undefined : lang()) } }}
           </h3>
-          <span class="chip chip-amber">{{ 'dashboard.note.status.' + p.status | translate }}</span>
+          <span class="chip chip-amber">{{ runStatusKey() | translate }}</span>
         </div>
 
         <div class="note-figure num">
-          <span class="note-currency">PKR</span>
+          <span class="note-currency">{{ p.currencyCode }}</span>
           <span class="note-amount">{{ p.net | amount: lang() }}</span>
         </div>
         <p class="note-caption">
-          {{ 'dashboard.note.caption' | translate: { count: p.employees, date: (p.payDate | date: 'EEEE, d MMMM' : undefined : lang()) } }}
+          {{ 'dashboard.note.caption' | translate: { count: p.employees, date: (payDate() | date: 'EEEE, d MMMM' : undefined : lang()) } }}
         </p>
 
         <dl class="note-lines num">
@@ -79,8 +93,8 @@
         </dl>
 
         <div class="note-foot">
-          <span class="note-serial" [attr.title]="'dashboard.note.reference' | translate">{{ p.reference }}</span>
-          <a class="btn btn-brass" routerLink="/app/payroll/runs">{{ 'dashboard.note.review' | translate }}</a>
+          <span class="note-serial" [attr.title]="'dashboard.note.reference' | translate">{{ p.payGroupName }}</span>
+          <a class="btn btn-brass" [routerLink]="['/app/payroll/runs', p.id]">{{ 'dashboard.note.review' | translate }}</a>
         </div>
       </div>
     </article>
@@ -93,18 +107,18 @@
       </header>
 
       <p class="today-figure num">
-        <strong>{{ atWork }}</strong>
-        <span>{{ 'dashboard.today.ofTotal' | translate: { total: attendance.total } }}</span>
+        <strong>{{ atWork() }}</strong>
+        <span>{{ 'dashboard.today.ofTotal' | translate: { total: a.total } }}</span>
       </p>
 
-      <div class="bar" role="img" [attr.aria-label]="'dashboard.today.barLabel' | translate: { present: attendance.present, remote: attendance.remote, leave: attendance.onLeave, absent: attendance.absent }">
-        @for (seg of segments; track seg.key) {
+      <div class="bar" role="img" [attr.aria-label]="'dashboard.today.barLabel' | translate: { present: a.present, remote: a.remote, leave: a.onLeave, absent: a.notIn }">
+        @for (seg of segments(); track seg.key) {
           <span [class]="seg.className" [style.flex-basis.%]="seg.percent"></span>
         }
       </div>
 
       <ul class="legend num">
-        @for (seg of segments; track seg.key) {
+        @for (seg of segments(); track seg.key) {
           <li>
             <span [class]="'swatch ' + seg.className"></span>
             {{ 'dashboard.today.' + seg.key | translate }}
@@ -114,13 +128,20 @@
       </ul>
 
       <h4 class="sub-head">{{ 'dashboard.today.away' | translate }}</h4>
+      @if (away().length === 0) {
+        <p class="muted">{{ 'dashboard.today.nobodyAway' | translate }}</p>
+      }
       <ul class="people">
-        @for (person of attendance.away; track person.name) {
+        @for (person of away(); track person.employeeId) {
           <li>
             <span class="avatar-sm" aria-hidden="true">{{ person.initials }}</span>
             <span class="person-name">{{ person.name }}</span>
             <span class="person-note">
-              {{ person.reasonKey | translate }}
+              @if (person.kind === 'Remote') {
+                {{ 'dashboard.away.remote' | translate }}
+              } @else {
+                {{ person.leaveTypeName }}
+              }
               @if (person.until) {
                 <span class="muted">{{ 'dashboard.today.until' | translate: { date: (person.until | date: 'd MMM' : undefined : lang()) } }}</span>
               }
@@ -136,7 +157,7 @@
     <div class="ledger-cell">
       <span class="ledger-label">{{ 'dashboard.ledger.headcount' | translate }}</span>
       <span class="ledger-value">{{ s.headcount }}</span>
-      <span class="ledger-note up">{{ 'dashboard.ledger.headcountChange' | translate: { count: s.headcountChange } }}</span>
+      <span class="ledger-note" [class.up]="s.headcountChange > 0">{{ 'dashboard.ledger.headcountChange' | translate: { count: (s.headcountChange > 0 ? '+' : '') + s.headcountChange } }}</span>
     </div>
     <div class="ledger-cell">
       <span class="ledger-label">{{ 'dashboard.ledger.joined' | translate }}</span>
@@ -157,19 +178,26 @@
 
   <!-- Charts -->
   <div class="row">
-    <section class="panel" [class.span-7]="canSeePayroll" [class.span-12]="!canSeePayroll">
+    <section class="panel" [class.span-7]="showCost()" [class.span-12]="!showCost()">
       <header class="panel-head">
         <div>
           <h3>{{ 'dashboard.attendance.title' | translate }}</h3>
           <p class="panel-sub">{{ 'dashboard.attendance.sub' | translate }}</p>
         </div>
       </header>
-      <div class="chart-box">
-        <app-chart type="bar" [labels]="trendLabels()" [datasets]="trendDatasets()" [options]="trendOptions" />
-      </div>
+      @if (trend().length) {
+        <div class="chart-box">
+          <app-chart type="bar" [labels]="trendLabels()" [datasets]="trendDatasets()" [options]="trendOptions()" />
+        </div>
+      } @else {
+        <div class="empty">
+          <span class="material-icons-outlined" aria-hidden="true">insights</span>
+          <p>{{ 'dashboard.attendance.empty' | translate }}</p>
+        </div>
+      }
     </section>
 
-    @if (canSeePayroll) {
+    @if (showCost()) {
     <section class="panel span-5">
       <header class="panel-head">
         <div>
@@ -181,15 +209,15 @@
         <div class="donut">
           <app-chart type="doughnut" [labels]="deptLabels()" [datasets]="deptDatasets()" />
           <div class="donut-center num">
-            <span>{{ departmentTotal | amount: lang() : 'compact' }}</span>
-            <small>PKR</small>
+            <span>{{ departmentTotal() | amount: lang() : 'compact' }}</span>
+            <small>{{ p?.currencyCode }}</small>
           </div>
         </div>
         <ul class="cost-list num">
-          @for (d of data.departments; track d.nameKey) {
+          @for (d of departments(); track d.name) {
             <li>
               <span class="swatch" [style.background]="d.color"></span>
-              <span class="cost-name">{{ d.nameKey | translate }}</span>
+              <span class="cost-name">{{ d.name || ('dashboard.cost.unassigned' | translate) }}</span>
               <span class="cost-count">{{ d.headcount }}</span>
               <span class="cost-amount">{{ d.monthlyCost | amount: lang() : 'compact' }}</span>
             </li>
@@ -229,17 +257,13 @@
                 <span class="task-title">{{ task.titleKey | translate: task.params }}</span>
               </div>
               <div class="task-actions">
-                @if (task.decidable) {
-                  <button type="button" class="btn btn-small btn-quiet" (click)="decide(task, false)">
-                    {{ 'dashboard.tasks.decline' | translate }}
-                  </button>
-                  <button type="button" class="btn btn-small btn-ink" (click)="decide(task, true)">
+                <a class="btn btn-small btn-quiet" [routerLink]="task.link" [queryParams]="task.queryParams">
+                  {{ 'dashboard.tasks.review' | translate }}
+                </a>
+                @if (task.approvable) {
+                  <button type="button" class="btn btn-small btn-ink" [disabled]="busy() === task.id" (click)="approve(task)">
                     {{ 'dashboard.tasks.approve' | translate }}
                   </button>
-                } @else {
-                  <a class="btn btn-small btn-quiet" [routerLink]="task.kind === 'payroll' ? '/app/payroll/runs' : '/app/employees'">
-                    {{ 'dashboard.tasks.review' | translate }}
-                  </a>
                 }
               </div>
             </li>
@@ -252,8 +276,14 @@
       <header class="panel-head">
         <h3>{{ 'dashboard.upcoming.title' | translate }}</h3>
       </header>
+      @if (upcoming().length === 0) {
+        <div class="empty">
+          <span class="material-icons-outlined" aria-hidden="true">event_available</span>
+          <p>{{ 'dashboard.upcoming.empty' | translate }}</p>
+        </div>
+      }
       <ol class="timeline">
-        @for (e of data.upcoming; track $index) {
+        @for (e of upcoming(); track $index) {
           @let days = daysUntil(e.date);
           <li class="event" [class.is-payday]="e.kind === 'payday'">
             <time class="event-date num" [attr.datetime]="e.date.toISOString().slice(0, 10)">
@@ -280,4 +310,5 @@
       </ol>
     </section>
   </div>
+}
 </div>
