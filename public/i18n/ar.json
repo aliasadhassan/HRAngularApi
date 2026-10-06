@@ -173,31 +173,29 @@
       "deductions": "الاستقطاعات",
       "tax": "الضريبة المستقطعة",
       "employerCost": "تكلفة صاحب العمل",
-      "reference": "مرجع المسير",
+      "reference": "مجموعة الرواتب",
       "review": "مراجعة واعتماد"
     },
     "today": {
       "title": "اليوم",
       "open": "فتح الحضور",
       "ofTotal": "من أصل {{total}} على رأس العمل",
-      "barLabel": "{{present}} في المكتب، {{remote}} عن بُعد، {{leave}} في إجازة، {{absent}} غائب",
+      "barLabel": "{{present}} في المكتب، {{remote}} عن بُعد، {{leave}} في إجازة، {{absent}} لم يحضروا بعد",
       "present": "في المكتب",
       "remote": "عن بُعد",
       "onLeave": "في إجازة",
-      "absent": "غائب",
+      "absent": "لم يحضر بعد",
       "away": "غير متواجدين اليوم",
-      "until": "حتى {{date}}"
+      "until": "حتى {{date}}",
+      "nobodyAway": "الجميع حاضرون اليوم."
     },
     "away": {
-      "annual": "إجازة سنوية",
-      "sick": "إجازة مرضية",
-      "training": "تدريب",
-      "unplanned": "لم يسجّل الحضور"
+      "remote": "يعمل عن بُعد"
     },
     "ledger": {
       "label": "ملخص القوى العاملة",
       "headcount": "عدد الموظفين",
-      "headcountChange": "+{{count}} هذا الربع",
+      "headcountChange": "{{count}} هذا الشهر",
       "joined": "انضموا هذا الشهر",
       "attrition": "معدل الدوران",
       "last12": "آخر 12 شهراً",
@@ -207,42 +205,45 @@
     "attendance": {
       "title": "الحضور",
       "sub": "نسبة الموظفين الحاضرين، آخر 14 يوم عمل",
-      "rate": "نسبة الحضور %"
+      "rate": "نسبة الحضور %",
+      "empty": "لا يوجد حضور مسجّل في الأسابيع الأخيرة."
     },
     "cost": {
       "title": "الرواتب حسب القسم",
-      "sub": "إجمالي التكلفة الشهرية"
-    },
-    "dept": {
-      "engineering": "الهندسة",
-      "sales": "المبيعات",
-      "operations": "العمليات",
-      "finance": "المالية",
-      "design": "التصميم",
-      "people": "الموارد البشرية"
+      "sub": "إجمالي الأجور مع مساهمات صاحب العمل، آخر دورة",
+      "unassigned": "بدون قسم"
     },
     "tasks": {
-      "title": "بانتظار إجراء منك",
-      "empty": "لا توجد مهام بانتظارك. ستظهر الطلبات الجديدة هنا.",
-      "approve": "اعتماد",
-      "decline": "رفض",
+      "title": "بحاجة إلى انتباهك",
+      "empty": "لا شيء بانتظارك. ستظهر الطلبات الجديدة هنا.",
+      "approve": "موافقة",
       "review": "مراجعة",
-      "payrollReady": "رواتب هذا الشهر لـ {{count}} موظفاً محسوبة وجاهزة للاعتماد",
-      "annualLeave": "إجازة سنوية، {{days}} أيام",
-      "sickLeave": "إجازة مرضية، {{days}} يوم",
-      "increment": "زيادة إلى {{amount}} روبية اعتباراً من الشهر القادم",
-      "contractEnds": "ينتهي العقد خلال {{days}} يوماً"
+      "approved": "تمت الموافقة على طلب {{name}}.",
+      "payrollReady": "تم احتساب رواتب {{count}} موظفًا وهي جاهزة للموافقة",
+      "leave": "{{type}}، {{days}} أيام من {{date}}",
+      "attendanceRequest": "{{type}} في {{date}}",
+      "probationEnds": "تنتهي فترة التجربة في {{date}} ({{days}} يومًا)",
+      "loanRequest": "طلب قرض، {{currency}} {{amount}}",
+      "advanceRequest": "طلب سلفة راتب، {{currency}} {{amount}}"
     },
     "upcoming": {
-      "title": "القادم",
+      "title": "قريبًا",
       "payday": "صرف الرواتب",
-      "leave": "{{name}} تبدأ إجازتها",
+      "leave": "يبدأ {{name}} إجازته",
       "anniversary": "{{name}}، {{years}} سنوات مع الشركة",
-      "contract": "انتهاء عقد {{name}}",
-      "joiner": "انضمام {{name}} إلى الهندسة",
+      "joiner": "ينضم {{name}}",
+      "holiday": "{{name}}",
+      "probation": "تنتهي فترة تجربة {{name}}",
+      "empty": "لا شيء خلال الثلاثين يومًا القادمة.",
       "today": "اليوم",
-      "tomorrow": "غداً",
+      "tomorrow": "غدًا",
       "inDays": "بعد {{days}} أيام"
+    },
+    "retry": "حاول مرة أخرى",
+    "loading": "جارٍ تحميل لوحة التحكم…",
+    "errors": {
+      "load": "تعذّر تحميل لوحة التحكم.",
+      "approve": "تعذّرت الموافقة على هذا الطلب."
     }
   },
   "payroll": {

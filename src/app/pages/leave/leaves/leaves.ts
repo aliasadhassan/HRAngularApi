@@ -1,3 +1,4 @@
+import { ActivatedRoute } from '@angular/router';
 import { Component, computed, inject, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -71,6 +72,10 @@ export class LeavesComponent {
 
     this.loadMine();
     if (this.canApprove) this.loadApprovals();
+
+    // Dashboard se ?tab=approvals
+    const tab = inject(ActivatedRoute).snapshot.queryParamMap.get('tab') as Tab | null;
+    if (tab && (['mine', 'approvals', 'all'] as Tab[]).includes(tab)) this.setTab(tab);
   }
 
   loadMine(): void {

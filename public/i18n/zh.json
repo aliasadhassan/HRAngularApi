@@ -173,31 +173,29 @@
       "deductions": "扣款",
       "tax": "代扣个税",
       "employerCost": "企业用工成本",
-      "reference": "批次编号",
+      "reference": "薪资组",
       "review": "审核并审批"
     },
     "today": {
       "title": "今日",
       "open": "查看考勤",
       "ofTotal": "/ {{total}} 人在岗",
-      "barLabel": "{{present}} 人在办公室，{{remote}} 人远程办公，{{leave}} 人休假，{{absent}} 人缺勤",
+      "barLabel": "{{present}} 人在办公室，{{remote}} 人远程，{{leave}} 人休假，{{absent}} 人尚未到岗",
       "present": "在办公室",
       "remote": "远程办公",
       "onLeave": "休假中",
-      "absent": "缺勤",
+      "absent": "尚未到岗",
       "away": "今日不在岗",
-      "until": "至 {{date}}"
+      "until": "至 {{date}}",
+      "nobodyAway": "今天全员到岗。"
     },
     "away": {
-      "annual": "年假",
-      "sick": "病假",
-      "training": "培训",
-      "unplanned": "未打卡"
+      "remote": "远程办公"
     },
     "ledger": {
       "label": "人员概况",
       "headcount": "在职人数",
-      "headcountChange": "本季度 +{{count}}",
+      "headcountChange": "本月 {{count}}",
       "joined": "本月入职",
       "attrition": "离职率",
       "last12": "近 12 个月",
@@ -207,42 +205,45 @@
     "attendance": {
       "title": "考勤",
       "sub": "近 14 个工作日在岗员工占比",
-      "rate": "出勤率 %"
+      "rate": "出勤率 %",
+      "empty": "最近几周没有考勤记录。"
     },
     "cost": {
       "title": "各部门薪资",
-      "sub": "月度应发总成本"
-    },
-    "dept": {
-      "engineering": "研发",
-      "sales": "销售",
-      "operations": "运营",
-      "finance": "财务",
-      "design": "设计",
-      "people": "人力资源"
+      "sub": "应发工资加雇主缴费（最近一次核算）",
+      "unassigned": "无部门"
     },
     "tasks": {
       "title": "待您处理",
-      "empty": "暂无待办事项，新的申请将显示在这里。",
-      "approve": "同意",
-      "decline": "拒绝",
-      "review": "审核",
-      "payrollReady": "本月 {{count}} 名员工的薪资已核算完成，等待审批",
-      "annualLeave": "年假，{{days}} 天",
-      "sickLeave": "病假，{{days}} 天",
-      "increment": "下月起调薪至 PKR {{amount}}",
-      "contractEnds": "合同将于 {{days}} 天后到期"
+      "empty": "暂无待办事项，新的申请会显示在这里。",
+      "approve": "批准",
+      "review": "查看",
+      "approved": "已批准 {{name}} 的申请。",
+      "payrollReady": "{{count}} 名员工的工资已核算完毕，等待批准",
+      "leave": "{{type}}，自 {{date}} 起 {{days}} 天",
+      "attendanceRequest": "{{type}}，{{date}}",
+      "probationEnds": "试用期于 {{date}} 结束（{{days}} 天）",
+      "loanRequest": "借款申请，{{currency}} {{amount}}",
+      "advanceRequest": "预支工资申请，{{currency}} {{amount}}"
     },
     "upcoming": {
-      "title": "近期事项",
+      "title": "即将到来",
       "payday": "发薪日",
       "leave": "{{name}} 开始休假",
-      "anniversary": "{{name}} 入职满 {{years}} 周年",
-      "contract": "{{name}} 的合同到期",
-      "joiner": "{{name}} 加入研发部",
+      "anniversary": "{{name}} 入职 {{years}} 周年",
+      "joiner": "{{name}} 入职",
+      "holiday": "{{name}}",
+      "probation": "{{name}} 试用期结束",
+      "empty": "未来 30 天内没有安排。",
       "today": "今天",
       "tomorrow": "明天",
       "inDays": "{{days}} 天后"
+    },
+    "retry": "重试",
+    "loading": "正在加载仪表盘…",
+    "errors": {
+      "load": "无法加载仪表盘。",
+      "approve": "无法批准此申请。"
     }
   },
   "payroll": {

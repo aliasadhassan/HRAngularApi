@@ -173,31 +173,29 @@
       "deductions": "Kesintiler",
       "tax": "Kesilen vergi",
       "employerCost": "İşveren maliyeti",
-      "reference": "Çalıştırma referansı",
+      "reference": "Bordro grubu",
       "review": "İncele ve onayla"
     },
     "today": {
       "title": "Bugün",
       "open": "Puantajı aç",
       "ofTotal": "/ {{total}} kişi işte",
-      "barLabel": "{{present}} ofiste, {{remote}} uzaktan, {{leave}} izinde, {{absent}} devamsız",
+      "barLabel": "{{present}} ofiste, {{remote}} uzaktan, {{leave}} izinde, {{absent}} henüz gelmedi",
       "present": "Ofiste",
       "remote": "Uzaktan",
       "onLeave": "İzinde",
-      "absent": "Devamsız",
+      "absent": "Henüz gelmedi",
       "away": "Bugün işte olmayanlar",
-      "until": "{{date}} tarihine kadar"
+      "until": "{{date}} tarihine kadar",
+      "nobodyAway": "Bugün herkes işte."
     },
     "away": {
-      "annual": "Yıllık izin",
-      "sick": "Hastalık izni",
-      "training": "Eğitim",
-      "unplanned": "Giriş yapmadı"
+      "remote": "Uzaktan çalışıyor"
     },
     "ledger": {
       "label": "İş gücü özeti",
       "headcount": "Çalışan sayısı",
-      "headcountChange": "Bu çeyrekte +{{count}}",
+      "headcountChange": "Bu ay {{count}}",
       "joined": "Bu ay katılanlar",
       "attrition": "Personel devir oranı",
       "last12": "Son 12 ay",
@@ -207,42 +205,45 @@
     "attendance": {
       "title": "Puantaj",
       "sub": "İşte olan çalışanların oranı, son 14 iş günü",
-      "rate": "Devam %"
+      "rate": "Devam %",
+      "empty": "Son haftalarda kayıtlı devam bilgisi yok."
     },
     "cost": {
       "title": "Departmanlara göre bordro",
-      "sub": "Aylık brüt maliyet"
-    },
-    "dept": {
-      "engineering": "Mühendislik",
-      "sales": "Satış",
-      "operations": "Operasyon",
-      "finance": "Finans",
-      "design": "Tasarım",
-      "people": "İnsan Kaynakları"
+      "sub": "Brüt ücret ve işveren katkıları, son bordro",
+      "unassigned": "Departman yok"
     },
     "tasks": {
-      "title": "İlginizi bekleyenler",
-      "empty": "Sizi bekleyen bir şey yok. Yeni talepler burada görünecek.",
+      "title": "İlgilenmeniz gerekenler",
+      "empty": "Bekleyen bir şey yok. Yeni talepler burada görünecek.",
       "approve": "Onayla",
-      "decline": "Reddet",
       "review": "İncele",
-      "payrollReady": "{{count}} çalışanın bu ayki bordrosu hesaplandı ve onaya hazır",
-      "annualLeave": "Yıllık izin, {{days}} gün",
-      "sickLeave": "Hastalık izni, {{days}} gün",
-      "increment": "Gelecek aydan itibaren PKR {{amount}} tutarına zam",
-      "contractEnds": "Sözleşme {{days}} gün içinde sona eriyor"
+      "approved": "{{name}} adlı kişinin talebi onaylandı.",
+      "payrollReady": "{{count}} çalışanın bordrosu hesaplandı ve onaya hazır",
+      "leave": "{{type}}, {{date}} tarihinden itibaren {{days}} gün",
+      "attendanceRequest": "{{type}}, {{date}}",
+      "probationEnds": "Deneme süresi {{date}} tarihinde bitiyor ({{days}} gün)",
+      "loanRequest": "Kredi talebi, {{currency}} {{amount}}",
+      "advanceRequest": "Maaş avansı talebi, {{currency}} {{amount}}"
     },
     "upcoming": {
       "title": "Yaklaşanlar",
-      "payday": "Maaşlar ödendi",
+      "payday": "Maaş ödemesi",
       "leave": "{{name}} izne başlıyor",
-      "anniversary": "{{name}}, şirkette {{years}}. yılı",
-      "contract": "{{name}} adlı çalışanın sözleşmesi sona eriyor",
-      "joiner": "{{name}} Mühendislik ekibine katılıyor",
+      "anniversary": "{{name}}, şirkette {{years}}. yıl",
+      "joiner": "{{name}} katılıyor",
+      "holiday": "{{name}}",
+      "probation": "{{name}} için deneme süresi bitiyor",
+      "empty": "Önümüzdeki 30 günde bir şey yok.",
       "today": "Bugün",
       "tomorrow": "Yarın",
-      "inDays": "{{days}} gün içinde"
+      "inDays": "{{days}} gün sonra"
+    },
+    "retry": "Tekrar dene",
+    "loading": "Pano yükleniyor…",
+    "errors": {
+      "load": "Pano yüklenemedi.",
+      "approve": "Bu talep onaylanamadı."
     }
   },
   "payroll": {
