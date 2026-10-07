@@ -142,6 +142,26 @@ export interface CompanySettings {
   maxFailedLoginAttempts: number;
 }
 
+export type SubscriptionStatus = 'Trial' | 'Active' | 'PastDue' | 'Expired' | 'Cancelled';
+export type BillingCycle = 'None' | 'Monthly' | 'Yearly';
+
+/** GET /identity/company/subscription — read-only; plan HR Cloud (platform owner) badalta hai */
+export interface Subscription {
+  planCode: string;
+  status: SubscriptionStatus;
+  startDate: string;
+  endDate: string | null;
+  graceUntil: string | null;
+  daysLeft: number | null;
+  inGrace: boolean;
+  seatLimit: number | null;
+  seatsUsed: number;
+  billingCycle: BillingCycle;
+  amount: number;
+  currencyCode: string;
+  autoRenew: boolean;
+}
+
 export interface Company {
   profile: CompanyProfile;
   settings: CompanySettings;

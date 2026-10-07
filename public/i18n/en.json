@@ -545,7 +545,31 @@
       "passwordMinHint": "Checked when people set or reset a password.",
       "maxFailed": "Lock account after",
       "attempts": "wrong passwords",
-      "maxFailedHint": "The account unlocks automatically after a while, or an admin can unlock it."
+      "maxFailedHint": "The account unlocks automatically after a while, or an admin can unlock it.",
+      "planTitle": "Plan & license",
+      "planHelp": "Your company's subscription. HR Cloud manages plans; contact us to change it.",
+      "plan": "Plan",
+      "planPeriod": "Period",
+      "planNoEnd": "No end date",
+      "planUsers": "Users",
+      "planSeats": "{{used}} of {{limit}} users",
+      "planSeatsUnlimited": "{{used}} users · no limit",
+      "planBilling": "Billing",
+      "planBillingNone": "Not billed",
+      "planContact": "To upgrade, renew or add users, contact HR Cloud support.",
+      "planGrace": "Your subscription ended on {{end}}. Access continues until {{until}}; renew to avoid interruption.",
+      "planEndingSoon": "Your subscription ends in {{n}} days ({{end}}).",
+      "planStatus": {
+        "Trial": "Trial",
+        "Active": "Active",
+        "PastDue": "Payment due",
+        "Expired": "Expired",
+        "Cancelled": "Cancelled"
+      },
+      "planCycle": {
+        "Monthly": "month",
+        "Yearly": "year"
+      }
     }
   },
   "perm": {

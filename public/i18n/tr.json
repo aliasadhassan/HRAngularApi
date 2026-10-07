@@ -545,7 +545,31 @@
       "passwordMinHint": "Kişiler parola belirlediğinde veya sıfırladığında kontrol edilir.",
       "maxFailed": "Hesap kilitleme",
       "attempts": "hatalı paroladan sonra",
-      "maxFailedHint": "Hesabın kilidi bir süre sonra otomatik olarak açılır veya bir yönetici kilidi açabilir."
+      "maxFailedHint": "Hesabın kilidi bir süre sonra otomatik olarak açılır veya bir yönetici kilidi açabilir.",
+      "planTitle": "Plan ve lisans",
+      "planHelp": "Şirketinizin aboneliği. Planları HR Cloud yönetir; değiştirmek için bize ulaşın.",
+      "plan": "Plan",
+      "planPeriod": "Dönem",
+      "planNoEnd": "Bitiş tarihi yok",
+      "planUsers": "Kullanıcılar",
+      "planSeats": "{{limit}} kullanıcıdan {{used}}",
+      "planSeatsUnlimited": "{{used}} kullanıcı · sınırsız",
+      "planBilling": "Faturalama",
+      "planBillingNone": "Faturalandırılmıyor",
+      "planContact": "Yükseltmek, yenilemek veya kullanıcı eklemek için HR Cloud destek ile iletişime geçin.",
+      "planGrace": "Aboneliğiniz {{end}} tarihinde sona erdi. Erişim {{until}} tarihine kadar sürer; kesinti olmaması için yenileyin.",
+      "planEndingSoon": "Aboneliğiniz {{n}} gün içinde sona eriyor ({{end}}).",
+      "planStatus": {
+        "Trial": "Deneme",
+        "Active": "Aktif",
+        "PastDue": "Ödeme bekleniyor",
+        "Expired": "Süresi doldu",
+        "Cancelled": "İptal edildi"
+      },
+      "planCycle": {
+        "Monthly": "ay",
+        "Yearly": "yıl"
+      }
     }
   },
   "perm": {

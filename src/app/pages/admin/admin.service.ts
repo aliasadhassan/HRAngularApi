@@ -4,7 +4,7 @@ import { Observable, map } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import {
   AssignableRole, Company, CompanyProfile, CompanySettings, LoginActivityItem, LoginActivitySummary, LoginMethod, Paged, PermissionItem, RoleItem,
-  UserCounts, UserListItem, UserStatus
+  Subscription, UserCounts, UserListItem, UserStatus
 } from './admin.models';
 
 export interface UserQuery {
@@ -90,6 +90,11 @@ export class AdminService {
   }
 
   // ───── Company ─────
+  /** 404 = koi current subscription nahi (purana tenant) */
+  getSubscription(): Observable<Subscription> {
+    return this.http.get<Subscription>(`${this.company}/subscription`);
+  }
+
   getCompany(): Observable<Company> {
     return this.http.get<Company>(this.company);
   }

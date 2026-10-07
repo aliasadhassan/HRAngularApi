@@ -545,7 +545,31 @@
       "passwordMinHint": "在设置或重置密码时进行校验。",
       "maxFailed": "密码连续输错",
       "attempts": "次后锁定账号",
-      "maxFailedHint": "账号将在一段时间后自动解锁，管理员也可手动解锁。"
+      "maxFailedHint": "账号将在一段时间后自动解锁，管理员也可手动解锁。",
+      "planTitle": "套餐与许可",
+      "planHelp": "贵公司的订阅。套餐由 HR Cloud 管理，如需更改请联系我们。",
+      "plan": "套餐",
+      "planPeriod": "期限",
+      "planNoEnd": "无结束日期",
+      "planUsers": "用户",
+      "planSeats": "{{used}} / {{limit}} 位用户",
+      "planSeatsUnlimited": "{{used}} 位用户 · 不限",
+      "planBilling": "计费",
+      "planBillingNone": "不计费",
+      "planContact": "如需升级、续订或增加用户，请联系 HR Cloud 支持。",
+      "planGrace": "您的订阅已于 {{end}} 结束。访问将持续到 {{until}}，请续订以免中断。",
+      "planEndingSoon": "您的订阅将在 {{n}} 天后结束（{{end}}）。",
+      "planStatus": {
+        "Trial": "试用",
+        "Active": "有效",
+        "PastDue": "待付款",
+        "Expired": "已过期",
+        "Cancelled": "已取消"
+      },
+      "planCycle": {
+        "Monthly": "月",
+        "Yearly": "年"
+      }
     }
   },
   "perm": {
