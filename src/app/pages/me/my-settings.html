@@ -4,12 +4,24 @@
       <span class="avatar-xl" aria-hidden="true">{{ initials() }}</span>
       <div>
         <h2>{{ m.displayName }}</h2>
-        <p class="mast-sub">{{ m.email }} · {{ m.tenant.name }}</p>
+        <p class="mast-sub">
+          {{ m.email }} · {{ m.tenant.name }}
+          @if (m.lastLoginAt) {
+            · {{ 'mySettings.lastLogin' | translate: { date: (utc(m.lastLoginAt) | date: 'd MMM, h:mm a' : undefined : language.language()) } }}
+          }
+        </p>
         <div class="roles">
           @for (r of m.roles; track r) { <span class="role-pill">{{ r }}</span> }
         </div>
       </div>
     </header>
+
+    @if (m.mustChangePassword && m.hasPassword) {
+      <div class="notice notice-error">
+        <span class="material-icons-outlined" aria-hidden="true">key</span>
+        <span>{{ 'mySettings.mustChange' | translate }}</span>
+      </div>
+    }
 
     <section class="panel section">
       <div class="side">
@@ -71,7 +83,7 @@
               <input id="p-conf" [type]="showPwd() ? 'text' : 'password'" autocomplete="new-password" [(ngModel)]="pwd.confirm" />
             </div>
           </div>
-          @if (pwdError(); as err) { <p class="err">{{ err | translate }}</p> }
+          @if (pwdError(); as err) { <p class="err">{{ err | translate: { n: minLength() } }}</p> }
           <label class="check"><input type="checkbox" [checked]="showPwd()" (change)="showPwd.set(!showPwd())" />{{ 'mySettings.show' | translate }}</label>
           <footer class="foot">
             <button type="button" class="btn btn-ink btn-small" [disabled]="!canChangePwd() || saving()" (click)="changePassword()">
@@ -83,6 +95,98 @@
             <span class="material-icons-outlined" aria-hidden="true">window</span>
             <span>{{ 'mySettings.sso' | translate }}</span>
           </div>
+        }
+      </div>
+    </section>
+
+    <section class="panel section">
+      <div class="side">
+        <h3 class="section-title">{{ 'mySettings.sessions' | translate }}</h3>
+        <p class="section-help">{{ 'mySettings.sessionsHelp' | translate }}</p>
+      </div>
+      <div class="body">
+        @if (sessions(); as list) {
+          <ul class="sessions">
+            @for (s of list; track s.id) {
+              @let dev = describeDevice(s.userAgent);
+              <li class="session" [class.is-current]="s.isCurrent">
+                <span class="material-icons-outlined dev-icon" aria-hidden="true">{{ dev.mobile ? 'smartphone' : 'computer' }}</span>
+                <div class="session-main">
+                  <span class="cell-main">
+                    {{ dev.browser }}@if (dev.os) { · {{ dev.os }} }
+                    @if (s.isCurrent) { <span class="chip chip-moss">{{ 'mySettings.thisDevice' | translate }}</span> }
+                  </span>
+                  <span class="cell-sub">
+                    {{ 'mySettings.started' | translate: { date: (utc(s.startedAt) | date: 'd MMM, h:mm a' : undefined : language.language()) } }}
+                    · {{ 'mySettings.lastActive' | translate: { date: (utc(s.lastActiveAt) | date: 'd MMM, h:mm a' : undefined : language.language()) } }}
+                    @if (s.ipAddress) { · <span class="num" dir="ltr">{{ s.ipAddress }}</span> }
+                  </span>
+                </div>
+                @if (!s.isCurrent) {
+                  <button type="button" class="btn btn-quiet btn-small" [disabled]="revoking()" (click)="signOut(s.id)">
+                    {{ (confirming() === s.id ? 'mySettings.confirmAgain' : 'mySettings.signOut') | translate }}
+                  </button>
+                }
+              </li>
+            }
+          </ul>
+          <footer class="foot">
+            @if (otherSessions() > 0) {
+              <button type="button" class="btn btn-danger btn-small" [disabled]="revoking()" (click)="signOut('others')">
+                {{ (confirming() === 'others' ? 'mySettings.confirmAgain' : 'mySettings.signOutOthers') | translate }}
+              </button>
+            } @else {
+              <span class="field-hint">{{ 'mySettings.onlyHere' | translate }}</span>
+            }
+          </footer>
+        } @else {
+          <span class="skeleton" style="width: 60%"></span>
+        }
+      </div>
+    </section>
+
+    <section class="panel section">
+      <div class="side">
+        <h3 class="section-title">{{ 'mySettings.activity' | translate }}</h3>
+        <p class="section-help">{{ 'mySettings.activityHelp' | translate }}</p>
+      </div>
+      <div class="body">
+        @if (signIns(); as list) {
+          @if (list.length === 0) {
+            <p class="field-hint">{{ 'mySettings.activityEmpty' | translate }}</p>
+          } @else {
+            <div class="table-wrap">
+              <table class="ledger-table compact">
+                <thead>
+                  <tr>
+                    <th>{{ 'admin.activity.when' | translate }}</th>
+                    <th>{{ 'admin.activity.result' | translate }}</th>
+                    <th>{{ 'admin.activity.device' | translate }}</th>
+                    <th>{{ 'admin.activity.ip' | translate }}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (a of list; track a.id) {
+                    @let dev = describeDevice(a.userAgent);
+                    <tr [class.is-failed]="!a.succeeded">
+                      <td class="num">{{ utc(a.occurredAt) | date: 'd MMM, h:mm a' : undefined : language.language() }}</td>
+                      <td>
+                        <span class="result" [class.ok]="a.succeeded">
+                          <span class="material-icons-outlined" aria-hidden="true">{{ a.succeeded ? 'check_circle' : 'cancel' }}</span>
+                          {{ reasonKey(a) | translate }}
+                          @if (a.method === 'Microsoft') { <span class="via">· {{ 'admin.activity.methods.Microsoft' | translate }}</span> }
+                        </span>
+                      </td>
+                      <td>{{ dev.browser }}@if (dev.os) { · {{ dev.os }} }</td>
+                      <td class="num" dir="ltr">{{ a.ipAddress ?? '—' }}</td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          }
+        } @else {
+          <span class="skeleton" style="width: 60%"></span>
         }
       </div>
     </section>
