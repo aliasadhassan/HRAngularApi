@@ -2,6 +2,7 @@ import { Component, computed, effect, inject, input, signal } from '@angular/cor
 import { DatePipe, Location } from '@angular/common';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { AmountPipe } from '../../../shared/pipes/amount.pipe';
+import { utc } from '../../admin/admin.models';
 import { LanguageService } from '../../../core/i18n/language.service';
 import { AlertService } from '../../../services/alert/alert';
 import { PayrollService } from '../payroll.service';
@@ -24,6 +25,7 @@ export class PayslipComponent {
   /** Route data: self=true → employee apni payslip */
   readonly self = input(false);
   readonly lang = inject(LanguageService).language;
+  readonly utc = utc;
   readonly chip = PAYSLIP_STATUS_CHIP;
 
   readonly slip = signal<Payslip | null>(null);

@@ -69,7 +69,7 @@
           <span class="step-text">
             <b>{{ 'payroll.detail.stepCalculate' | translate }}</b>
             @if (r.calculatedAt) {
-              <span class="num">{{ r.calculatedAt + 'Z' | date: 'd MMM, h:mm a' : undefined : lang() }}</span>
+              <span class="num">{{ utc(r.calculatedAt) | date: 'd MMM, h:mm a' : undefined : lang() }}</span>
             }
           </span>
         </li>
@@ -78,7 +78,7 @@
           <span class="step-text">
             <b>{{ 'payroll.detail.stepApprove' | translate }}</b>
             @if (r.approvedAt) {
-              <span class="num">{{ r.approvedAt + 'Z' | date: 'd MMM, h:mm a' : undefined : lang() }}</span>
+              <span class="num">{{ utc(r.approvedAt) | date: 'd MMM, h:mm a' : undefined : lang() }}</span>
             }
           </span>
         </li>
