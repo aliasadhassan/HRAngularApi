@@ -1,0 +1,720 @@
+<div class="page">
+  <header class="page-intro">
+    <p>{{ 'lifecycle.intro' | translate }}</p>
+    @if (canManage && (tab() === 'onboarding' || tab() === 'exits')) {
+      <div class="intro-actions">
+        @if (tab() === 'onboarding') {
+          <button type="button" class="btn btn-ink" (click)="openStart('Onboarding')">
+            <span class="material-icons-outlined" aria-hidden="true">person_add</span>{{ 'lifecycle.startOnboarding' | translate }}
+          </button>
+        } @else {
+          <button type="button" class="btn btn-ink" (click)="openStart('Exit')">
+            <span class="material-icons-outlined" aria-hidden="true">logout</span>{{ 'lifecycle.startExit' | translate }}
+          </button>
+        }
+      </div>
+    }
+    @if (canEditTemplates && tab() === 'checklists' && templates()?.length) {
+      <div class="intro-actions">
+        <button type="button" class="btn btn-quiet" (click)="openTemplate('Exit')">
+          <span class="material-icons-outlined" aria-hidden="true">add</span>{{ 'lifecycle.tpl.newExit' | translate }}
+        </button>
+        <button type="button" class="btn btn-ink" (click)="openTemplate('Onboarding')">
+          <span class="material-icons-outlined" aria-hidden="true">add</span>{{ 'lifecycle.tpl.newOnboarding' | translate }}
+        </button>
+      </div>
+    }
+  </header>
+
+  @if (canView) {
+    <nav class="tabs">
+      <button type="button" class="tab" [class.is-active]="tab() === 'onboarding'" (click)="setTab('onboarding')">
+        {{ 'lifecycle.tabs.onboarding' | translate }}
+        @if (summary()?.onboardingOpen) { <span class="tab-count num">{{ summary()!.onboardingOpen }}</span> }
+      </button>
+      <button type="button" class="tab" [class.is-active]="tab() === 'exits'" (click)="setTab('exits')">
+        {{ 'lifecycle.tabs.exits' | translate }}
+        @if (summary()?.exitsOpen) { <span class="tab-count num">{{ summary()!.exitsOpen }}</span> }
+      </button>
+      <button type="button" class="tab" [class.is-active]="tab() === 'mine'" (click)="setTab('mine')">
+        {{ 'lifecycle.tabs.mine' | translate }}
+        @if (myTasks()?.length) { <span class="tab-count num" [class.alert-count]="myOverdue() > 0">{{ myTasks()!.length }}</span> }
+      </button>
+      <button type="button" class="tab" [class.is-active]="tab() === 'checklists'" (click)="setTab('checklists')">{{ 'lifecycle.tabs.checklists' | translate }}</button>
+    </nav>
+  }
+
+  <!-- ═══ My tasks ═══ -->
+  @if (tab() === 'mine') {
+    <section class="panel panel-flush">
+      <header class="list-head">
+        <div>
+          <h3 class="section-title">{{ 'lifecycle.myTasks' | translate }}</h3>
+          <p class="panel-sub">{{ 'lifecycle.myTasksSub' | translate }}</p>
+        </div>
+      </header>
+      @if (myTasks() === null) {
+        <p class="loading-line">{{ 'common.loading' | translate }}</p>
+      } @else {
+        <ul class="task-list">
+          @for (t of myTasks(); track t.taskId) {
+            <li class="task-row" [class.is-late]="isOverdue(t)">
+              <span class="owner-badge" [attr.title]="'lifecycle.owner.' + t.owner | translate">
+                <span class="material-icons-outlined" aria-hidden="true">{{ ownerIcon[t.owner] }}</span>
+              </span>
+              <div class="task-text">
+                <span class="cell-main wrap">{{ t.title }}@if (t.isRequired) { <span class="req" [attr.title]="'lifecycle.required' | translate"> *</span> }</span>
+                <span class="cell-sub">
+                  {{ (t.kind === 'Exit' ? 'lifecycle.kind.Exit' : 'lifecycle.kind.Onboarding') | translate }} ·
+                  {{ t.isSelf ? ('lifecycle.forYou' | translate) : t.employeeName }}
+                </span>
+                @if (t.description) { <span class="cell-sub desc">{{ t.description }}</span> }
+              </div>
+              <span class="due num" [class.warn]="isOverdue(t)">
+                @if (t.dueDate) {
+                  {{ t.dueDate | date: 'd MMM' : undefined : lang() }}
+                  @if (isOverdue(t)) { <span class="cell-sub warn">{{ 'lifecycle.overdue' | translate }}</span> }
+                } @else { <span class="dim">—</span> }
+              </span>
+              <button type="button" class="btn btn-quiet btn-small" [disabled]="busy() === t.taskId" (click)="doneMine(t)">
+                <span class="material-icons-outlined" aria-hidden="true">check</span>{{ 'lifecycle.markDone' | translate }}
+              </button>
+            </li>
+          } @empty {
+            <li class="empty-state">
+              <span class="material-icons-outlined" aria-hidden="true">task_alt</span>
+              <h3>{{ 'lifecycle.noMyTasks' | translate }}</h3>
+              <p>{{ 'lifecycle.noMyTasksBody' | translate }}</p>
+            </li>
+          }
+        </ul>
+      }
+    </section>
+  }
+
+  <!-- ═══ Onboarding / Exits ═══ -->
+  @if (tab() === 'onboarding' || tab() === 'exits') {
+    @if (summary(); as s) {
+      <section class="tallies">
+        <article class="tally">
+          <span class="t-label">{{ (tab() === 'exits' ? 'lifecycle.sum.exitsOpen' : 'lifecycle.sum.onboardingOpen') | translate }}</span>
+          <span class="t-figure num">{{ tab() === 'exits' ? s.exitsOpen : s.onboardingOpen }}</span>
+        </article>
+        <article class="tally" [class.is-alert]="s.overdueTasks > 0">
+          <span class="t-label">{{ 'lifecycle.sum.overdue' | translate }}</span>
+          <span class="t-figure num">{{ s.overdueTasks }}</span>
+          <span class="t-sub">{{ 'lifecycle.sum.allChecklists' | translate }}</span>
+        </article>
+        <article class="tally">
+          <span class="t-label">{{ 'lifecycle.sum.dueWeek' | translate }}</span>
+          <span class="t-figure num">{{ s.dueThisWeek }}</span>
+          <span class="t-sub">{{ 'lifecycle.sum.allChecklists' | translate }}</span>
+        </article>
+        <article class="tally">
+          <span class="t-label">{{ 'lifecycle.sum.closedMonth' | translate }}</span>
+          <span class="t-figure num">{{ s.closedThisMonth }}</span>
+        </article>
+      </section>
+
+      @if (tab() === 'onboarding' && s.joinersWithoutChecklist > 0 && canManage) {
+        <div class="notice notice-info">
+          <span class="material-icons-outlined" aria-hidden="true">waving_hand</span>
+          <span class="grow">{{ 'lifecycle.joinersHint' | translate: { n: s.joinersWithoutChecklist } }}</span>
+          <button type="button" class="btn btn-quiet btn-small" (click)="openStart('Onboarding')">{{ 'lifecycle.startOnboarding' | translate }}</button>
+        </div>
+      }
+    }
+
+    @if (templates() && !templates()!.length && canEditTemplates) {
+      <div class="notice notice-info">
+        <span class="material-icons-outlined" aria-hidden="true">checklist</span>
+        <span class="grow">{{ 'lifecycle.noTemplatesHint' | translate }}</span>
+        <button type="button" class="btn btn-quiet btn-small" [disabled]="saving()" (click)="createStarter()">{{ 'lifecycle.tpl.starter' | translate }}</button>
+      </div>
+    }
+
+    <section class="panel panel-flush">
+      <div class="toolbar">
+        <label class="search">
+          <span class="material-icons-outlined" aria-hidden="true">search</span>
+          <input type="search" [ngModel]="search()" (ngModelChange)="onSearch($event)" [placeholder]="'lifecycle.searchPh' | translate" [attr.aria-label]="'lifecycle.searchPh' | translate" />
+        </label>
+        <select class="select-sm" [ngModel]="status()" (ngModelChange)="setStatus($event)" [attr.aria-label]="'lifecycle.statusCol' | translate">
+          <option value="InProgress">{{ 'lifecycle.status.InProgress' | translate }}</option>
+          <option value="Completed">{{ 'lifecycle.status.Completed' | translate }}</option>
+          <option value="Cancelled">{{ 'lifecycle.status.Cancelled' | translate }}</option>
+          <option value="">{{ 'lifecycle.anyStatus' | translate }}</option>
+        </select>
+      </div>
+      <div class="table-wrap">
+        <table class="ledger-table">
+          <thead>
+            <tr>
+              <th>{{ 'people.employee' | translate }}</th>
+              <th>{{ (tab() === 'exits' ? 'lifecycle.lastDay' : 'lifecycle.joining') | translate }}</th>
+              <th class="progress-col">{{ 'lifecycle.progress' | translate }}</th>
+              <th>{{ 'lifecycle.nextDue' | translate }}</th>
+              <th>{{ 'lifecycle.statusCol' | translate }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            @if (cases() === null) {
+              <tr><td colspan="5"><p class="loading-line">{{ 'common.loading' | translate }}</p></td></tr>
+            }
+            @for (c of cases(); track c.id) {
+              <tr class="is-link" tabindex="0" (click)="openCase(c.id)" (keydown.enter)="openCase(c.id)">
+                <td>
+                  <span class="cell-main">{{ c.employeeName }}</span>
+                  <span class="cell-sub">{{ c.employeeCode }}@if (c.designationTitle) { · {{ c.designationTitle }} }@if (c.departmentName) { · {{ c.departmentName }} }</span>
+                </td>
+                <td class="num">
+                  {{ c.anchorDate | date: 'd MMM y' : undefined : lang() }}
+                  @if (c.status === 'InProgress') {
+                    @let d = daysTo(c.anchorDate);
+                    <span class="cell-sub">
+                      @if (d > 0) { {{ 'lifecycle.inDays' | translate: { n: d } }} }
+                      @else if (d === 0) { {{ 'lifecycle.todayLabel' | translate }} }
+                      @else { {{ 'lifecycle.daysAgo' | translate: { n: -d } }} }
+                    </span>
+                  }
+                  @if (c.exitType) { <span class="cell-sub">{{ 'lifecycle.exitType.' + c.exitType | translate }}</span> }
+                </td>
+                <td class="progress-col">
+                  <div class="progress-cell">
+                    <span class="meter" role="progressbar" [attr.aria-valuenow]="progress(c)" aria-valuemin="0" aria-valuemax="100">
+                      <span class="meter-fill" [class.is-full]="progress(c) === 100" [style.width.%]="progress(c)"></span>
+                    </span>
+                    <span class="num progress-num">{{ c.closedTasks }}/{{ c.totalTasks }}</span>
+                  </div>
+                  @if (c.status === 'InProgress' && c.openRequired) {
+                    <span class="cell-sub">{{ 'lifecycle.requiredLeft' | translate: { n: c.openRequired } }}</span>
+                  }
+                </td>
+                <td class="num">
+                  @if (c.nextDue) {
+                    <span [class.warn]="c.nextDue < today">{{ c.nextDue | date: 'd MMM' : undefined : lang() }}</span>
+                    @if (c.overdueTasks) { <span class="cell-sub warn">{{ 'lifecycle.nOverdue' | translate: { n: c.overdueTasks } }}</span> }
+                  } @else { <span class="dim">—</span> }
+                </td>
+                <td>
+                  <span [class]="caseChip[c.status]">{{ 'lifecycle.status.' + c.status | translate }}</span>
+                  @if (c.closedAt) { <span class="cell-sub">{{ c.closedAt | date: 'd MMM y' : undefined : lang() }}</span> }
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="5">
+                  <div class="empty-state">
+                    <span class="material-icons-outlined" aria-hidden="true">{{ tab() === 'exits' ? 'logout' : 'how_to_reg' }}</span>
+                    <h3>{{ (tab() === 'exits' ? 'lifecycle.noExits' : 'lifecycle.noOnboarding') | translate }}</h3>
+                    <p>{{ (tab() === 'exits' ? 'lifecycle.noExitsBody' : 'lifecycle.noOnboardingBody') | translate }}</p>
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+  }
+
+  <!-- ═══ Checklist templates ═══ -->
+  @if (tab() === 'checklists') {
+    @if (templates() === null) {
+      <p class="loading-line">{{ 'common.loading' | translate }}</p>
+    } @else if (!templates()!.length) {
+      <section class="panel">
+        <div class="empty-state">
+          <span class="material-icons-outlined" aria-hidden="true">checklist</span>
+          <h3>{{ 'lifecycle.tpl.emptyTitle' | translate }}</h3>
+          <p>{{ 'lifecycle.tpl.emptyBody' | translate }}</p>
+          @if (canEditTemplates) {
+            <div class="empty-actions">
+              <button type="button" class="btn btn-ink" [disabled]="saving()" (click)="createStarter()">{{ 'lifecycle.tpl.starter' | translate }}</button>
+              <button type="button" class="btn btn-quiet" (click)="openTemplate('Onboarding')">{{ 'lifecycle.tpl.fromScratch' | translate }}</button>
+            </div>
+          }
+        </div>
+      </section>
+    } @else {
+      @for (group of [{ kind: 'Onboarding', list: onboardingTemplates() }, { kind: 'Exit', list: exitTemplates() }]; track group.kind) {
+        <section class="tpl-group">
+          <h3 class="section-title">{{ (group.kind === 'Exit' ? 'lifecycle.tpl.exitGroup' : 'lifecycle.tpl.onboardingGroup') | translate }}</h3>
+          <div class="tpl-grid">
+            @for (t of group.list; track t.id) {
+              <button type="button" class="tpl-card" [class.is-off]="!t.isActive" (click)="openTemplate(t.kind, t)">
+                <span class="tpl-top">
+                  <span class="tpl-name">{{ t.name }}</span>
+                  @if (t.isDefault) { <span class="chip chip-ink">{{ 'lifecycle.tpl.default' | translate }}</span> }
+                  @if (!t.isActive) { <span class="chip chip-muted">{{ 'lifecycle.tpl.inactive' | translate }}</span> }
+                </span>
+                @if (t.description) { <span class="cell-sub">{{ t.description }}</span> }
+                <span class="tpl-meta">
+                  <span>{{ 'lifecycle.tpl.nTasks' | translate: { n: t.tasks.length } }}</span>
+                  @if (t.inUse) { <span>· {{ 'lifecycle.tpl.inUse' | translate: { n: t.inUse } }}</span> }
+                </span>
+                <span class="tpl-owners">
+                  @for (o of templateOwners(t); track o) {
+                    <span class="owner-badge sm" [attr.title]="'lifecycle.owner.' + o | translate">
+                      <span class="material-icons-outlined" aria-hidden="true">{{ ownerIcon[o] }}</span>
+                    </span>
+                  }
+                </span>
+              </button>
+            } @empty {
+              <p class="dim">{{ 'lifecycle.tpl.noneOfKind' | translate }}</p>
+            }
+          </div>
+        </section>
+      }
+    }
+  }
+</div>
+
+@if (drawer(); as d) {
+  <div class="overlay" (click)="closeDrawer()">
+    <aside class="drawer" [class.drawer-wide]="d === 'case' || d === 'template'" role="dialog" aria-modal="true" (click)="$event.stopPropagation()">
+      <header class="drawer-head">
+        <h3>
+          @switch (d) {
+            @case ('case') { {{ detail()?.employeeName ?? ('common.loading' | translate) }} }
+            @case ('startOnboarding') { {{ 'lifecycle.startOnboarding' | translate }} }
+            @case ('startExit') { {{ 'lifecycle.startExit' | translate }} }
+            @case ('template') { {{ (templateForm?.id ? 'lifecycle.tpl.edit' : (templateForm?.kind === 'Exit' ? 'lifecycle.tpl.newExit' : 'lifecycle.tpl.newOnboarding')) | translate }} }
+          }
+        </h3>
+        <button type="button" class="btn-link" (click)="closeDrawer()" [attr.aria-label]="'common.close' | translate">
+          <span class="material-icons-outlined" aria-hidden="true">close</span>
+        </button>
+      </header>
+
+      <div class="drawer-body">
+        @switch (d) {
+          <!-- Case -->
+          @case ('case') {
+            @if (detail(); as c) {
+              <div class="case-head">
+                <div>
+                  <span class="cell-sub">{{ c.employeeCode }}@if (c.designationTitle) { · {{ c.designationTitle }} }@if (c.departmentName) { · {{ c.departmentName }} }</span>
+                  <span class="cell-sub">{{ c.workEmail }}@if (c.managerName) { · {{ 'lifecycle.manager' | translate }}: {{ c.managerName }} }</span>
+                </div>
+                <span [class]="caseChip[c.status]">{{ 'lifecycle.status.' + c.status | translate }}</span>
+              </div>
+
+              <dl class="facts">
+                <div>
+                  <dt>{{ (c.kind === 'Exit' ? 'lifecycle.lastDay' : 'lifecycle.joining') | translate }}</dt>
+                  <dd class="num">{{ c.anchorDate | date: 'd MMM y' : undefined : lang() }}</dd>
+                </div>
+                <div>
+                  <dt>{{ 'lifecycle.empStatus' | translate }}</dt>
+                  <dd>{{ 'people.status.' + c.employmentStatus | translate }}</dd>
+                </div>
+                <div>
+                  <dt>{{ 'lifecycle.progress' | translate }}</dt>
+                  <dd class="num">{{ closedCount() }}/{{ c.tasks.length }}</dd>
+                </div>
+                @if (c.templateName) {
+                  <div>
+                    <dt>{{ 'lifecycle.template' | translate }}</dt>
+                    <dd>{{ c.templateName }}</dd>
+                  </div>
+                }
+              </dl>
+
+              <!-- Exit details -->
+              @if (c.kind === 'Exit') {
+                <section class="sub-panel">
+                  <header class="sub-head">
+                    <h4>{{ 'lifecycle.exitDetails' | translate }}</h4>
+                    @if (canManage && c.status === 'InProgress' && !exitForm) {
+                      <button type="button" class="btn-link" (click)="editExit()">{{ 'common.edit' | translate }}</button>
+                    }
+                  </header>
+                  @if (exitForm; as f) {
+                    <div class="form-grid">
+                      <div class="field">
+                        <label for="x-type">{{ 'lifecycle.exitTypeLabel' | translate }}</label>
+                        <select id="x-type" [(ngModel)]="f.exitType">
+                          @for (x of exitTypes; track x) { <option [value]="x">{{ 'lifecycle.exitType.' + x | translate }}</option> }
+                        </select>
+                      </div>
+                      <div class="field">
+                        <label for="x-notice">{{ 'lifecycle.noticeDate' | translate }}</label>
+                        <input id="x-notice" type="date" [(ngModel)]="f.noticeDate" />
+                      </div>
+                      <div class="field">
+                        <label for="x-lwd">{{ 'lifecycle.lastDay' | translate }}</label>
+                        <input id="x-lwd" type="date" [min]="f.noticeDate" [(ngModel)]="f.lastWorkingDay" />
+                      </div>
+                      <div class="field span-all">
+                        <label for="x-reason">{{ 'lifecycle.reason' | translate }}</label>
+                        <input id="x-reason" [(ngModel)]="f.reason" maxlength="500" />
+                      </div>
+                      <div class="field">
+                        <label for="x-rehire">{{ 'lifecycle.rehire' | translate }}</label>
+                        <select id="x-rehire" [(ngModel)]="f.eligibleForRehire">
+                          <option [ngValue]="null">{{ 'lifecycle.notDecided' | translate }}</option>
+                          <option [ngValue]="true">{{ 'common.yes' | translate }}</option>
+                          <option [ngValue]="false">{{ 'common.no' | translate }}</option>
+                        </select>
+                      </div>
+                      <div class="field span-all">
+                        <label for="x-notes">{{ 'lifecycle.interviewNotes' | translate }}</label>
+                        <textarea id="x-notes" rows="3" [(ngModel)]="f.interviewNotes" maxlength="4000"></textarea>
+                      </div>
+                    </div>
+                    @if (f.lastWorkingDay !== c.anchorDate) { <p class="field-hint">{{ 'lifecycle.shiftHint' | translate }}</p> }
+                    <div class="inline-actions">
+                      <button type="button" class="btn btn-quiet btn-small" (click)="exitForm = null">{{ 'common.cancel' | translate }}</button>
+                      <button type="button" class="btn btn-ink btn-small" [disabled]="!f.reason.trim() || f.lastWorkingDay < f.noticeDate || saving()" (click)="saveExit()">{{ 'common.save' | translate }}</button>
+                    </div>
+                  } @else {
+                    <dl class="facts">
+                      <div><dt>{{ 'lifecycle.exitTypeLabel' | translate }}</dt><dd>{{ 'lifecycle.exitType.' + c.exitType | translate }}</dd></div>
+                      <div><dt>{{ 'lifecycle.noticeDate' | translate }}</dt><dd class="num">{{ c.noticeDate | date: 'd MMM y' : undefined : lang() }}</dd></div>
+                      <div>
+                        <dt>{{ 'lifecycle.rehire' | translate }}</dt>
+                        <dd>{{ (c.eligibleForRehire === null ? 'lifecycle.notDecided' : c.eligibleForRehire ? 'common.yes' : 'common.no') | translate }}</dd>
+                      </div>
+                      <div class="span-all"><dt>{{ 'lifecycle.reason' | translate }}</dt><dd class="reason">{{ c.reason }}</dd></div>
+                      @if (c.interviewNotes) {
+                        <div class="span-all"><dt>{{ 'lifecycle.interviewNotes' | translate }}</dt><dd class="pre">{{ c.interviewNotes }}</dd></div>
+                      }
+                    </dl>
+                  }
+                </section>
+              }
+
+              <!-- Tasks -->
+              <section class="sub-panel">
+                <header class="sub-head">
+                  <h4>{{ 'lifecycle.tasks' | translate }}</h4>
+                  @if (canManage && c.status === 'InProgress' && !taskForm) {
+                    <button type="button" class="btn-link" (click)="newTask()">
+                      <span class="material-icons-outlined inline-icon" aria-hidden="true">add</span>{{ 'lifecycle.addTask' | translate }}
+                    </button>
+                  }
+                </header>
+
+                @if (taskForm; as f) {
+                  <div class="task-form">
+                    <div class="form-grid">
+                      <div class="field span-all">
+                        <label for="t-title">{{ 'lifecycle.taskTitle' | translate }}</label>
+                        <input id="t-title" [(ngModel)]="f.title" maxlength="200" />
+                      </div>
+                      <div class="field">
+                        <label for="t-owner">{{ 'lifecycle.ownerLabel' | translate }}</label>
+                        <select id="t-owner" [(ngModel)]="f.owner">
+                          @for (o of owners; track o) { <option [value]="o">{{ 'lifecycle.owner.' + o | translate }}</option> }
+                        </select>
+                      </div>
+                      <div class="field">
+                        <label for="t-assignee">{{ 'lifecycle.assignee' | translate }}</label>
+                        <select id="t-assignee" [(ngModel)]="f.assigneeEmployeeId">
+                          <option [ngValue]="null">{{ 'lifecycle.noAssignee' | translate }}</option>
+                          @for (p of staff(); track p.id) { <option [ngValue]="p.id">{{ p.name }} · {{ p.code }}</option> }
+                        </select>
+                      </div>
+                      <div class="field">
+                        <label for="t-due">{{ 'lifecycle.dueDate' | translate }}</label>
+                        <input id="t-due" type="date" [(ngModel)]="f.dueDate" />
+                      </div>
+                      <div class="field span-all">
+                        <label for="t-desc">{{ 'lifecycle.taskDesc' | translate }}</label>
+                        <input id="t-desc" [(ngModel)]="f.description" maxlength="1000" />
+                      </div>
+                      <label class="check span-all"><input type="checkbox" [(ngModel)]="f.isRequired" />{{ 'lifecycle.requiredLong' | translate }}</label>
+                    </div>
+                    <div class="inline-actions">
+                      <button type="button" class="btn btn-quiet btn-small" (click)="taskForm = null">{{ 'common.cancel' | translate }}</button>
+                      <button type="button" class="btn btn-ink btn-small" [disabled]="!f.title.trim() || saving()" (click)="saveTask()">{{ 'common.save' | translate }}</button>
+                    </div>
+                  </div>
+                }
+
+                <ul class="case-tasks">
+                  @for (t of c.tasks; track t.id) {
+                    <li class="case-task" [class.is-closed]="t.status !== 'Open'" [class.is-late]="isOverdue(t)">
+                      <button type="button" class="tick" [class.is-done]="t.status === 'Done'" [class.is-skipped]="t.status === 'Skipped'"
+                              [disabled]="c.status !== 'InProgress' || busy() === t.id || !canManage"
+                              [attr.aria-label]="(t.status === 'Open' ? 'lifecycle.markDone' : 'lifecycle.reopen') | translate"
+                              (click)="toggleTask(t)">
+                        <span class="material-icons-outlined" aria-hidden="true">{{ t.status === 'Done' ? 'check' : t.status === 'Skipped' ? 'remove' : '' }}</span>
+                      </button>
+                      <div class="task-text">
+                        <span class="t-title">{{ t.title }}@if (t.isRequired) { <span class="req" [attr.title]="'lifecycle.required' | translate"> *</span> }</span>
+                        <span class="cell-sub">
+                          <span class="material-icons-outlined inline-icon" aria-hidden="true">{{ ownerIcon[t.owner] }}</span>{{ 'lifecycle.owner.' + t.owner | translate }}
+                          @if (t.assigneeName) { · {{ t.assigneeName }} }
+                          @if (t.dueDate) {
+                            · <span class="num" [class.warn]="isOverdue(t)">{{ t.dueDate | date: 'd MMM' : undefined : lang() }}</span>
+                          }
+                          @if (t.status === 'Skipped') { · {{ 'lifecycle.skipped' | translate }} }
+                        </span>
+                        @if (t.description) { <span class="cell-sub desc">{{ t.description }}</span> }
+                        @if (t.note) { <span class="cell-sub reason">“{{ t.note }}”</span> }
+                        @if (skipping?.id === t.id) {
+                          <div class="skip-row">
+                            <input class="reject-input" [(ngModel)]="skipping!.note" maxlength="1000"
+                                   [placeholder]="(t.isRequired ? 'lifecycle.skipReasonReq' : 'lifecycle.skipReason') | translate" />
+                            <button type="button" class="btn btn-ink btn-small" [disabled]="(t.isRequired && !skipping!.note.trim()) || busy() === t.id" (click)="confirmSkip(t)">{{ 'lifecycle.skip' | translate }}</button>
+                            <button type="button" class="btn-link" (click)="skipping = null">{{ 'common.cancel' | translate }}</button>
+                          </div>
+                        }
+                      </div>
+                      @if (canManage && c.status === 'InProgress' && skipping?.id !== t.id) {
+                        <div class="row-actions">
+                          @if (t.status === 'Open') {
+                            <button type="button" class="icon-btn" (click)="startSkip(t)" [attr.title]="'lifecycle.skip' | translate" [attr.aria-label]="'lifecycle.skip' | translate">
+                              <span class="material-icons-outlined" aria-hidden="true">redo</span>
+                            </button>
+                          }
+                          <button type="button" class="icon-btn" (click)="editTask(t)" [attr.title]="'common.edit' | translate" [attr.aria-label]="'common.edit' | translate">
+                            <span class="material-icons-outlined" aria-hidden="true">edit</span>
+                          </button>
+                          @if (t.status !== 'Done') {
+                            <button type="button" class="icon-btn" [class.is-danger]="confirm === 'rm:' + t.id" (click)="removeTask(t)"
+                                    [attr.title]="(confirm === 'rm:' + t.id ? 'lifecycle.confirmRemove' : 'lifecycle.removeTask') | translate"
+                                    [attr.aria-label]="'lifecycle.removeTask' | translate">
+                              <span class="material-icons-outlined" aria-hidden="true">{{ confirm === 'rm:' + t.id ? 'delete_forever' : 'delete' }}</span>
+                            </button>
+                          }
+                        </div>
+                      }
+                    </li>
+                  } @empty {
+                    <li class="dim empty-line">{{ 'lifecycle.noTasks' | translate }}</li>
+                  }
+                </ul>
+              </section>
+
+              <!-- Notes -->
+              <section class="sub-panel">
+                <header class="sub-head">
+                  <h4>{{ 'lifecycle.notes' | translate }}</h4>
+                  @if (canManage && c.status === 'InProgress' && notesForm === null) {
+                    <button type="button" class="btn-link" (click)="notesForm = c.notes ?? ''">{{ 'common.edit' | translate }}</button>
+                  }
+                </header>
+                @if (notesForm !== null) {
+                  <textarea rows="3" [(ngModel)]="notesForm" maxlength="2000" [attr.aria-label]="'lifecycle.notes' | translate"></textarea>
+                  <div class="inline-actions">
+                    <button type="button" class="btn btn-quiet btn-small" (click)="notesForm = null">{{ 'common.cancel' | translate }}</button>
+                    <button type="button" class="btn btn-ink btn-small" [disabled]="saving()" (click)="saveNotes()">{{ 'common.save' | translate }}</button>
+                  </div>
+                } @else {
+                  <p class="pre" [class.dim]="!c.notes">{{ c.notes || ('lifecycle.noNotes' | translate) }}</p>
+                }
+              </section>
+
+              @if (c.status === 'InProgress' && canManage) {
+                @if (openRequired() > 0) {
+                  <p class="field-hint">{{ 'lifecycle.requiredLeft' | translate: { n: openRequired() } }}</p>
+                } @else if (exitTooEarly()) {
+                  <p class="field-hint">{{ 'lifecycle.exitTooEarly' | translate: { date: (c.anchorDate | date: 'd MMM y' : undefined : lang()) } }}</p>
+                } @else if (confirm === 'complete') {
+                  <div class="notice" [class.notice-warn]="c.kind === 'Exit'" [class.notice-info]="c.kind !== 'Exit'">
+                    <span class="material-icons-outlined" aria-hidden="true">{{ c.kind === 'Exit' ? 'warning_amber' : 'info' }}</span>
+                    <span>{{ (c.kind === 'Exit' ? 'lifecycle.confirmExit' : 'lifecycle.confirmOnboarding') | translate: { name: c.employeeName } }}</span>
+                  </div>
+                }
+                @if (confirm === 'cancel') {
+                  <div class="notice notice-warn">
+                    <span class="material-icons-outlined" aria-hidden="true">warning_amber</span>
+                    <span>{{ (c.kind === 'Exit' ? 'lifecycle.confirmCancelExit' : 'lifecycle.confirmCancel') | translate }}</span>
+                  </div>
+                }
+              }
+            } @else {
+              <p class="loading-line">{{ 'common.loading' | translate }}</p>
+            }
+          }
+
+          <!-- Start onboarding / exit -->
+          @case ('startOnboarding') { <ng-container *ngTemplateOutlet="startTpl; context: { kind: 'Onboarding' }" /> }
+          @case ('startExit') { <ng-container *ngTemplateOutlet="startTpl; context: { kind: 'Exit' }" /> }
+
+          <!-- Template editor -->
+          @case ('template') {
+            @if (templateForm; as f) {
+              <div class="form-grid">
+                <div class="field span-all">
+                  <label for="tp-name">{{ 'lifecycle.tpl.name' | translate }}</label>
+                  <input id="tp-name" [(ngModel)]="f.name" maxlength="150" />
+                </div>
+                <div class="field span-all">
+                  <label for="tp-desc">{{ 'lifecycle.tpl.description' | translate }}</label>
+                  <input id="tp-desc" [(ngModel)]="f.description" maxlength="500" />
+                </div>
+                <label class="check"><input type="checkbox" [(ngModel)]="f.isDefault" [disabled]="!f.isActive" />{{ 'lifecycle.tpl.makeDefault' | translate }}</label>
+                <label class="check"><input type="checkbox" [(ngModel)]="f.isActive" />{{ 'lifecycle.tpl.active' | translate }}</label>
+              </div>
+              <p class="field-hint">{{ (f.kind === 'Exit' ? 'lifecycle.tpl.offsetHintExit' : 'lifecycle.tpl.offsetHint') | translate }}</p>
+
+              <ol class="tpl-tasks">
+                @for (t of f.tasks; track $index; let i = $index) {
+                  <li class="tpl-task" [class.bad]="!t.title.trim()">
+                    <header class="line-head">
+                      <span class="line-no num">{{ i + 1 }}</span>
+                      <span class="line-tools">
+                        <button type="button" class="icon-btn-sm" [disabled]="i === 0" (click)="moveTemplateTask(i, -1)" [attr.aria-label]="'lifecycle.tpl.up' | translate">
+                          <span class="material-icons-outlined" aria-hidden="true">arrow_upward</span>
+                        </button>
+                        <button type="button" class="icon-btn-sm" [disabled]="i === f.tasks.length - 1" (click)="moveTemplateTask(i, 1)" [attr.aria-label]="'lifecycle.tpl.down' | translate">
+                          <span class="material-icons-outlined" aria-hidden="true">arrow_downward</span>
+                        </button>
+                        <button type="button" class="icon-btn-sm" (click)="removeTemplateTask(i)" [attr.aria-label]="'lifecycle.removeTask' | translate">
+                          <span class="material-icons-outlined" aria-hidden="true">close</span>
+                        </button>
+                      </span>
+                    </header>
+                    <div class="tpl-task-grid">
+                      <div class="field span-all">
+                        <label [for]="'tt-title' + i">{{ 'lifecycle.taskTitle' | translate }}</label>
+                        <input [id]="'tt-title' + i" [(ngModel)]="t.title" maxlength="200" />
+                      </div>
+                      <div class="field">
+                        <label [for]="'tt-owner' + i">{{ 'lifecycle.ownerLabel' | translate }}</label>
+                        <select [id]="'tt-owner' + i" [(ngModel)]="t.owner">
+                          @for (o of owners; track o) { <option [value]="o">{{ 'lifecycle.owner.' + o | translate }}</option> }
+                        </select>
+                      </div>
+                      <div class="field">
+                        <label [for]="'tt-off' + i">{{ 'lifecycle.tpl.offset' | translate }}</label>
+                        <input [id]="'tt-off' + i" type="number" step="1" min="-365" max="365" [(ngModel)]="t.dueOffsetDays" />
+                        <span class="field-hint">{{ offsetLabel(f.kind, t.dueOffsetDays || 0) }}</span>
+                      </div>
+                      <label class="check req-check"><input type="checkbox" [(ngModel)]="t.isRequired" />{{ 'lifecycle.required' | translate }}</label>
+                    </div>
+                  </li>
+                }
+              </ol>
+              <button type="button" class="btn btn-quiet btn-small add-line" (click)="addTemplateTask()">
+                <span class="material-icons-outlined" aria-hidden="true">add</span>{{ 'lifecycle.addTask' | translate }}
+              </button>
+
+              @if (f.id && confirm === 'deleteTemplate') {
+                <div class="notice notice-warn">
+                  <span class="material-icons-outlined" aria-hidden="true">warning_amber</span>
+                  <span>{{ 'lifecycle.tpl.confirmDelete' | translate }}</span>
+                </div>
+              }
+            }
+          }
+        }
+      </div>
+
+      <footer class="drawer-foot">
+        @switch (d) {
+          @case ('case') {
+            @if (detail(); as c) {
+              @if (c.status === 'InProgress' && canManage) {
+                <button type="button" class="btn btn-quiet foot-start" [class.btn-danger]="confirm === 'cancel'" [disabled]="saving()" (click)="cancelCase()">
+                  {{ (confirm === 'cancel' ? 'lifecycle.confirmCancelBtn' : (c.kind === 'Exit' ? 'lifecycle.cancelExit' : 'lifecycle.cancelOnboarding')) | translate }}
+                </button>
+                <button type="button" class="btn btn-quiet" (click)="closeDrawer()">{{ 'common.close' | translate }}</button>
+                <button type="button" class="btn btn-ink" [disabled]="openRequired() > 0 || exitTooEarly() || saving()" (click)="completeCase()">
+                  {{ (confirm === 'complete' ? 'lifecycle.confirmCompleteBtn' : (c.kind === 'Exit' ? 'lifecycle.completeExit' : 'lifecycle.completeOnboarding')) | translate }}
+                </button>
+              } @else {
+                <button type="button" class="btn btn-quiet" (click)="closeDrawer()">{{ 'common.close' | translate }}</button>
+              }
+            } @else {
+              <button type="button" class="btn btn-quiet" (click)="closeDrawer()">{{ 'common.close' | translate }}</button>
+            }
+          }
+          @case ('template') {
+            @if (templateForm?.id && canEditTemplates) {
+              <button type="button" class="btn btn-quiet foot-start" [class.btn-danger]="confirm === 'deleteTemplate'" [disabled]="saving()" (click)="deleteTemplate()">
+                {{ (confirm === 'deleteTemplate' ? 'lifecycle.tpl.confirmDeleteBtn' : 'lifecycle.tpl.delete') | translate }}
+              </button>
+            }
+            <button type="button" class="btn btn-quiet" (click)="closeDrawer()">{{ 'common.cancel' | translate }}</button>
+            @if (canEditTemplates) {
+              <button type="button" class="btn btn-ink" [disabled]="!canSaveTemplate() || saving()" (click)="saveTemplate()">{{ (saving() ? 'common.saving' : 'common.save') | translate }}</button>
+            }
+          }
+          @default {
+            <button type="button" class="btn btn-quiet" (click)="closeDrawer()">{{ 'common.cancel' | translate }}</button>
+            <button type="button" class="btn btn-ink" [disabled]="!canStart() || saving()" (click)="start()">
+              {{ (saving() ? 'common.saving' : (d === 'startExit' ? 'lifecycle.startExitBtn' : 'lifecycle.startOnboardingBtn')) | translate }}
+            </button>
+          }
+        }
+      </footer>
+    </aside>
+  </div>
+}
+
+<ng-template #startTpl let-kind="kind">
+  <span class="group-label">{{ 'people.employee' | translate }}</span>
+  <label class="search">
+    <span class="material-icons-outlined" aria-hidden="true">search</span>
+    <input type="search" [(ngModel)]="candidateSearch" (ngModelChange)="onCandidateSearch()" [placeholder]="'lifecycle.searchPh' | translate" [attr.aria-label]="'lifecycle.searchPh' | translate" />
+  </label>
+  <ul class="pick-list" role="listbox" [attr.aria-label]="'people.employee' | translate">
+    @for (p of candidates(); track p.id) {
+      <li>
+        <button type="button" role="option" class="pick" [class.is-picked]="startForm.employeeId === p.id" [attr.aria-selected]="startForm.employeeId === p.id" (click)="startForm.employeeId = p.id">
+          <span class="pick-main">
+            <span class="cell-main">{{ p.name }}</span>
+            <span class="cell-sub">{{ p.employeeCode }}@if (p.departmentName) { · {{ p.departmentName }} }</span>
+          </span>
+          <span class="cell-sub num">
+            {{ 'lifecycle.joined' | translate }} {{ p.joiningDate | date: 'd MMM y' : undefined : lang() }}
+            @if (p.joiningDate > today) { · {{ 'lifecycle.upcoming' | translate }} }
+          </span>
+        </button>
+      </li>
+    } @empty {
+      <li class="dim empty-line">{{ (kind === 'Exit' ? 'lifecycle.noExitCandidates' : 'lifecycle.noCandidates') | translate }}</li>
+    }
+  </ul>
+
+  @if (kind === 'Exit') {
+    <div class="form-grid">
+      <div class="field span-all">
+        <label for="s-type">{{ 'lifecycle.exitTypeLabel' | translate }}</label>
+        <select id="s-type" [(ngModel)]="startForm.exitType">
+          @for (x of exitTypes; track x) { <option [value]="x">{{ 'lifecycle.exitType.' + x | translate }}</option> }
+        </select>
+      </div>
+      <div class="field">
+        <label for="s-notice">{{ 'lifecycle.noticeDate' | translate }}</label>
+        <input id="s-notice" type="date" [(ngModel)]="startForm.noticeDate" />
+      </div>
+      <div class="field">
+        <label for="s-lwd">{{ 'lifecycle.lastDay' | translate }}</label>
+        <input id="s-lwd" type="date" [min]="startForm.noticeDate" [(ngModel)]="startForm.lastWorkingDay" />
+      </div>
+      <div class="field span-all">
+        <label for="s-reason">{{ 'lifecycle.reason' | translate }}</label>
+        <input id="s-reason" [(ngModel)]="startForm.reason" maxlength="500" [placeholder]="'lifecycle.reasonPh' | translate" />
+      </div>
+    </div>
+    @if (startForm.lastWorkingDay < startForm.noticeDate) { <p class="err">{{ 'lifecycle.problem.dates' | translate }}</p> }
+  }
+
+  <div class="field">
+    <label for="s-tpl">{{ 'lifecycle.template' | translate }}</label>
+    <select id="s-tpl" [(ngModel)]="startForm.templateId">
+      <option [ngValue]="null">{{ 'lifecycle.noTemplate' | translate }}</option>
+      @for (t of activeTemplates(kind); track t.id) {
+        <option [ngValue]="t.id">{{ t.name }} ({{ 'lifecycle.tpl.nTasks' | translate: { n: t.tasks.length } }})</option>
+      }
+    </select>
+  </div>
+  <div class="field">
+    <label for="s-notes">{{ 'lifecycle.notes' | translate }}</label>
+    <textarea id="s-notes" rows="2" [(ngModel)]="startForm.notes" maxlength="2000"></textarea>
+  </div>
+
+  @if (kind === 'Exit') {
+    <div class="notice notice-info">
+      <span class="material-icons-outlined" aria-hidden="true">info</span>
+      <span>{{ 'lifecycle.exitStartHint' | translate }}</span>
+    </div>
+  }
+</ng-template>
