@@ -8,7 +8,7 @@ import { AuthService } from '../auth';
   selector: 'app-reset-password',
   imports: [ReactiveFormsModule, RouterLink],
   templateUrl: './reset-password.html',
-  styleUrl: './reset-password.css'
+  styleUrls: ['../auth-shell.css']
 })
 export class ResetPasswordComponent implements OnInit {
   resetForm: FormGroup;
@@ -17,6 +17,9 @@ export class ResetPasswordComponent implements OnInit {
   isLoading: boolean = false;
   token: string = '';
   email: string = '';
+  isArabic = false;
+  hidePassword = true;
+  hideConfirm = true;
 
   constructor(
     private fb: FormBuilder,

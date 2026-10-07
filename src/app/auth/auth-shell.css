@@ -1,4 +1,4 @@
-/* HR Cloud Login — responsive LTR / RTL layout
+/* HR Cloud auth pages (login, register, forgot/reset password) — responsive LTR / RTL layout
    Designed to match the reference composition at 100% browser zoom.
 */
 
@@ -795,3 +795,48 @@ a.disabled {
     justify-content: flex-start;
   }
 }
+
+/* ───────── Shared by register / forgot / reset ───────── */
+.login-success {
+  margin: 0 0 12px;
+  padding: 10px 12px;
+  border-inline-start: 3px solid var(--moss);
+  background: rgba(76,107,79,.1);
+  color: #2f4a37;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.strength-meter {
+  height: 3px;
+  background: var(--line);
+  border-radius: 3px;
+  margin-top: 8px;
+  overflow: hidden;
+}
+
+.strength-bar {
+  height: 100%;
+  width: 100%;
+  transform-origin: left;
+  transform: scaleX(0);
+  transition: transform 0.3s ease;
+}
+
+.rtl .strength-bar { transform-origin: right; }
+
+.level-weak { background-color: #b5452a; }
+.level-medium { background-color: var(--gold); }
+.level-strong { background-color: var(--moss); }
+
+.strength-text {
+  display: block;
+  margin-top: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  font-family: 'IBM Plex Mono', monospace;
+}
+
+.text-weak { color: #b5452a; }
+.text-medium { color: var(--gold); }
+.text-strong { color: #2f4a37; }
