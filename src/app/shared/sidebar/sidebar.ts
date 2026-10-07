@@ -115,7 +115,7 @@ export class SidebarComponent {
     {
       title: 'nav.reporting',
       items: [
-        { icon: 'assessment', label: 'nav.reports', route: '/app/reports' },
+        { icon: 'assessment', label: 'nav.reports', route: '/app/reports', permission: [P.employeesView, P.payrollViewAll, P.payrollApprove] },
         { icon: 'design_services', label: 'nav.reportBuilder', route: '/app/reports/builder' }
       ]
     },

@@ -1,0 +1,590 @@
+<div class="page">
+  <header class="page-intro">
+    <p>{{ 'reports.intro' | translate }}</p>
+  </header>
+
+  <nav class="tabs">
+    @if (canPeople) {
+      <button type="button" class="tab" [class.is-active]="tab() === 'people'" (click)="setTab('people')">{{ 'reports.tabs.people' | translate }}</button>
+      <button type="button" class="tab" [class.is-active]="tab() === 'time'" (click)="setTab('time')">{{ 'reports.tabs.time' | translate }}</button>
+    }
+    @if (canPay) {
+      <button type="button" class="tab" [class.is-active]="tab() === 'pay'" (click)="setTab('pay')">{{ 'reports.tabs.pay' | translate }}</button>
+    }
+  </nav>
+
+  <!-- ═══ Filters ═══ -->
+  <section class="filters panel">
+    @if (tab() !== 'pay') {
+      <div class="f-field">
+        <label for="r-preset">{{ 'reports.filter.period' | translate }}</label>
+        <select id="r-preset" [(ngModel)]="preset" (ngModelChange)="onPreset()">
+          @for (p of presets; track p) { <option [value]="p">{{ 'reports.preset.' + p | translate }}</option> }
+        </select>
+      </div>
+      <div class="f-field">
+        <label for="r-from">{{ 'reports.filter.from' | translate }}</label>
+        <input id="r-from" type="date" [(ngModel)]="from" [max]="to" (change)="onDates()" />
+      </div>
+      <div class="f-field">
+        <label for="r-to">{{ 'reports.filter.to' | translate }}</label>
+        <input id="r-to" type="date" [(ngModel)]="to" [min]="from" (change)="onDates()" />
+      </div>
+      <div class="f-field f-wide">
+        <label for="r-dept">{{ 'reports.filter.department' | translate }}</label>
+        <select id="r-dept" [(ngModel)]="departmentId" (ngModelChange)="load()">
+          <option [ngValue]="null">{{ 'reports.filter.allDepartments' | translate }}</option>
+          @for (d of departments(); track d.id) { <option [ngValue]="d.id">{{ d.name }}</option> }
+        </select>
+      </div>
+    } @else {
+      <div class="f-field">
+        <label for="r-year">{{ 'reports.filter.year' | translate }}</label>
+        <select id="r-year" [(ngModel)]="year" (ngModelChange)="onYear()">
+          @for (y of years; track y) { <option [ngValue]="y">{{ y }}</option> }
+        </select>
+      </div>
+      <p class="f-note">{{ 'reports.pay.finalOnly' | translate }}</p>
+    }
+    @if (loading()) { <span class="f-loading">{{ 'reports.loading' | translate }}</span> }
+  </section>
+
+  @if (error()) {
+    <div class="notice notice-error">
+      <span class="material-icons-outlined" aria-hidden="true">error_outline</span>
+      <span>{{ error() }}</span>
+    </div>
+  }
+
+  <!-- ═══ People ═══ -->
+  @if (tab() === 'people' && people(); as r) {
+    <div class="tallies">
+      <article class="tally is-ink">
+        <span class="t-label">{{ 'reports.people.headcountOn' | translate: { date: (r.to | date: 'd MMM y' : undefined : lang()) } }}</span>
+        <span class="t-figure num">{{ r.summary.headcountEnd | amount: lang() }}</span>
+        <span class="t-sub num">
+          @if (headcountChange() > 0) { +{{ headcountChange() }} } @else { {{ headcountChange() }} }
+          {{ 'reports.people.sinceStart' | translate: { n: r.summary.headcountStart } }}
+        </span>
+      </article>
+      <article class="tally">
+        <span class="t-label">{{ 'reports.people.joined' | translate }}</span>
+        <span class="t-figure num">{{ r.summary.joined }}</span>
+      </article>
+      <article class="tally">
+        <span class="t-label">{{ 'reports.people.left' | translate }}</span>
+        <span class="t-figure num">{{ r.summary.left }}</span>
+      </article>
+      <article class="tally">
+        <span class="t-label">{{ 'reports.people.attrition' | translate }}</span>
+        <span class="t-figure num">{{ r.summary.attritionRate }}<span class="t-cur">%</span></span>
+      </article>
+      <article class="tally">
+        <span class="t-label">{{ 'reports.people.avgTenure' | translate }}</span>
+        <span class="t-figure num">{{ r.summary.averageTenureYears }}<span class="t-cur">{{ 'reports.years' | translate }}</span></span>
+        @if (r.summary.averageAgeYears !== null) {
+          <span class="t-sub">{{ 'reports.people.avgAge' | translate: { n: r.summary.averageAgeYears } }}</span>
+        }
+      </article>
+    </div>
+
+    <div class="grid-split">
+      <section class="panel">
+        <header class="panel-head">
+          <div>
+            <h3>{{ 'reports.people.trend' | translate }}</h3>
+            <p class="panel-sub">{{ 'reports.people.trendHint' | translate }}</p>
+          </div>
+        </header>
+        @if (r.trend.length) {
+          <div class="chart-box"><app-chart type="line" [labels]="trendLabels()" [datasets]="trendDatasets()" [options]="trendOptions()" /></div>
+        }
+      </section>
+
+      <section class="panel">
+        <header class="panel-head">
+          <div>
+            <h3>{{ 'reports.people.mix' | translate }}</h3>
+            <p class="panel-sub">{{ 'reports.people.mixHint' | translate }}</p>
+          </div>
+        </header>
+        <div class="mix">
+          @for (g of mix(); track g.title) {
+            @if (g.rows.length) {
+              <div class="mix-group">
+                <h4>{{ g.title }}</h4>
+                @for (row of g.rows; track row.label) {
+                  <div class="mix-row">
+                    <span class="mix-label">{{ row.label }}</span>
+                    <span class="mix-bar"><span [style.width.%]="row.pct"></span></span>
+                    <span class="mix-count num">{{ row.count }}</span>
+                  </div>
+                }
+              </div>
+            }
+          }
+        </div>
+      </section>
+    </div>
+
+    <section class="panel panel-flush">
+      <header class="list-head">
+        <h3 class="section-title">{{ 'reports.people.byDepartment' | translate }}</h3>
+        <button type="button" class="btn btn-quiet btn-small" (click)="exportDepartments()" [disabled]="!r.departments.length">
+          <span class="material-icons-outlined" aria-hidden="true">download</span>{{ 'reports.csv' | translate }}
+        </button>
+      </header>
+      @if (r.departments.length) {
+        <div class="table-wrap">
+          <table class="ledger-table">
+            <thead>
+              <tr>
+                <th>{{ 'reports.col.department' | translate }}</th>
+                <th class="end">{{ 'reports.people.headcount' | translate }}</th>
+                <th class="end">{{ 'reports.people.joined' | translate }}</th>
+                <th class="end">{{ 'reports.people.left' | translate }}</th>
+                <th class="end">{{ 'reports.people.avgTenure' | translate }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (d of r.departments; track d.name) {
+                <tr>
+                  <td class="cell-main">{{ d.name }}</td>
+                  <td class="end num">{{ d.headcount }}</td>
+                  <td class="end num" [class.dim]="!d.joined">{{ d.joined }}</td>
+                  <td class="end num" [class.dim]="!d.left">{{ d.left }}</td>
+                  <td class="end num">{{ d.averageTenureYears }}</td>
+                </tr>
+              }
+            </tbody>
+            <tfoot>
+              <tr>
+                <td>{{ 'reports.total' | translate }}</td>
+                <td class="end num">{{ r.summary.headcountEnd }}</td>
+                <td class="end num">{{ r.summary.joined }}</td>
+                <td class="end num">{{ r.summary.left }}</td>
+                <td class="end num">{{ r.summary.averageTenureYears }}</td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      } @else {
+        <p class="empty-state">{{ 'reports.empty' | translate }}</p>
+      }
+    </section>
+
+    <section class="panel panel-flush">
+      <header class="list-head">
+        <div>
+          <h3 class="section-title">{{ 'reports.people.movements' | translate }}</h3>
+          <p class="panel-sub">{{ 'reports.people.movementsHint' | translate }}</p>
+        </div>
+        <button type="button" class="btn btn-quiet btn-small" (click)="exportMovements()" [disabled]="!r.movements.length">
+          <span class="material-icons-outlined" aria-hidden="true">download</span>{{ 'reports.csv' | translate }}
+        </button>
+      </header>
+      @if (r.movements.length) {
+        <div class="table-wrap">
+          <table class="ledger-table">
+            <thead>
+              <tr>
+                <th>{{ 'reports.col.date' | translate }}</th>
+                <th>{{ 'reports.col.employee' | translate }}</th>
+                <th>{{ 'reports.col.department' | translate }}</th>
+                <th>{{ 'reports.col.kind' | translate }}</th>
+                <th>{{ 'reports.col.reason' | translate }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (m of r.movements; track m.employeeId + m.kind) {
+                <tr>
+                  <td class="num">{{ m.date | date: 'd MMM y' : undefined : lang() }}</td>
+                  <td>
+                    <span class="cell-main">{{ m.name }}</span>
+                    <span class="cell-sub">{{ m.employeeCode }} · {{ m.designation }}</span>
+                  </td>
+                  <td>{{ m.department }}</td>
+                  <td><span class="chip" [class.chip-moss]="m.kind === 'Joined'" [class.chip-oxblood]="m.kind === 'Left'">{{ 'reports.movement.' + m.kind | translate }}</span></td>
+                  <td class="reason" [class.dim]="!m.reason">{{ m.reason ?? '—' }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      } @else {
+        <p class="empty-state">{{ 'reports.people.noMovements' | translate }}</p>
+      }
+    </section>
+  }
+
+  <!-- ═══ Time ═══ -->
+  @if (tab() === 'time' && time(); as r) {
+    <div class="tallies">
+      <article class="tally is-ink">
+        <span class="t-label">{{ 'reports.time.rate' | translate }}</span>
+        <span class="t-figure num">{{ r.summary.attendanceRate }}<span class="t-cur">%</span></span>
+        <span class="t-sub num">{{ 'reports.time.attendedOf' | translate: { a: r.summary.attended, s: r.summary.scheduled } }}</span>
+      </article>
+      <article class="tally">
+        <span class="t-label">{{ 'reports.time.absentDays' | translate }}</span>
+        <span class="t-figure num">{{ r.summary.absent }}</span>
+      </article>
+      <article class="tally">
+        <span class="t-label">{{ 'reports.time.lateArrivals' | translate }}</span>
+        <span class="t-figure num">{{ r.summary.lateDays }}</span>
+        <span class="t-sub num">{{ 'reports.time.lateHours' | translate: { n: hours(r.summary.lateMinutes) } }}</span>
+      </article>
+      <article class="tally">
+        <span class="t-label">{{ 'reports.time.leaveDays' | translate }}</span>
+        <span class="t-figure num">{{ r.summary.leaveDays }}</span>
+      </article>
+      <article class="tally">
+        <span class="t-label">{{ 'reports.time.overtimeHours' | translate }}</span>
+        <span class="t-figure num">{{ hours(r.summary.overtimeMinutes) }}</span>
+      </article>
+    </div>
+
+    <div class="grid-split">
+      <section class="panel panel-flush">
+        <header class="list-head"><h3 class="section-title">{{ 'reports.time.byDepartment' | translate }}</h3></header>
+        @if (r.departments.length) {
+          <div class="table-wrap">
+            <table class="ledger-table">
+              <thead>
+                <tr>
+                  <th>{{ 'reports.col.department' | translate }}</th>
+                  <th class="end">{{ 'reports.time.people' | translate }}</th>
+                  <th class="end">{{ 'reports.time.lateDays' | translate }}</th>
+                  <th class="end">{{ 'reports.time.leaveDays' | translate }}</th>
+                  <th class="end">{{ 'reports.time.rate' | translate }}</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (d of r.departments; track d.name) {
+                  <tr>
+                    <td class="cell-main">{{ d.name }}</td>
+                    <td class="end num">{{ d.employees }}</td>
+                    <td class="end num">{{ d.lateDays }}</td>
+                    <td class="end num">{{ d.leaveDays }}</td>
+                    <td class="end num"><span [class]="rateClass(d.attendanceRate, d.scheduled)">{{ d.scheduled ? d.attendanceRate + '%' : '—' }}</span></td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        } @else {
+          <p class="empty-state">{{ 'reports.time.noAttendance' | translate }}</p>
+        }
+      </section>
+
+      <section class="panel panel-flush">
+        <header class="list-head">
+          <h3 class="section-title">{{ 'reports.time.leaveByType' | translate }}</h3>
+          <button type="button" class="btn btn-quiet btn-small" (click)="exportLeave()" [disabled]="!r.leaveTypes.length">
+            <span class="material-icons-outlined" aria-hidden="true">download</span>{{ 'reports.csv' | translate }}
+          </button>
+        </header>
+        @if (r.leaveTypes.length) {
+          <ul class="leave-list">
+            @for (l of r.leaveTypes; track l.name) {
+              <li>
+                <div class="leave-top">
+                  <span class="leave-dot" [style.background]="l.color || '#3f5e48'"></span>
+                  <span class="cell-main">{{ l.name }}</span>
+                  @if (!l.isPaid) { <span class="chip chip-neutral">{{ 'reports.time.unpaid' | translate }}</span> }
+                  <span class="leave-days num">{{ 'reports.time.days' | translate: { n: l.days } }}</span>
+                </div>
+                <span class="mix-bar"><span [style.width.%]="(l.days * 100) / maxLeaveDays()" [style.background]="l.color || '#3f5e48'"></span></span>
+                <span class="cell-sub">{{ 'reports.time.requestsPeople' | translate: { r: l.requests, p: l.employees } }}</span>
+              </li>
+            }
+          </ul>
+        } @else {
+          <p class="empty-state">{{ 'reports.time.noLeave' | translate }}</p>
+        }
+      </section>
+    </div>
+
+    <section class="panel panel-flush">
+      <header class="list-head">
+        <div>
+          <h3 class="section-title">{{ 'reports.time.byEmployee' | translate }}</h3>
+          <p class="panel-sub">{{ 'reports.time.byEmployeeHint' | translate }}</p>
+        </div>
+        <div class="head-actions">
+          <select class="select-sm" [ngModel]="timeSort()" (ngModelChange)="timeSort.set($event)" [attr.aria-label]="'reports.time.sort' | translate">
+            <option value="department">{{ 'reports.time.sortBy.department' | translate }}</option>
+            <option value="rateAsc">{{ 'reports.time.sortBy.rateAsc' | translate }}</option>
+            <option value="lateDesc">{{ 'reports.time.sortBy.lateDesc' | translate }}</option>
+            <option value="absentDesc">{{ 'reports.time.sortBy.absentDesc' | translate }}</option>
+          </select>
+          <button type="button" class="btn btn-quiet btn-small" (click)="exportTime()" [disabled]="!r.employees.length">
+            <span class="material-icons-outlined" aria-hidden="true">download</span>{{ 'reports.csv' | translate }}
+          </button>
+        </div>
+      </header>
+      @if (timeRows().length) {
+        <div class="table-wrap">
+          <table class="ledger-table">
+            <thead>
+              <tr>
+                <th>{{ 'reports.col.employee' | translate }}</th>
+                <th class="end">{{ 'reports.time.scheduled' | translate }}</th>
+                <th class="end">{{ 'reports.time.present' | translate }}</th>
+                <th class="end">{{ 'reports.time.absent' | translate }}</th>
+                <th class="end">{{ 'reports.time.missingPunch' | translate }}</th>
+                <th class="end">{{ 'reports.time.lateDays' | translate }}</th>
+                <th class="end">{{ 'reports.time.leaveDays' | translate }}</th>
+                <th class="end">{{ 'reports.time.overtimeHours' | translate }}</th>
+                <th class="end">{{ 'reports.time.rate' | translate }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (e of timeRows(); track e.employeeId) {
+                <tr>
+                  <td>
+                    <span class="cell-main">{{ e.name }}</span>
+                    <span class="cell-sub">{{ e.employeeCode }} · {{ e.department }}</span>
+                  </td>
+                  <td class="end num">{{ e.scheduled }}</td>
+                  <td class="end num">
+                    {{ e.present }}
+                    @if (e.halfDays) { <span class="cell-sub">{{ 'reports.time.plusHalf' | translate: { n: e.halfDays } }}</span> }
+                  </td>
+                  <td class="end num" [class.dim]="!e.absent">{{ e.absent }}</td>
+                  <td class="end num" [class.dim]="!e.incomplete">{{ e.incomplete }}</td>
+                  <td class="end num" [class.dim]="!e.lateDays">
+                    {{ e.lateDays }}
+                    @if (e.lateMinutes) { <span class="cell-sub">{{ 'reports.time.minutes' | translate: { n: e.lateMinutes } }}</span> }
+                  </td>
+                  <td class="end num" [class.dim]="!e.leaveDays">{{ e.leaveDays }}</td>
+                  <td class="end num" [class.dim]="!e.overtimeMinutes">{{ hours(e.overtimeMinutes) }}</td>
+                  <td class="end num"><span [class]="rateClass(e.attendanceRate, e.scheduled)">{{ e.scheduled ? e.attendanceRate + '%' : '—' }}</span></td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      } @else {
+        <p class="empty-state">{{ 'reports.time.noAttendance' | translate }}</p>
+      }
+    </section>
+  }
+
+  <!-- ═══ Pay ═══ -->
+  @if (tab() === 'pay' && pay(); as r) {
+    <div class="tallies is-money">
+      <article class="tally is-ink">
+        <span class="t-label">{{ 'reports.pay.totalCostYear' | translate: { year: r.year } }}</span>
+        <span class="t-figure num"><span class="t-cur">{{ r.currencyCode }}</span>{{ payTotalCost() | amount: lang() }}</span>
+        <span class="t-sub num">{{ 'reports.pay.runsSlips' | translate: { runs: r.totals.runs, slips: r.totals.payslips } }}</span>
+      </article>
+      <article class="tally">
+        <span class="t-label">{{ 'reports.pay.gross' | translate }}</span>
+        <span class="t-figure num"><span class="t-cur">{{ r.currencyCode }}</span>{{ r.totals.gross | amount: lang() }}</span>
+      </article>
+      <article class="tally">
+        <span class="t-label">{{ 'reports.pay.net' | translate }}</span>
+        <span class="t-figure num"><span class="t-cur">{{ r.currencyCode }}</span>{{ r.totals.net | amount: lang() }}</span>
+      </article>
+      <article class="tally">
+        <span class="t-label">{{ 'reports.pay.tax' | translate }}</span>
+        <span class="t-figure num"><span class="t-cur">{{ r.currencyCode }}</span>{{ r.totals.tax | amount: lang() }}</span>
+      </article>
+      <article class="tally">
+        <span class="t-label">{{ 'reports.pay.loanBook' | translate }}</span>
+        <span class="t-figure num"><span class="t-cur">{{ r.currencyCode }}</span>{{ r.loans.outstanding + r.loans.advancesOutstanding | amount: lang() }}</span>
+        <span class="t-sub num">{{ 'reports.pay.loanCounts' | translate: { loans: r.loans.activeLoans, advances: r.loans.activeAdvances } }}</span>
+      </article>
+    </div>
+
+    @if (!hasPay()) {
+      <div class="notice notice-info">
+        <span class="material-icons-outlined" aria-hidden="true">info</span>
+        <span>{{ 'reports.pay.noRuns' | translate: { year: r.year } }}</span>
+      </div>
+    } @else {
+      <section class="panel">
+        <header class="panel-head">
+          <div>
+            <h3>{{ 'reports.pay.byMonth' | translate }}</h3>
+            <p class="panel-sub">{{ 'reports.pay.byMonthHint' | translate: { cur: r.currencyCode } }}</p>
+          </div>
+          <button type="button" class="btn btn-quiet btn-small" (click)="exportMonths()">
+            <span class="material-icons-outlined" aria-hidden="true">download</span>{{ 'reports.csv' | translate }}
+          </button>
+        </header>
+        <div class="chart-box"><app-chart type="bar" [labels]="monthLabels()" [datasets]="payDatasets()" [options]="payOptions()" /></div>
+        <div class="table-wrap month-table">
+          <table class="ledger-table">
+            <thead>
+              <tr>
+                <th>{{ 'reports.col.month' | translate }}</th>
+                <th class="end">{{ 'reports.pay.payslips' | translate }}</th>
+                <th class="end">{{ 'reports.pay.gross' | translate }}</th>
+                <th class="end">{{ 'reports.pay.deductions' | translate }}</th>
+                <th class="end">{{ 'reports.pay.tax' | translate }}</th>
+                <th class="end">{{ 'reports.pay.net' | translate }}</th>
+                <th class="end">{{ 'reports.pay.employerCost' | translate }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (m of r.months; track m.month) {
+                <tr [class.dim]="!m.payslips">
+                  <td class="cell-main">{{ monthName(m.month) }}</td>
+                  <td class="end num">{{ m.payslips || '—' }}</td>
+                  <td class="end num">{{ m.payslips ? (m.gross | amount: lang()) : '—' }}</td>
+                  <td class="end num">{{ m.payslips ? (m.deductions | amount: lang()) : '—' }}</td>
+                  <td class="end num">{{ m.payslips ? (m.tax | amount: lang()) : '—' }}</td>
+                  <td class="end num">{{ m.payslips ? (m.net | amount: lang()) : '—' }}</td>
+                  <td class="end num">{{ m.payslips ? (m.employerCost | amount: lang()) : '—' }}</td>
+                </tr>
+              }
+            </tbody>
+            <tfoot>
+              <tr>
+                <td>{{ 'reports.total' | translate }}</td>
+                <td class="end num">{{ r.totals.payslips }}</td>
+                <td class="end num">{{ r.totals.gross | amount: lang() }}</td>
+                <td class="end num">{{ r.totals.deductions | amount: lang() }}</td>
+                <td class="end num">{{ r.totals.tax | amount: lang() }}</td>
+                <td class="end num">{{ r.totals.net | amount: lang() }}</td>
+                <td class="end num">{{ r.totals.employerCost | amount: lang() }}</td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      </section>
+
+      <div class="grid-split">
+        <section class="panel panel-flush">
+          <header class="list-head">
+            <h3 class="section-title">{{ 'reports.pay.byDepartment' | translate }}</h3>
+            <button type="button" class="btn btn-quiet btn-small" (click)="exportPayDepartments()">
+              <span class="material-icons-outlined" aria-hidden="true">download</span>{{ 'reports.csv' | translate }}
+            </button>
+          </header>
+          <div class="table-wrap">
+            <table class="ledger-table">
+              <thead>
+                <tr>
+                  <th>{{ 'reports.col.department' | translate }}</th>
+                  <th class="end">{{ 'reports.pay.employees' | translate }}</th>
+                  <th class="end">{{ 'reports.pay.totalCost' | translate }}</th>
+                  <th class="end">{{ 'reports.pay.share' | translate }}</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (d of r.departments; track d.name) {
+                  <tr>
+                    <td class="cell-main">{{ d.name || ('reports.noDepartment' | translate) }}</td>
+                    <td class="end num">{{ d.employees }}</td>
+                    <td class="end num">{{ d.totalCost | amount: lang() }}</td>
+                    <td class="end num">{{ payTotalCost() ? ((d.totalCost * 100) / payTotalCost() | amount: lang() : 'full' : 1) + '%' : '—' }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="panel panel-flush">
+          <header class="list-head">
+            <h3 class="section-title">{{ 'reports.pay.byComponent' | translate }}</h3>
+            <button type="button" class="btn btn-quiet btn-small" (click)="exportComponents()">
+              <span class="material-icons-outlined" aria-hidden="true">download</span>{{ 'reports.csv' | translate }}
+            </button>
+          </header>
+          <div class="table-wrap">
+            <table class="ledger-table">
+              <tbody>
+                @for (g of componentGroups(); track g.type) {
+                  <tr class="group-row">
+                    <th scope="rowgroup">{{ 'reports.componentType.' + g.type | translate }}</th>
+                    <th class="end num">{{ g.total | amount: lang() }}</th>
+                  </tr>
+                  @for (c of g.rows; track c.code) {
+                    <tr>
+                      <td>
+                        <span class="cell-main">{{ c.name }}</span>
+                        <span class="cell-sub">{{ c.code }} · {{ 'reports.pay.peopleN' | translate: { n: c.employees } }}</span>
+                      </td>
+                      <td class="end num">{{ c.amount | amount: lang() }}</td>
+                    </tr>
+                  }
+                }
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+    }
+
+    <section class="panel panel-flush">
+      <header class="list-head">
+        <div>
+          <h3 class="section-title">{{ 'reports.pay.register' | translate }}</h3>
+          <p class="panel-sub">{{ 'reports.pay.registerHint' | translate }}</p>
+        </div>
+        <div class="head-actions">
+          <select class="select-sm" [(ngModel)]="registerMonth" (ngModelChange)="loadRegister()" [attr.aria-label]="'reports.col.month' | translate">
+            @for (m of months; track m) { <option [ngValue]="m">{{ monthName(m) }} {{ year }}</option> }
+          </select>
+          <button type="button" class="btn btn-quiet btn-small" (click)="exportRegister()" [disabled]="!register()?.rows?.length">
+            <span class="material-icons-outlined" aria-hidden="true">download</span>{{ 'reports.csv' | translate }}
+          </button>
+        </div>
+      </header>
+      @if (register(); as g) {
+        @if (g.rows.length) {
+          <div class="table-wrap">
+            <table class="ledger-table">
+              <thead>
+                <tr>
+                  <th>{{ 'reports.col.employee' | translate }}</th>
+                  <th>{{ 'reports.col.department' | translate }}</th>
+                  <th class="end">{{ 'reports.pay.payableDays' | translate }}</th>
+                  <th class="end">{{ 'reports.pay.gross' | translate }}</th>
+                  <th class="end">{{ 'reports.pay.deductions' | translate }}</th>
+                  <th class="end">{{ 'reports.pay.tax' | translate }}</th>
+                  <th class="end">{{ 'reports.pay.net' | translate }}</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (x of g.rows; track x.payslipId) {
+                  <tr>
+                    <td>
+                      <span class="cell-main">{{ x.employeeName }}</span>
+                      <span class="cell-sub">{{ x.employeeCode }} · {{ x.payslipNumber }}
+                        @if (x.runType !== 'Regular') { · {{ 'reports.runType.' + x.runType | translate }} }
+                      </span>
+                    </td>
+                    <td>{{ x.department ?? '—' }}</td>
+                    <td class="end num">{{ x.payableDays }}</td>
+                    <td class="end num">{{ x.gross | amount: lang() }}</td>
+                    <td class="end num">{{ x.deductions | amount: lang() }}</td>
+                    <td class="end num">{{ x.tax | amount: lang() }}</td>
+                    <td class="end num strong">{{ x.net | amount: lang() }}</td>
+                  </tr>
+                }
+              </tbody>
+              <tfoot>
+                <tr>
+                  <td colspan="3">{{ 'reports.total' | translate }} · {{ 'reports.pay.peopleN' | translate: { n: g.rows.length } }}</td>
+                  <td class="end num">{{ g.totals.gross | amount: lang() }}</td>
+                  <td class="end num">{{ g.totals.deductions | amount: lang() }}</td>
+                  <td class="end num">{{ g.totals.tax | amount: lang() }}</td>
+                  <td class="end num">{{ g.totals.net | amount: lang() }}</td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        } @else {
+          <p class="empty-state">{{ 'reports.pay.noRegister' | translate: { month: monthName(g.month), year: g.year } }}</p>
+        }
+      } @else if (registerLoading()) {
+        <p class="empty-state">{{ 'reports.loading' | translate }}</p>
+      }
+    </section>
+  }
+</div>

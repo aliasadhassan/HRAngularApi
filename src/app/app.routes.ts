@@ -66,7 +66,6 @@ const PLANNED: Route[] = [
   soon('engagement', 'nav.engagement', undefined, ['surveys', 'recognition']),
 
   // Reporting
-  soon('reports', 'nav.reports', undefined, ['peopleReports', 'payReports', 'timeReports', 'talentReports']),
   soon('reports/builder', 'nav.reportBuilder', undefined, ['builder', 'savedReports', 'scheduled']),
 
   // Compliance
@@ -102,6 +101,7 @@ export const routes: Routes = [
       { path: 'leave-setup', component: LeaveSetupComponent, canActivate: [permissionGuard], data: { titleKey: 'nav.leaveSetup', permission: P.settingsManage } },
       { path: 'payroll/loans', loadComponent: () => import('./pages/payroll/loans/loans').then(m => m.LoansComponent), canActivate: [permissionGuard], data: { titleKey: 'nav.loansAdvances', permission: [P.payrollViewOwn, P.payrollViewAll, P.payrollApprove] } },
       { path: 'expenses', loadComponent: () => import('./pages/expenses/expenses').then(m => m.ExpensesComponent), data: { titleKey: 'nav.expensesTravel' } },
+      { path: 'reports', loadComponent: () => import('./pages/reports/reports').then(m => m.ReportsComponent), canActivate: [permissionGuard], data: { titleKey: 'nav.reports', permission: [P.employeesView, P.payrollViewAll, P.payrollApprove] } },
       { path: 'me/payslips', component: MyPayslipsComponent, data: { titleKey: 'nav.myPayslips' } },
       { path: 'me/payslips/:id', component: PayslipComponent, data: { titleKey: 'payroll.payslip.title', self: true } },
       { path: 'settings', component: MySettingsComponent, data: { titleKey: 'nav.mySettings' } },

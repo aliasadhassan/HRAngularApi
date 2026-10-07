@@ -1717,5 +1717,163 @@
     "errors": {
       "load": "Couldn't load expenses. Check your connection and try again."
     }
+  },
+  "reports": {
+    "intro": "Ready-made reports on your people, time and pay. Pick a period, read the figures, and download any table as a CSV file.",
+    "tabs": {
+      "people": "People",
+      "time": "Attendance & leave",
+      "pay": "Payroll"
+    },
+    "filter": {
+      "period": "Period",
+      "from": "From",
+      "to": "To",
+      "department": "Department",
+      "allDepartments": "All departments",
+      "year": "Year"
+    },
+    "preset": {
+      "thisMonth": "This month",
+      "lastMonth": "Last month",
+      "last3": "Last 3 months",
+      "thisYear": "This year",
+      "last12": "Last 12 months",
+      "custom": "Custom dates"
+    },
+    "loading": "Loading…",
+    "csv": "CSV",
+    "total": "Total",
+    "empty": "Nothing to show for this period.",
+    "unknown": "Not recorded",
+    "years": "yrs",
+    "noDepartment": "No department",
+    "errors": {
+      "load": "Could not load this report.",
+      "order": "The start date must be on or before the end date.",
+      "tooLong": "Pick a period of one year or less."
+    },
+    "col": {
+      "code": "Code",
+      "date": "Date",
+      "department": "Department",
+      "designation": "Designation",
+      "employee": "Employee",
+      "kind": "Change",
+      "month": "Month",
+      "reason": "Reason"
+    },
+    "movement": {
+      "Joined": "Joined",
+      "Left": "Left"
+    },
+    "tenure": {
+      "lt1": "Under 1 year",
+      "1to3": "1 to 3 years",
+      "3to5": "3 to 5 years",
+      "5to10": "5 to 10 years",
+      "10plus": "10+ years"
+    },
+    "componentType": {
+      "Earning": "Earnings",
+      "Deduction": "Deductions",
+      "EmployerContribution": "Employer contributions",
+      "Informational": "For information"
+    },
+    "runType": {
+      "Regular": "Regular",
+      "OffCycle": "Off-cycle",
+      "FinalSettlement": "Final settlement"
+    },
+    "people": {
+      "headcount": "Headcount",
+      "headcountOn": "Headcount on {{date}}",
+      "sinceStart": "from {{n}} at the start",
+      "joined": "Joined",
+      "left": "Left",
+      "attrition": "Attrition",
+      "avgTenure": "Average tenure",
+      "avgAge": "Average age {{n}}",
+      "trend": "Headcount by month",
+      "trendHint": "People on the books at each month end.",
+      "mix": "Workforce mix",
+      "mixHint": "Everyone on the books at the end of the period.",
+      "byType": "Employment type",
+      "byStatus": "Status",
+      "byGender": "Gender",
+      "byTenure": "Time with us",
+      "byLocation": "Location",
+      "byDepartment": "By department",
+      "movements": "Joiners and leavers",
+      "movementsHint": "Everyone who joined or left in this period.",
+      "noMovements": "Nobody joined or left in this period."
+    },
+    "time": {
+      "rate": "Attendance",
+      "attendedOf": "{{a}} of {{s}} working days",
+      "absentDays": "Absent days",
+      "lateArrivals": "Late arrivals",
+      "lateHours": "{{n}} hours late in total",
+      "leaveDays": "Leave days",
+      "overtimeHours": "Overtime hours",
+      "byDepartment": "By department",
+      "people": "People",
+      "lateDays": "Late",
+      "leaveByType": "Leave by type",
+      "unpaid": "Unpaid",
+      "days": "{{n}} days",
+      "requestsPeople": "{{r}} requests from {{p}} people",
+      "byEmployee": "By employee",
+      "byEmployeeHint": "Working days only. Leave is counted on the day it starts.",
+      "sort": "Sort",
+      "sortBy": {
+        "department": "By department",
+        "rateAsc": "Lowest attendance first",
+        "lateDesc": "Most late first",
+        "absentDesc": "Most absent first"
+      },
+      "scheduled": "Working days",
+      "present": "Present",
+      "absent": "Absent",
+      "missingPunch": "Missing punch",
+      "halfDays": "Half days",
+      "plusHalf": "+{{n}} half",
+      "minutes": "{{n}} min",
+      "lateMinutes": "Late minutes",
+      "leaveType": "Leave type",
+      "requests": "Requests",
+      "noAttendance": "No attendance was recorded in this period.",
+      "noLeave": "No approved leave started in this period."
+    },
+    "pay": {
+      "finalOnly": "Counts approved and paid payroll runs only. A run that is still being checked is left out until it is approved.",
+      "totalCostYear": "Cost of pay in {{year}}",
+      "runsSlips": "{{runs}} runs, {{slips}} payslips",
+      "gross": "Gross pay",
+      "net": "Net pay",
+      "tax": "Tax withheld",
+      "deductions": "Deductions",
+      "employerCost": "Employer cost",
+      "loanBook": "Loans and advances owed",
+      "loanCounts": "{{loans}} loans, {{advances}} advances",
+      "noRuns": "There are no approved payroll runs in {{year}} yet.",
+      "byMonth": "Month by month",
+      "byMonthHint": "Amounts in {{cur}}. Net pay, deductions and the employer's share add up to the full cost.",
+      "payslips": "Payslips",
+      "byDepartment": "Cost by department",
+      "employees": "People",
+      "totalCost": "Total cost",
+      "share": "Share",
+      "byComponent": "By pay item",
+      "peopleN": "{{n}} people",
+      "component": "Pay item",
+      "type": "Type",
+      "amount": "Amount",
+      "register": "Payroll register",
+      "registerHint": "One line per payslip for the month you pick.",
+      "payableDays": "Paid days",
+      "noRegister": "No approved payslips for {{month}} {{year}}.",
+      "payslip": "Payslip"
+    }
   }
 }
