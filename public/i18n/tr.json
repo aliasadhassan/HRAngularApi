@@ -1717,5 +1717,163 @@
     "errors": {
       "load": "Harcamalar yüklenemedi. Bağlantınızı kontrol edip tekrar deneyin."
     }
+  },
+  "reports": {
+    "intro": "Çalışanlarınız, zaman ve bordro için hazır raporlar. Bir dönem seçin, rakamları inceleyin ve istediğiniz tabloyu CSV dosyası olarak indirin.",
+    "tabs": {
+      "people": "Çalışanlar",
+      "time": "Devam ve izin",
+      "pay": "Bordro"
+    },
+    "filter": {
+      "period": "Dönem",
+      "from": "Başlangıç",
+      "to": "Bitiş",
+      "department": "Departman",
+      "allDepartments": "Tüm departmanlar",
+      "year": "Yıl"
+    },
+    "preset": {
+      "thisMonth": "Bu ay",
+      "lastMonth": "Geçen ay",
+      "last3": "Son 3 ay",
+      "thisYear": "Bu yıl",
+      "last12": "Son 12 ay",
+      "custom": "Özel tarihler"
+    },
+    "loading": "Yükleniyor…",
+    "csv": "CSV",
+    "total": "Toplam",
+    "empty": "Bu dönem için gösterilecek veri yok.",
+    "unknown": "Kayıtlı değil",
+    "years": "yıl",
+    "noDepartment": "Departman yok",
+    "errors": {
+      "load": "Bu rapor yüklenemedi.",
+      "order": "Başlangıç tarihi bitiş tarihinden sonra olamaz.",
+      "tooLong": "En fazla bir yıllık bir dönem seçin."
+    },
+    "col": {
+      "code": "Sicil",
+      "date": "Tarih",
+      "department": "Departman",
+      "designation": "Unvan",
+      "employee": "Çalışan",
+      "kind": "Değişiklik",
+      "month": "Ay",
+      "reason": "Neden"
+    },
+    "movement": {
+      "Joined": "Katıldı",
+      "Left": "Ayrıldı"
+    },
+    "tenure": {
+      "lt1": "1 yıldan az",
+      "1to3": "1–3 yıl",
+      "3to5": "3–5 yıl",
+      "5to10": "5–10 yıl",
+      "10plus": "10 yıl ve üzeri"
+    },
+    "componentType": {
+      "Earning": "Kazançlar",
+      "Deduction": "Kesintiler",
+      "EmployerContribution": "İşveren payları",
+      "Informational": "Bilgi amaçlı"
+    },
+    "runType": {
+      "Regular": "Normal",
+      "OffCycle": "Dönem dışı",
+      "FinalSettlement": "Çıkış ödemesi"
+    },
+    "people": {
+      "headcount": "Çalışan sayısı",
+      "headcountOn": "{{date}} itibarıyla çalışan sayısı",
+      "sinceStart": "başlangıçta {{n}}",
+      "joined": "Katılan",
+      "left": "Ayrılan",
+      "attrition": "Ayrılma oranı",
+      "avgTenure": "Ortalama kıdem",
+      "avgAge": "Ortalama yaş {{n}}",
+      "trend": "Aylara göre çalışan sayısı",
+      "trendHint": "Her ay sonunda kayıtlı çalışanlar.",
+      "mix": "İş gücü dağılımı",
+      "mixHint": "Dönem sonunda kayıtlı herkes.",
+      "byType": "Çalışma türü",
+      "byStatus": "Durum",
+      "byGender": "Cinsiyet",
+      "byTenure": "Kıdem",
+      "byLocation": "Lokasyon",
+      "byDepartment": "Departmana göre",
+      "movements": "Katılanlar ve ayrılanlar",
+      "movementsHint": "Bu dönemde katılan veya ayrılan herkes.",
+      "noMovements": "Bu dönemde katılan veya ayrılan olmadı."
+    },
+    "time": {
+      "rate": "Devam oranı",
+      "attendedOf": "{{s}} iş gününün {{a}} günü",
+      "absentDays": "Devamsız günler",
+      "lateArrivals": "Geç gelmeler",
+      "lateHours": "Toplam {{n}} saat gecikme",
+      "leaveDays": "İzin günleri",
+      "overtimeHours": "Fazla mesai saati",
+      "byDepartment": "Departmana göre",
+      "people": "Kişi",
+      "lateDays": "Geç",
+      "leaveByType": "Türe göre izin",
+      "unpaid": "Ücretsiz",
+      "days": "{{n}} gün",
+      "requestsPeople": "{{p}} kişiden {{r}} talep",
+      "byEmployee": "Çalışana göre",
+      "byEmployeeHint": "Yalnızca iş günleri. İzin başladığı günde sayılır.",
+      "sort": "Sırala",
+      "sortBy": {
+        "department": "Departmana göre",
+        "rateAsc": "En düşük devam önce",
+        "lateDesc": "En çok geç kalan önce",
+        "absentDesc": "En çok devamsız önce"
+      },
+      "scheduled": "İş günleri",
+      "present": "Mevcut",
+      "absent": "Devamsız",
+      "missingPunch": "Eksik kayıt",
+      "halfDays": "Yarım günler",
+      "plusHalf": "+{{n}} yarım",
+      "minutes": "{{n}} dk",
+      "lateMinutes": "Gecikme dakikası",
+      "leaveType": "İzin türü",
+      "requests": "Talepler",
+      "noAttendance": "Bu dönemde devam kaydı yok.",
+      "noLeave": "Bu dönemde başlayan onaylı izin yok."
+    },
+    "pay": {
+      "finalOnly": "Yalnızca onaylanmış ve ödenmiş bordrolar sayılır. Hâlâ kontrol edilen bir bordro onaylanana kadar dahil edilmez.",
+      "totalCostYear": "{{year}} ücret maliyeti",
+      "runsSlips": "{{runs}} bordro, {{slips}} pusula",
+      "gross": "Brüt ücret",
+      "net": "Net ücret",
+      "tax": "Kesilen vergi",
+      "deductions": "Kesintiler",
+      "employerCost": "İşveren maliyeti",
+      "loanBook": "Ödenmemiş krediler ve avanslar",
+      "loanCounts": "{{loans}} kredi, {{advances}} avans",
+      "noRuns": "{{year}} yılında henüz onaylanmış bordro yok.",
+      "byMonth": "Aylık döküm",
+      "byMonthHint": "Tutarlar {{cur}} cinsinden. Net ücret, kesintiler ve işveren payı toplam maliyeti verir.",
+      "payslips": "Pusulalar",
+      "byDepartment": "Departmana göre maliyet",
+      "employees": "Kişi",
+      "totalCost": "Toplam maliyet",
+      "share": "Pay",
+      "byComponent": "Ücret kalemine göre",
+      "peopleN": "{{n}} kişi",
+      "component": "Ücret kalemi",
+      "type": "Tür",
+      "amount": "Tutar",
+      "register": "Bordro listesi",
+      "registerHint": "Seçtiğiniz ay için her pusula bir satır.",
+      "payableDays": "Ödenen günler",
+      "noRegister": "{{month}} {{year}} için onaylanmış pusula yok.",
+      "payslip": "Pusula"
+    }
   }
 }

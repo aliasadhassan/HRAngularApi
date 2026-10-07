@@ -1,0 +1,290 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+/* ── Filters ── */
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 14px 18px;
+  padding: 16px 20px;
+}
+.f-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 150px;
+}
+.f-wide {
+  min-width: 220px;
+}
+.f-field label {
+  font-size: var(--fs-12);
+  font-weight: 500;
+  color: var(--text-muted);
+}
+.f-field select,
+.f-field input {
+  height: 40px;
+  padding: 0 12px;
+  border: 1px solid var(--rule-strong);
+  border-radius: var(--radius-control);
+  background: var(--sheet);
+  font: inherit;
+  font-size: var(--fs-14);
+  color: var(--text);
+}
+.f-note {
+  margin: 0 0 10px;
+  font-size: var(--fs-13);
+  color: var(--text-muted);
+  max-width: 520px;
+}
+.f-loading {
+  margin: 0 0 12px auto;
+  font-size: var(--fs-13);
+  color: var(--text-muted);
+}
+
+/* ── Tallies ── */
+.tallies {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 14px;
+}
+.tally {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 16px 18px;
+  border: 1px solid var(--rule);
+  border-top: 3px solid var(--brass);
+  border-radius: var(--radius-panel);
+  background: var(--sheet);
+  min-width: 0;
+}
+.tally.is-ink {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--text-on-ink);
+}
+.tally.is-ink .t-label,
+.tally.is-ink .t-cur,
+.tally.is-ink .t-sub {
+  color: rgba(236, 238, 230, 0.7);
+}
+.tally.is-ink .t-figure {
+  color: var(--brass);
+}
+.t-label {
+  font-size: var(--fs-13);
+  color: var(--text-muted);
+}
+.t-figure {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  font-family: var(--font-display);
+  font-size: var(--fs-28);
+  line-height: 1.05;
+  white-space: nowrap;
+}
+.t-cur {
+  font-family: var(--font-ui);
+  font-size: var(--fs-12);
+  color: var(--text-muted);
+}
+.t-sub {
+  font-size: var(--fs-12);
+  color: var(--text-muted);
+}
+
+.tallies.is-money {
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+}
+.tallies.is-money .t-figure {
+  font-size: 22px;
+}
+
+/* ── Layout ── */
+.grid-split {
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
+  gap: 18px;
+  align-items: start;
+}
+@media (max-width: 1100px) {
+  .grid-split {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+.chart-box {
+  position: relative;
+  height: 260px;
+}
+.list-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 20px 12px;
+  border-bottom: 1px solid var(--rule);
+}
+.list-head .panel-sub {
+  margin-top: 2px;
+}
+.head-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.btn-small .material-icons-outlined {
+  font-size: 18px;
+}
+.empty-state {
+  margin: 0;
+  padding: 36px 24px;
+}
+
+/* ── Mix bars ── */
+.mix {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 18px 24px;
+}
+.mix-group h4 {
+  margin: 0 0 8px;
+  font-family: var(--font-ui);
+  font-size: var(--fs-12);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.mix-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 70px 30px;
+  align-items: center;
+  gap: 10px;
+  padding: 3px 0;
+  font-size: var(--fs-13);
+}
+.mix-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.mix-bar {
+  display: block;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--rule);
+  overflow: hidden;
+}
+.mix-bar > span {
+  display: block;
+  height: 100%;
+  border-radius: 3px;
+  background: var(--moss);
+}
+.mix-count {
+  text-align: end;
+}
+
+/* ── Leave list ── */
+.leave-list {
+  list-style: none;
+  margin: 0;
+  padding: 6px 20px 14px;
+}
+.leave-list li {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--rule);
+}
+.leave-list li:last-child {
+  border-bottom: none;
+}
+.leave-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.leave-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex: none;
+}
+.leave-days {
+  margin-inline-start: auto;
+  font-weight: 500;
+}
+
+/* ── Tables ── */
+.ledger-table tfoot td {
+  padding: 14px 20px;
+  border-top: 3px double var(--rule-strong);
+  font-weight: 600;
+}
+.ledger-table td.strong {
+  font-weight: 600;
+}
+.ledger-table tr.dim td {
+  color: var(--text-muted);
+}
+.ledger-table tr.group-row th {
+  padding-top: 18px;
+  background: var(--vellum);
+  color: var(--text);
+  font-size: var(--fs-12);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.ledger-table tr.group-row th.end {
+  text-align: end;
+}
+.month-table {
+  margin: 18px -24px -22px;
+  border-top: 1px solid var(--rule);
+}
+.month-table .ledger-table td {
+  padding-block: 10px;
+}
+.reason {
+  font-style: italic;
+  max-width: 260px;
+  white-space: normal;
+}
+.rate-ok {
+  color: var(--moss);
+  font-weight: 600;
+}
+.rate-mid {
+  color: var(--amber);
+  font-weight: 600;
+}
+.rate-low {
+  color: var(--oxblood);
+  font-weight: 600;
+}
+.cell-sub {
+  display: block;
+}
+
+@media (max-width: 640px) {
+  .f-field,
+  .f-wide {
+    min-width: 0;
+    flex: 1 1 140px;
+  }
+  .t-figure {
+    font-size: 22px;
+  }
+}

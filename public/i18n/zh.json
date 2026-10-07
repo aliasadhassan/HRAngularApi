@@ -1717,5 +1717,163 @@
     "errors": {
       "load": "无法加载费用。请检查网络后重试。"
     }
+  },
+  "reports": {
+    "intro": "关于员工、考勤和薪资的现成报表。选择时间段，查看数据，并可将任意表格下载为 CSV 文件。",
+    "tabs": {
+      "people": "员工",
+      "time": "考勤与休假",
+      "pay": "薪资"
+    },
+    "filter": {
+      "period": "时间段",
+      "from": "从",
+      "to": "至",
+      "department": "部门",
+      "allDepartments": "所有部门",
+      "year": "年份"
+    },
+    "preset": {
+      "thisMonth": "本月",
+      "lastMonth": "上月",
+      "last3": "最近 3 个月",
+      "thisYear": "今年",
+      "last12": "最近 12 个月",
+      "custom": "自定义日期"
+    },
+    "loading": "加载中…",
+    "csv": "CSV",
+    "total": "合计",
+    "empty": "该时间段没有数据。",
+    "unknown": "未记录",
+    "years": "年",
+    "noDepartment": "无部门",
+    "errors": {
+      "load": "无法加载此报表。",
+      "order": "开始日期必须早于或等于结束日期。",
+      "tooLong": "请选择一年以内的时间段。"
+    },
+    "col": {
+      "code": "工号",
+      "date": "日期",
+      "department": "部门",
+      "designation": "职位",
+      "employee": "员工",
+      "kind": "变动",
+      "month": "月份",
+      "reason": "原因"
+    },
+    "movement": {
+      "Joined": "入职",
+      "Left": "离职"
+    },
+    "tenure": {
+      "lt1": "不足 1 年",
+      "1to3": "1 至 3 年",
+      "3to5": "3 至 5 年",
+      "5to10": "5 至 10 年",
+      "10plus": "10 年及以上"
+    },
+    "componentType": {
+      "Earning": "收入项",
+      "Deduction": "扣款项",
+      "EmployerContribution": "雇主缴费",
+      "Informational": "仅供参考"
+    },
+    "runType": {
+      "Regular": "常规",
+      "OffCycle": "非周期",
+      "FinalSettlement": "离职结算"
+    },
+    "people": {
+      "headcount": "在职人数",
+      "headcountOn": "{{date}} 在职人数",
+      "sinceStart": "期初为 {{n}} 人",
+      "joined": "入职",
+      "left": "离职",
+      "attrition": "流失率",
+      "avgTenure": "平均司龄",
+      "avgAge": "平均年龄 {{n}}",
+      "trend": "每月在职人数",
+      "trendHint": "每月月末的在职人数。",
+      "mix": "人员构成",
+      "mixHint": "期末所有在职员工。",
+      "byType": "用工类型",
+      "byStatus": "状态",
+      "byGender": "性别",
+      "byTenure": "司龄",
+      "byLocation": "工作地点",
+      "byDepartment": "按部门",
+      "movements": "入职与离职",
+      "movementsHint": "该时间段内入职或离职的所有人员。",
+      "noMovements": "该时间段内没有人员入职或离职。"
+    },
+    "time": {
+      "rate": "出勤率",
+      "attendedOf": "{{s}} 个工作日中出勤 {{a}} 天",
+      "absentDays": "缺勤天数",
+      "lateArrivals": "迟到次数",
+      "lateHours": "共迟到 {{n}} 小时",
+      "leaveDays": "休假天数",
+      "overtimeHours": "加班小时",
+      "byDepartment": "按部门",
+      "people": "人数",
+      "lateDays": "迟到",
+      "leaveByType": "按假期类型",
+      "unpaid": "无薪",
+      "days": "{{n}} 天",
+      "requestsPeople": "{{p}} 人提交 {{r}} 份申请",
+      "byEmployee": "按员工",
+      "byEmployeeHint": "仅统计工作日。休假按开始日期计入。",
+      "sort": "排序",
+      "sortBy": {
+        "department": "按部门",
+        "rateAsc": "出勤率最低优先",
+        "lateDesc": "迟到最多优先",
+        "absentDesc": "缺勤最多优先"
+      },
+      "scheduled": "工作日",
+      "present": "出勤",
+      "absent": "缺勤",
+      "missingPunch": "缺卡",
+      "halfDays": "半天",
+      "plusHalf": "+{{n}} 个半天",
+      "minutes": "{{n}} 分钟",
+      "lateMinutes": "迟到分钟",
+      "leaveType": "假期类型",
+      "requests": "申请数",
+      "noAttendance": "该时间段没有考勤记录。",
+      "noLeave": "该时间段没有开始的已批准休假。"
+    },
+    "pay": {
+      "finalOnly": "仅统计已批准和已发放的薪资批次。仍在审核中的批次在批准前不计入。",
+      "totalCostYear": "{{year}} 年薪资成本",
+      "runsSlips": "{{runs}} 个批次，{{slips}} 张工资单",
+      "gross": "应发工资",
+      "net": "实发工资",
+      "tax": "代扣税款",
+      "deductions": "扣款",
+      "employerCost": "雇主成本",
+      "loanBook": "未还贷款与预支",
+      "loanCounts": "{{loans}} 笔贷款，{{advances}} 笔预支",
+      "noRuns": "{{year}} 年尚无已批准的薪资批次。",
+      "byMonth": "逐月",
+      "byMonthHint": "金额单位：{{cur}}。实发工资、扣款与雇主承担部分合计为总成本。",
+      "payslips": "工资单",
+      "byDepartment": "按部门成本",
+      "employees": "人数",
+      "totalCost": "总成本",
+      "share": "占比",
+      "byComponent": "按薪资项目",
+      "peopleN": "{{n}} 人",
+      "component": "薪资项目",
+      "type": "类型",
+      "amount": "金额",
+      "register": "工资明细表",
+      "registerHint": "所选月份每张工资单一行。",
+      "payableDays": "计薪天数",
+      "noRegister": "{{year}} 年 {{month}} 没有已批准的工资单。",
+      "payslip": "工资单"
+    }
   }
 }
