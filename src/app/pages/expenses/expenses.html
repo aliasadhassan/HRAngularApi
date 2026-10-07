@@ -1,0 +1,879 @@
+<div class="page">
+  <header class="page-intro">
+    <p>{{ 'expenses.intro' | translate }}</p>
+    @if (tab() === 'mine' && my()?.employeeId) {
+      <div class="intro-actions">
+        @if (my()!.policy.travelEnabled) {
+          <button type="button" class="btn btn-quiet" (click)="openTrip()">
+            <span class="material-icons-outlined" aria-hidden="true">flight_takeoff</span>{{ 'expenses.newTrip' | translate }}
+          </button>
+        }
+        @if (my()!.policy.claimsEnabled) {
+          <button type="button" class="btn btn-ink" (click)="openClaim()">
+            <span class="material-icons-outlined" aria-hidden="true">add</span>{{ 'expenses.newClaim' | translate }}
+          </button>
+        }
+      </div>
+    }
+    @if (tab() === 'policies' && canEditPolicy) {
+      <div class="intro-actions">
+        <button type="button" class="btn btn-ink" (click)="openCategory()">
+          <span class="material-icons-outlined" aria-hidden="true">add</span>{{ 'expenses.cat.add' | translate }}
+        </button>
+      </div>
+    }
+  </header>
+
+  @if (canSeeAll || canEditPolicy) {
+    <nav class="tabs">
+      @if (my()?.employeeId) {
+        <button type="button" class="tab" [class.is-active]="tab() === 'mine'" (click)="setTab('mine')">{{ 'expenses.tabs.mine' | translate }}</button>
+      }
+      @if (canSeeAll) {
+        <button type="button" class="tab" [class.is-active]="tab() === 'claims'" (click)="setTab('claims')">
+          {{ 'expenses.tabs.claims' | translate }}
+          @if (pendingClaims()) { <span class="tab-count num alert-count">{{ pendingClaims() }}</span> }
+        </button>
+        <button type="button" class="tab" [class.is-active]="tab() === 'travel'" (click)="setTab('travel')">
+          {{ 'expenses.tabs.travel' | translate }}
+          @if (pendingTrips()) { <span class="tab-count num alert-count">{{ pendingTrips() }}</span> }
+        </button>
+        <button type="button" class="tab" [class.is-active]="tab() === 'advances'" (click)="setTab('advances')">{{ 'expenses.tabs.advances' | translate }}</button>
+      }
+      @if (canEditPolicy) {
+        <button type="button" class="tab" [class.is-active]="tab() === 'policies'" (click)="setTab('policies')">{{ 'expenses.tabs.policies' | translate }}</button>
+      }
+    </nav>
+  }
+
+  <!-- ═══ Mine ═══ -->
+  @if (tab() === 'mine') {
+    @if (loadError()) {
+      <div class="notice notice-error">
+        <span class="material-icons-outlined" aria-hidden="true">error_outline</span>
+        <span>{{ loadError() }}</span>
+      </div>
+    }
+
+    @if (my(); as m) {
+      @if (!m.employeeId) {
+        <div class="notice notice-info">
+          <span class="material-icons-outlined" aria-hidden="true">link_off</span>
+          <span>{{ 'expenses.notLinked' | translate }}</span>
+        </div>
+      } @else {
+        <section class="tallies">
+          <article class="tally">
+            <span class="t-label">{{ 'expenses.sum.awaiting' | translate }}</span>
+            <span class="t-figure num"><span class="t-cur">{{ m.currencyCode }}</span>{{ awaiting() | amount: lang() }}</span>
+          </article>
+          <article class="tally">
+            <span class="t-label">{{ 'expenses.sum.toBePaid' | translate }}</span>
+            <span class="t-figure num"><span class="t-cur">{{ m.currencyCode }}</span>{{ toBePaid() | amount: lang() }}</span>
+          </article>
+          <article class="tally">
+            <span class="t-label">{{ 'expenses.sum.paidYear' | translate }}</span>
+            <span class="t-figure num"><span class="t-cur">{{ m.currencyCode }}</span>{{ paidThisYear() | amount: lang() }}</span>
+          </article>
+          <article class="tally" [class.is-ink]="advanceOut() > 0">
+            <span class="t-label">{{ 'expenses.sum.advanceOut' | translate }}</span>
+            <span class="t-figure num"><span class="t-cur">{{ m.currencyCode }}</span>{{ advanceOut() | amount: lang() }}</span>
+          </article>
+        </section>
+
+        @if (claimableTrips().length && m.policy.claimsEnabled) {
+          <div class="notice notice-info">
+            <span class="material-icons-outlined" aria-hidden="true">flight_land</span>
+            <span class="grow">{{ 'expenses.claimTripHint' | translate: { n: claimableTrips().length } }}</span>
+            @for (t of claimableTrips(); track t.id) {
+              <button type="button" class="btn btn-quiet btn-small" (click)="openClaim(t)">{{ 'expenses.claimFor' | translate: { place: t.destination } }}</button>
+            }
+          </div>
+        }
+
+        <section class="panel panel-flush">
+          <header class="list-head"><h3 class="section-title">{{ 'expenses.myClaims' | translate }}</h3></header>
+          <div class="table-wrap">
+            <table class="ledger-table">
+              <thead>
+                <tr>
+                  <th>{{ 'expenses.claim' | translate }}</th>
+                  <th class="end">{{ 'expenses.claimed' | translate }}</th>
+                  <th class="end">{{ 'expenses.youGet' | translate }}</th>
+                  <th>{{ 'expenses.statusCol' | translate }}</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (c of myClaims(); track c.id) {
+                  <tr class="is-link" tabindex="0" (click)="viewClaim(c)" (keydown.enter)="viewClaim(c)">
+                    <td>
+                      <span class="cell-main">{{ c.title }}</span>
+                      <span class="cell-sub">
+                        {{ 'expenses.nItems' | translate: { n: c.lines.length } }} · {{ c.createdAt | date: 'd MMM y' : undefined : lang() }}
+                        @if (c.travelDestination) { · <span class="material-icons-outlined inline-icon" aria-hidden="true">flight</span>{{ c.travelDestination }} }
+                      </span>
+                    </td>
+                    <td class="end num">{{ c.currencyCode }} {{ c.totalAmount | amount: lang() }}</td>
+                    <td class="end num">
+                      @if (c.approvedAmount !== null) {
+                        {{ c.netPayable | amount: lang() }}
+                        @if (c.advanceAdjusted > 0) { <span class="cell-sub">{{ 'expenses.lessAdvance' | translate: { amount: (c.advanceAdjusted | amount: lang()) } }}</span> }
+                      } @else { <span class="dim">—</span> }
+                    </td>
+                    <td>
+                      <span [class]="claimChip[c.status]">{{ 'expenses.claimStatus.' + c.status | translate }}</span>
+                      @if (c.status === 'Approved' && c.payoutMethod === 'Payroll' && c.payPeriodEnd) {
+                        <span class="cell-sub">{{ 'expenses.withSalary' | translate: { month: (c.payPeriodEnd | date: 'MMM y' : undefined : lang()) } }}</span>
+                      }
+                      @if (c.decisionComment) { <span class="cell-sub reason">“{{ c.decisionComment }}”</span> }
+                    </td>
+                    <td class="end" (click)="$event.stopPropagation()">
+                      @if (c.canCancel) {
+                        <button type="button" class="btn-link" [disabled]="busy() === c.id" (click)="cancelClaim(c)">{{ 'expenses.cancel' | translate }}</button>
+                      }
+                    </td>
+                  </tr>
+                } @empty {
+                  <tr>
+                    <td colspan="5">
+                      <div class="empty-state">
+                        <span class="material-icons-outlined" aria-hidden="true">receipt</span>
+                        <h3>{{ 'expenses.noClaimsTitle' | translate }}</h3>
+                        <p>{{ 'expenses.noClaimsBody' | translate }}</p>
+                      </div>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        @if (myTrips().length) {
+          <section class="panel panel-flush">
+            <header class="list-head"><h3 class="section-title">{{ 'expenses.myTrips' | translate }}</h3></header>
+            <div class="table-wrap">
+              <table class="ledger-table">
+                <thead>
+                  <tr>
+                    <th>{{ 'expenses.trip' | translate }}</th>
+                    <th>{{ 'expenses.dates' | translate }}</th>
+                    <th class="end">{{ 'expenses.estimate' | translate }}</th>
+                    <th>{{ 'expenses.advance' | translate }}</th>
+                    <th>{{ 'expenses.statusCol' | translate }}</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (t of myTrips(); track t.id) {
+                    <tr>
+                      <td>
+                        <span class="cell-main">{{ t.destination }}</span>
+                        <span class="cell-sub reason">{{ t.purpose }}</span>
+                      </td>
+                      <td class="num">{{ t.departDate | date: 'd MMM' : undefined : lang() }} – {{ t.returnDate | date: 'd MMM y' : undefined : lang() }}</td>
+                      <td class="end num">{{ t.currencyCode }} {{ t.estimatedCost | amount: lang() }}</td>
+                      <td>
+                        @if (t.advanceStatus !== 'None') {
+                          <span class="num adv-amt">{{ t.advanceApproved | amount: lang() }}</span>
+                          <span [class]="advanceChip[t.advanceStatus]">{{ 'expenses.advanceStatus.' + t.advanceStatus | translate }}</span>
+                        } @else if (t.advanceRequested > 0 && t.status === 'Pending') {
+                          <span class="num dim">{{ t.advanceRequested | amount: lang() }}</span>
+                        } @else { <span class="dim">—</span> }
+                      </td>
+                      <td>
+                        <span [class]="travelChip[t.status]">{{ 'expenses.tripStatus.' + t.status | translate }}</span>
+                        @if (t.decisionComment) { <span class="cell-sub reason">“{{ t.decisionComment }}”</span> }
+                      </td>
+                      <td class="end actions">
+                        @if (t.canClaim && m.policy.claimsEnabled) {
+                          <button type="button" class="btn btn-quiet btn-small" (click)="openClaim(t)">{{ 'expenses.fileClaim' | translate }}</button>
+                        }
+                        @if (t.canCancel) {
+                          <button type="button" class="btn-link" [disabled]="busy() === t.id" (click)="cancelTrip(t)">{{ 'expenses.cancel' | translate }}</button>
+                        }
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          </section>
+        }
+      }
+    }
+  }
+
+  <!-- ═══ Claims (HR) ═══ -->
+  @if (tab() === 'claims') {
+    <section class="panel panel-flush">
+      <div class="toolbar">
+        <select class="select-sm" [ngModel]="claimStatus()" (ngModelChange)="claimStatus.set($event); loadClaims()" [attr.aria-label]="'expenses.statusCol' | translate">
+          <option value="">{{ 'expenses.anyStatus' | translate }}</option>
+          @for (s of ['Submitted', 'Approved', 'Paid', 'Rejected', 'Cancelled']; track s) { <option [value]="s">{{ 'expenses.claimStatus.' + s | translate }}</option> }
+        </select>
+      </div>
+      <div class="table-wrap">
+        <table class="ledger-table">
+          <thead>
+            <tr>
+              <th>{{ 'people.employee' | translate }}</th>
+              <th>{{ 'expenses.claim' | translate }}</th>
+              <th class="end">{{ 'expenses.claimed' | translate }}</th>
+              <th class="end">{{ 'expenses.payable' | translate }}</th>
+              <th>{{ 'expenses.statusCol' | translate }}</th>
+              @if (canApprove) { <th></th> }
+            </tr>
+          </thead>
+          <tbody>
+            @for (c of claims(); track c.id) {
+              <tr>
+                <td>
+                  <span class="cell-main">{{ c.employeeName }}</span>
+                  <span class="cell-sub">{{ c.employeeCode }}@if (c.departmentName) { · {{ c.departmentName }} }</span>
+                </td>
+                <td>
+                  <button type="button" class="btn-link cell-main" (click)="viewClaim(c)">{{ c.title }}</button>
+                  <span class="cell-sub">
+                    {{ 'expenses.nItems' | translate: { n: c.lines.length } }} · {{ c.createdAt | date: 'd MMM' : undefined : lang() }}
+                    @if (c.travelDestination) { · <span class="material-icons-outlined inline-icon" aria-hidden="true">flight</span>{{ c.travelDestination }} }
+                  </span>
+                </td>
+                <td class="end num">{{ c.currencyCode }} {{ c.totalAmount | amount: lang() }}</td>
+                <td class="end num">
+                  @if (c.approvedAmount !== null) {
+                    {{ c.netPayable | amount: lang() }}
+                    @if (c.advanceAdjusted > 0) { <span class="cell-sub">{{ 'expenses.lessAdvance' | translate: { amount: (c.advanceAdjusted | amount: lang()) } }}</span> }
+                    @if (c.toRecover > 0) { <span class="cell-sub warn">{{ 'expenses.toRecover' | translate: { amount: (c.toRecover | amount: lang()) } }}</span> }
+                  } @else { <span class="dim">—</span> }
+                </td>
+                <td>
+                  <span [class]="claimChip[c.status]">{{ 'expenses.claimStatus.' + c.status | translate }}</span>
+                  @if (c.status === 'Approved') {
+                    <span class="cell-sub">
+                      @if (c.payoutMethod === 'Payroll' && c.payPeriodEnd) {
+                        {{ 'expenses.withSalary' | translate: { month: (c.payPeriodEnd | date: 'MMM y' : undefined : lang()) } }}
+                      } @else { {{ 'expenses.payout.Direct' | translate }} }
+                    </span>
+                  }
+                  @if (c.decisionComment) { <span class="cell-sub reason">“{{ c.decisionComment }}”</span> }
+                </td>
+                @if (canApprove) {
+                  <td class="end actions">
+                    @if (c.status === 'Submitted') {
+                      @if (rejectingId === c.id) {
+                        <input class="reject-input" [(ngModel)]="rejectComment" [placeholder]="'expenses.rejectReason' | translate" maxlength="500" />
+                        <button type="button" class="btn btn-danger btn-small" [disabled]="!rejectComment.trim() || busy() === c.id" (click)="rejectClaim(c)">{{ 'expenses.reject' | translate }}</button>
+                        <button type="button" class="btn-link" (click)="rejectingId = null">{{ 'common.cancel' | translate }}</button>
+                      } @else {
+                        <button type="button" class="btn btn-quiet btn-small" [disabled]="busy() === c.id" (click)="startReject(c.id)">{{ 'expenses.reject' | translate }}</button>
+                        <button type="button" class="btn btn-ink btn-small" [disabled]="busy() === c.id" (click)="openApproveClaim(c)">{{ 'expenses.approve' | translate }}</button>
+                      }
+                    }
+                    @if (c.status === 'Approved' && c.payoutMethod === 'Direct') {
+                      <button type="button" class="btn btn-small" [class.btn-ink]="confirmId === c.id" [class.btn-quiet]="confirmId !== c.id" [disabled]="busy() === c.id" (click)="markPaid(c)">
+                        {{ (confirmId === c.id ? 'expenses.confirmPaid' : 'expenses.markPaid') | translate }}
+                      </button>
+                    }
+                  </td>
+                }
+              </tr>
+            } @empty {
+              <tr>
+                <td [attr.colspan]="canApprove ? 6 : 5">
+                  <div class="empty-state">
+                    <span class="material-icons-outlined" aria-hidden="true">task_alt</span>
+                    <h3>{{ (claimStatus() === 'Submitted' ? 'expenses.inboxEmpty' : 'expenses.noClaims') | translate }}</h3>
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+  }
+
+  <!-- ═══ Travel (HR) ═══ -->
+  @if (tab() === 'travel') {
+    <section class="panel panel-flush">
+      <div class="toolbar">
+        <select class="select-sm" [ngModel]="tripStatus()" (ngModelChange)="tripStatus.set($event); loadTrips()" [attr.aria-label]="'expenses.statusCol' | translate">
+          <option value="">{{ 'expenses.anyStatus' | translate }}</option>
+          @for (s of ['Pending', 'Approved', 'Rejected', 'Cancelled']; track s) { <option [value]="s">{{ 'expenses.tripStatus.' + s | translate }}</option> }
+        </select>
+      </div>
+      <div class="table-wrap">
+        <table class="ledger-table">
+          <thead>
+            <tr>
+              <th>{{ 'people.employee' | translate }}</th>
+              <th>{{ 'expenses.trip' | translate }}</th>
+              <th>{{ 'expenses.dates' | translate }}</th>
+              <th class="end">{{ 'expenses.estimate' | translate }}</th>
+              <th class="end">{{ 'expenses.advance' | translate }}</th>
+              <th>{{ 'expenses.statusCol' | translate }}</th>
+              @if (canApprove) { <th></th> }
+            </tr>
+          </thead>
+          <tbody>
+            @for (t of trips(); track t.id) {
+              <tr>
+                <td>
+                  <span class="cell-main">{{ t.employeeName }}</span>
+                  <span class="cell-sub">{{ t.employeeCode }}@if (t.departmentName) { · {{ t.departmentName }} }</span>
+                </td>
+                <td>
+                  <span class="cell-main">{{ t.destination }} <span class="dim">· {{ 'expenses.mode.' + t.travelMode | translate }}</span></span>
+                  <span class="cell-sub reason">{{ t.purpose }}</span>
+                </td>
+                <td class="num">{{ t.departDate | date: 'd MMM' : undefined : lang() }} – {{ t.returnDate | date: 'd MMM y' : undefined : lang() }}</td>
+                <td class="end num">{{ t.currencyCode }} {{ t.estimatedCost | amount: lang() }}</td>
+                <td class="end num">
+                  @if (t.status === 'Pending') { {{ t.advanceRequested | amount: lang() }} } @else { {{ t.advanceApproved | amount: lang() }} }
+                </td>
+                <td>
+                  <span [class]="travelChip[t.status]">{{ 'expenses.tripStatus.' + t.status | translate }}</span>
+                  @if (t.decisionComment) { <span class="cell-sub reason">“{{ t.decisionComment }}”</span> }
+                </td>
+                @if (canApprove) {
+                  <td class="end actions">
+                    @if (t.status === 'Pending') {
+                      @if (rejectingId === t.id) {
+                        <input class="reject-input" [(ngModel)]="rejectComment" [placeholder]="'expenses.rejectReason' | translate" maxlength="500" />
+                        <button type="button" class="btn btn-danger btn-small" [disabled]="!rejectComment.trim() || busy() === t.id" (click)="rejectTrip(t)">{{ 'expenses.reject' | translate }}</button>
+                        <button type="button" class="btn-link" (click)="rejectingId = null">{{ 'common.cancel' | translate }}</button>
+                      } @else {
+                        <button type="button" class="btn btn-quiet btn-small" [disabled]="busy() === t.id" (click)="startReject(t.id)">{{ 'expenses.reject' | translate }}</button>
+                        <button type="button" class="btn btn-ink btn-small" [disabled]="busy() === t.id" (click)="openApproveTrip(t)">{{ 'expenses.approve' | translate }}</button>
+                      }
+                    }
+                  </td>
+                }
+              </tr>
+            } @empty {
+              <tr>
+                <td [attr.colspan]="canApprove ? 7 : 6">
+                  <div class="empty-state">
+                    <span class="material-icons-outlined" aria-hidden="true">flight</span>
+                    <h3>{{ (tripStatus() === 'Pending' ? 'expenses.tripInboxEmpty' : 'expenses.noTrips') | translate }}</h3>
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+  }
+
+  <!-- ═══ Advances (HR) ═══ -->
+  @if (tab() === 'advances') {
+    <section class="panel panel-flush">
+      <div class="table-wrap">
+        <table class="ledger-table">
+          <thead>
+            <tr>
+              <th>{{ 'people.employee' | translate }}</th>
+              <th>{{ 'expenses.trip' | translate }}</th>
+              <th class="end">{{ 'expenses.advance' | translate }}</th>
+              <th>{{ 'expenses.statusCol' | translate }}</th>
+              @if (canApprove) { <th></th> }
+            </tr>
+          </thead>
+          <tbody>
+            @for (t of advances(); track t.id) {
+              <tr>
+                <td>
+                  <span class="cell-main">{{ t.employeeName }}</span>
+                  <span class="cell-sub">{{ t.employeeCode }}@if (t.departmentName) { · {{ t.departmentName }} }</span>
+                </td>
+                <td>
+                  <span class="cell-main">{{ t.destination }}</span>
+                  <span class="cell-sub num">{{ t.departDate | date: 'd MMM' : undefined : lang() }} – {{ t.returnDate | date: 'd MMM y' : undefined : lang() }}</span>
+                </td>
+                <td class="end num">{{ t.currencyCode }} {{ t.advanceApproved | amount: lang() }}</td>
+                <td>
+                  <span [class]="advanceChip[t.advanceStatus]">{{ 'expenses.advanceStatus.' + t.advanceStatus | translate }}</span>
+                  @if (t.advanceStatus === 'Paid') {
+                    <span class="cell-sub">{{ (t.claimId ? 'expenses.awaitingClaimDecision' : 'expenses.awaitingClaim') | translate }}</span>
+                  }
+                  @if (t.advancePaidAt) {
+                    <span class="cell-sub">{{ 'expenses.paidVia' | translate: { how: ('expenses.payout.' + t.advancePayoutMethod | translate), date: (t.advancePaidAt | date: 'd MMM' : undefined : lang()) } }}</span>
+                  }
+                </td>
+                @if (canApprove) {
+                  <td class="end actions">
+                    @if (t.advanceStatus === 'Approved') {
+                      <button type="button" class="btn btn-small" [class.btn-ink]="confirmId === t.id + ':Direct'" [class.btn-quiet]="confirmId !== t.id + ':Direct'" [disabled]="busy() === t.id" (click)="payAdvance(t, 'Direct')">
+                        {{ (confirmId === t.id + ':Direct' ? 'expenses.confirmPaid' : 'expenses.paidDirectly') | translate }}
+                      </button>
+                      <button type="button" class="btn btn-small" [class.btn-ink]="confirmId === t.id + ':Payroll'" [class.btn-quiet]="confirmId !== t.id + ':Payroll'" [disabled]="busy() === t.id" (click)="payAdvance(t, 'Payroll')">
+                        {{ (confirmId === t.id + ':Payroll' ? 'expenses.confirmPayroll' : 'expenses.payWithSalary') | translate }}
+                      </button>
+                    }
+                  </td>
+                }
+              </tr>
+            } @empty {
+              <tr>
+                <td [attr.colspan]="canApprove ? 5 : 4">
+                  <div class="empty-state">
+                    <span class="material-icons-outlined" aria-hidden="true">payments</span>
+                    <h3>{{ 'expenses.noAdvances' | translate }}</h3>
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+  }
+
+  <!-- ═══ Policies ═══ -->
+  @if (tab() === 'policies') {
+    @if (policy(); as p) {
+      <section class="panel section">
+        <div class="side">
+          <h3 class="section-title">{{ 'expenses.policy.title' | translate }}</h3>
+          <p class="section-help">{{ 'expenses.policy.help' | translate }}</p>
+        </div>
+        @if (policyForm; as f) {
+          <div class="body">
+            <label class="check"><input type="checkbox" [(ngModel)]="f.claimsEnabled" />{{ 'expenses.policy.claimsEnabled' | translate }}</label>
+            <label class="check"><input type="checkbox" [(ngModel)]="f.travelEnabled" />{{ 'expenses.policy.travelEnabled' | translate }}</label>
+            <div class="grid-2">
+              <div class="field">
+                <label for="p-receipt">{{ 'expenses.policy.receiptAbove' | translate }}</label>
+                <input id="p-receipt" type="number" min="0" [(ngModel)]="f.receiptRequiredAbove" />
+                <span class="field-hint">{{ 'expenses.policy.receiptHint' | translate }}</span>
+              </div>
+              <div class="field">
+                <label for="p-days">{{ 'expenses.policy.window' | translate }}</label>
+                <input id="p-days" type="number" min="1" max="365" [(ngModel)]="f.submitWithinDays" />
+              </div>
+            </div>
+            <label class="check"><input type="checkbox" [(ngModel)]="f.advancesEnabled" />{{ 'expenses.policy.advancesEnabled' | translate }}</label>
+            @if (f.advancesEnabled) {
+              <div class="field">
+                <label for="p-adv">{{ 'expenses.policy.advancePercent' | translate }}</label>
+                <input id="p-adv" type="number" min="1" max="100" [(ngModel)]="f.maxAdvancePercent" />
+              </div>
+            }
+            <div class="grid-2">
+              <div class="field">
+                <label for="p-reimb">{{ 'expenses.policy.reimbComponent' | translate }}</label>
+                <select id="p-reimb" [(ngModel)]="f.reimbursementComponentId">
+                  <option [ngValue]="null">{{ 'expenses.policy.noComponent' | translate }}</option>
+                  @for (c of earningComponents(); track c.id) { <option [ngValue]="c.id">{{ c.name }} ({{ c.code }})</option> }
+                </select>
+                <span class="field-hint">{{ 'expenses.policy.reimbHint' | translate }}</span>
+              </div>
+              <div class="field">
+                <label for="p-rec">{{ 'expenses.policy.recoveryComponent' | translate }}</label>
+                <select id="p-rec" [(ngModel)]="f.advanceRecoveryComponentId">
+                  <option [ngValue]="null">{{ 'expenses.policy.noComponent' | translate }}</option>
+                  @for (c of deductionComponents(); track c.id) { <option [ngValue]="c.id">{{ c.name }} ({{ c.code }})</option> }
+                </select>
+                <span class="field-hint">{{ 'expenses.policy.recoveryHint' | translate }}</span>
+              </div>
+            </div>
+            <footer class="foot">
+              <button type="button" class="btn btn-quiet btn-small" (click)="policyForm = null">{{ 'common.cancel' | translate }}</button>
+              <button type="button" class="btn btn-ink btn-small" [disabled]="saving()" (click)="savePolicy()">{{ (saving() ? 'common.saving' : 'common.save') | translate }}</button>
+            </footer>
+          </div>
+        } @else {
+          <div class="body">
+            <dl class="facts">
+              <div><dt>{{ 'expenses.policy.claims' | translate }}</dt><dd>{{ (p.claimsEnabled ? 'expenses.policy.on' : 'expenses.policy.off') | translate }}</dd></div>
+              <div><dt>{{ 'expenses.policy.travel' | translate }}</dt><dd>{{ (p.travelEnabled ? 'expenses.policy.on' : 'expenses.policy.off') | translate }}</dd></div>
+              <div>
+                <dt>{{ 'expenses.policy.receipts' | translate }}</dt>
+                <dd class="num">
+                  @if (p.receiptRequiredAbove === null) { {{ 'expenses.policy.receiptsByType' | translate }} }
+                  @else if (p.receiptRequiredAbove === 0) { {{ 'expenses.policy.receiptsAlways' | translate }} }
+                  @else { {{ 'expenses.policy.receiptsAbove' | translate: { amount: (p.receiptRequiredAbove | amount: lang()) } }} }
+                </dd>
+              </div>
+              <div><dt>{{ 'expenses.policy.window' | translate }}</dt><dd class="num">{{ 'expenses.policy.nDays' | translate: { n: p.submitWithinDays } }}</dd></div>
+              <div>
+                <dt>{{ 'expenses.policy.advances' | translate }}</dt>
+                <dd class="num">{{ p.advancesEnabled ? ('expenses.policy.upToPercent' | translate: { n: p.maxAdvancePercent }) : ('expenses.policy.off' | translate) }}</dd>
+              </div>
+              <div>
+                <dt>{{ 'expenses.policy.paidVia' | translate }}</dt>
+                <dd>{{ componentName(p.reimbursementComponentId, earningComponents()) ?? ('expenses.policy.directOnly' | translate) }}</dd>
+              </div>
+              <div>
+                <dt>{{ 'expenses.policy.recovery' | translate }}</dt>
+                <dd>{{ componentName(p.advanceRecoveryComponentId, deductionComponents()) ?? ('expenses.policy.manual' | translate) }}</dd>
+              </div>
+            </dl>
+            <footer class="foot">
+              <button type="button" class="btn btn-quiet btn-small" (click)="editPolicy()">
+                <span class="material-icons-outlined" aria-hidden="true">edit</span>{{ 'common.edit' | translate }}
+              </button>
+            </footer>
+          </div>
+        }
+      </section>
+    }
+
+    <section class="panel panel-flush">
+      <header class="list-head"><h3 class="section-title">{{ 'expenses.cat.title' | translate }}</h3></header>
+      <div class="table-wrap">
+        <table class="ledger-table">
+          <thead>
+            <tr>
+              <th>{{ 'expenses.cat.name' | translate }}</th>
+              <th class="end">{{ 'expenses.cat.limit' | translate }}</th>
+              <th>{{ 'expenses.cat.receipt' | translate }}</th>
+              <th>{{ 'expenses.statusCol' | translate }}</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (c of categories(); track c.id) {
+              <tr [class.is-off]="!c.isActive">
+                <td>
+                  <span class="cell-main">{{ c.name }}</span>
+                  <span class="cell-sub"><span class="code">{{ c.code }}</span>@if (c.description) { · {{ c.description }} }</span>
+                </td>
+                <td class="end num">@if (c.maxPerClaim !== null) { {{ c.maxPerClaim | amount: lang() }} } @else { <span class="dim">—</span> }</td>
+                <td>{{ (c.receiptRequired ? 'common.yes' : 'expenses.cat.byPolicy') | translate }}</td>
+                <td><span [class]="c.isActive ? 'chip chip-moss' : 'chip chip-muted'">{{ (c.isActive ? 'expenses.cat.active' : 'expenses.cat.inactive') | translate }}</span></td>
+                <td class="end">
+                  <button type="button" class="icon-btn" (click)="openCategory(c)" [title]="'common.edit' | translate" [attr.aria-label]="'common.edit' | translate">
+                    <span class="material-icons-outlined" aria-hidden="true">edit</span>
+                  </button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+  }
+</div>
+
+@if (drawer(); as d) {
+  <div class="overlay" (click)="closeDrawer()">
+    <aside class="drawer" [class.drawer-wide]="d === 'claim' || d === 'viewClaim'" role="dialog" aria-modal="true" (click)="$event.stopPropagation()">
+      <header class="drawer-head">
+        <h3>
+          @switch (d) {
+            @case ('claim') { {{ 'expenses.newClaim' | translate }} }
+            @case ('trip') { {{ 'expenses.newTrip' | translate }} }
+            @case ('approveClaim') { {{ 'expenses.approveClaimTitle' | translate: { name: claimTarget?.employeeName } }} }
+            @case ('approveTrip') { {{ 'expenses.approveTripTitle' | translate: { name: tripTarget?.employeeName } }} }
+            @case ('viewClaim') { {{ claimTarget?.title }} }
+            @case ('category') { {{ (categoryForm?.id ? 'expenses.cat.edit' : 'expenses.cat.add') | translate }} }
+          }
+        </h3>
+        <button type="button" class="btn-link" (click)="closeDrawer()" [attr.aria-label]="'common.close' | translate">
+          <span class="material-icons-outlined" aria-hidden="true">close</span>
+        </button>
+      </header>
+
+      <div class="drawer-body">
+        @switch (d) {
+          <!-- New claim -->
+          @case ('claim') {
+            @if (my(); as m) {
+              <div class="field">
+                <label for="c-title">{{ 'expenses.claimTitle' | translate }}</label>
+                <input id="c-title" [(ngModel)]="claimForm.title" maxlength="200" [placeholder]="'expenses.claimTitlePh' | translate" />
+              </div>
+              @if (claimableTrips().length) {
+                <div class="field">
+                  <label for="c-trip">{{ 'expenses.linkTrip' | translate }}</label>
+                  <select id="c-trip" [(ngModel)]="claimForm.travelRequestId">
+                    <option [ngValue]="null">{{ 'expenses.noTrip' | translate }}</option>
+                    @for (t of claimableTrips(); track t.id) { <option [ngValue]="t.id">{{ t.destination }} · {{ t.departDate | date: 'd MMM' : undefined : lang() }}</option> }
+                  </select>
+                </div>
+              }
+
+              <ol class="lines">
+                @for (l of claimForm.lines; track $index; let i = $index) {
+                  <li class="line" [class.bad]="lineProblem(l)">
+                    <header class="line-head">
+                      <span class="line-no num">{{ i + 1 }}</span>
+                      @if (claimForm.lines.length > 1) {
+                        <button type="button" class="icon-btn-sm" (click)="removeLine(i)" [attr.aria-label]="'expenses.removeLine' | translate">
+                          <span class="material-icons-outlined" aria-hidden="true">close</span>
+                        </button>
+                      }
+                    </header>
+                    <div class="line-grid">
+                      <div class="field">
+                        <label [for]="'l-cat' + i">{{ 'expenses.type' | translate }}</label>
+                        <select [id]="'l-cat' + i" [(ngModel)]="l.categoryId">
+                          @for (c of m.categories; track c.id) { <option [value]="c.id">{{ c.name }}</option> }
+                        </select>
+                      </div>
+                      <div class="field">
+                        <label [for]="'l-date' + i">{{ 'expenses.date' | translate }}</label>
+                        <input [id]="'l-date' + i" type="date" [min]="oldestDate()" [max]="today" [(ngModel)]="l.expenseDate" />
+                      </div>
+                      <div class="field">
+                        <label [for]="'l-amt' + i">{{ 'expenses.amount' | translate }} ({{ m.currencyCode }})</label>
+                        <input [id]="'l-amt' + i" type="number" min="0.01" step="0.01" [(ngModel)]="l.amount" />
+                      </div>
+                      <div class="field span-2">
+                        <label [for]="'l-desc' + i">{{ 'expenses.description' | translate }}</label>
+                        <input [id]="'l-desc' + i" [(ngModel)]="l.description" maxlength="300" />
+                      </div>
+                      <div class="field">
+                        <label [for]="'l-merch' + i">{{ 'expenses.merchant' | translate }}</label>
+                        <input [id]="'l-merch' + i" [(ngModel)]="l.merchant" maxlength="150" />
+                      </div>
+                      <div class="field">
+                        <label [for]="'l-rcpt' + i">{{ 'expenses.receiptNo' | translate }}@if (needsReceipt(l)) { <span class="req"> *</span> }</label>
+                        <input [id]="'l-rcpt' + i" [(ngModel)]="l.receiptNumber" maxlength="100" />
+                      </div>
+                      <label class="check span-2 receipt-check"><input type="checkbox" [(ngModel)]="l.hasReceipt" />{{ 'expenses.haveReceipt' | translate }}</label>
+                    </div>
+                    @if (lineProblem(l); as p) { <p class="err">{{ p | translate: { n: m.policy.submitWithinDays } }}</p> }
+                  </li>
+                }
+              </ol>
+              <button type="button" class="btn btn-quiet btn-small add-line" (click)="addLine()">
+                <span class="material-icons-outlined" aria-hidden="true">add</span>{{ 'expenses.addLine' | translate }}
+              </button>
+
+              <div class="calc-card">
+                <span class="c-num num">{{ claimTotal() | amount: lang() : 'full' : 2 }}</span>
+                <span>
+                  <span class="cell-main">{{ 'expenses.totalN' | translate: { cur: m.currencyCode, n: claimForm.lines.length } }}</span>
+                  <span class="cell-sub">{{ 'expenses.receiptNote' | translate }}</span>
+                </span>
+              </div>
+            }
+          }
+
+          <!-- New trip -->
+          @case ('trip') {
+            <div class="grid-2">
+              <div class="field">
+                <label for="t-dest">{{ 'expenses.destination' | translate }}</label>
+                <input id="t-dest" [(ngModel)]="tripForm.destination" maxlength="200" />
+              </div>
+              <div class="field">
+                <label for="t-mode">{{ 'expenses.travelMode' | translate }}</label>
+                <select id="t-mode" [(ngModel)]="tripForm.travelMode">
+                  @for (x of modes; track x) { <option [value]="x">{{ 'expenses.mode.' + x | translate }}</option> }
+                </select>
+              </div>
+              <div class="field">
+                <label for="t-from">{{ 'expenses.depart' | translate }}</label>
+                <input id="t-from" type="date" [(ngModel)]="tripForm.departDate" />
+              </div>
+              <div class="field">
+                <label for="t-to">{{ 'expenses.return' | translate }}</label>
+                <input id="t-to" type="date" [min]="tripForm.departDate" [(ngModel)]="tripForm.returnDate" />
+              </div>
+            </div>
+            <div class="field">
+              <label for="t-purpose">{{ 'expenses.purpose' | translate }}</label>
+              <textarea id="t-purpose" rows="2" [(ngModel)]="tripForm.purpose" maxlength="500"></textarea>
+            </div>
+            <div class="grid-2">
+              <div class="field">
+                <label for="t-est">{{ 'expenses.estimate' | translate }} ({{ my()?.currencyCode }})</label>
+                <input id="t-est" type="number" min="1" [(ngModel)]="tripForm.estimatedCost" />
+              </div>
+              @if (my()?.policy?.advancesEnabled) {
+                <div class="field">
+                  <label for="t-adv">{{ 'expenses.advanceNeeded' | translate }}</label>
+                  <input id="t-adv" type="number" min="0" [max]="maxAdvance()" [(ngModel)]="tripForm.advanceRequested" />
+                  @if (maxAdvance(); as max) { <span class="field-hint num">{{ 'expenses.maxAdvance' | translate: { amount: (max | amount: lang()), n: my()?.policy?.maxAdvancePercent } }}</span> }
+                </div>
+              }
+            </div>
+            @if (tripProblem(); as p) { <p class="err">{{ p | translate }}</p> }
+            <p class="field-hint">{{ 'expenses.tripHint' | translate }}</p>
+          }
+
+          <!-- View claim -->
+          @case ('viewClaim') {
+            @if (claimTarget; as c) {
+              <div class="request-summary">
+                <span class="cell-main">{{ c.employeeName }} · {{ c.currencyCode }} {{ c.totalAmount | amount: lang() }}</span>
+                <span class="cell-sub">
+                  <span [class]="claimChip[c.status]">{{ 'expenses.claimStatus.' + c.status | translate }}</span>
+                  @if (c.travelDestination) { · {{ 'expenses.forTrip' | translate: { place: c.travelDestination } }} }
+                </span>
+              </div>
+              <table class="ledger-table compact">
+                <thead>
+                  <tr>
+                    <th>{{ 'expenses.date' | translate }}</th>
+                    <th>{{ 'expenses.description' | translate }}</th>
+                    <th>{{ 'expenses.receiptNo' | translate }}</th>
+                    <th class="end">{{ 'expenses.amount' | translate }}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (l of c.lines; track l.id) {
+                    <tr>
+                      <td class="num">{{ l.expenseDate | date: 'd MMM' : undefined : lang() }}</td>
+                      <td>
+                        <span class="cell-main wrap">{{ l.description }}</span>
+                        <span class="cell-sub">{{ l.categoryName }}@if (l.merchant) { · {{ l.merchant }} }</span>
+                      </td>
+                      <td>
+                        @if (l.receiptNumber) { <span class="code">{{ l.receiptNumber }}</span> }
+                        @else if (l.hasReceipt) { <span class="material-icons-outlined ok-icon" aria-hidden="true">check</span> }
+                        @else { <span class="dim">—</span> }
+                      </td>
+                      <td class="end num">{{ l.amount | amount: lang() : 'full' : 2 }}</td>
+                    </tr>
+                  }
+                </tbody>
+                <tfoot>
+                  <tr><td colspan="3">{{ 'expenses.total' | translate }}</td><td class="end num">{{ c.totalAmount | amount: lang() : 'full' : 2 }}</td></tr>
+                </tfoot>
+              </table>
+              @if (c.approvedAmount !== null) {
+                <dl class="facts">
+                  <div><dt>{{ 'expenses.approvedAmt' | translate }}</dt><dd class="num">{{ c.approvedAmount | amount: lang() }}</dd></div>
+                  @if (c.advanceAdjusted > 0) { <div><dt>{{ 'expenses.advanceAdjusted' | translate }}</dt><dd class="num">− {{ c.advanceAdjusted | amount: lang() }}</dd></div> }
+                  <div><dt>{{ 'expenses.payable' | translate }}</dt><dd class="num">{{ c.netPayable | amount: lang() }}</dd></div>
+                  @if (c.toRecover > 0) { <div><dt>{{ 'expenses.recover' | translate }}</dt><dd class="num warn">{{ c.toRecover | amount: lang() }}</dd></div> }
+                </dl>
+              }
+              @if (c.decisionComment) { <p class="field-hint">“{{ c.decisionComment }}”</p> }
+            }
+          }
+
+          <!-- Approve claim -->
+          @case ('approveClaim') {
+            @if (claimTarget; as c) {
+              @let adv = advanceFor(c);
+              <div class="request-summary">
+                <span class="cell-main">{{ c.title }} · {{ c.currencyCode }} {{ c.totalAmount | amount: lang() }}</span>
+                <span class="cell-sub">{{ 'expenses.nItems' | translate: { n: c.lines.length } }}@if (c.travelDestination) { · {{ 'expenses.forTrip' | translate: { place: c.travelDestination } }} }</span>
+              </div>
+              <ul class="mini-lines">
+                @for (l of c.lines; track l.id) {
+                  <li>
+                    <span>{{ l.description }} <span class="dim">· {{ l.categoryName }}</span></span>
+                    <span class="num">{{ l.amount | amount: lang() }}</span>
+                  </li>
+                }
+              </ul>
+              <div class="field">
+                <label for="ac-amt">{{ 'expenses.approvedAmt' | translate }}</label>
+                <input id="ac-amt" type="number" min="0.01" [max]="c.totalAmount" [(ngModel)]="approveClaimForm.approvedAmount" />
+                <span class="field-hint">{{ 'expenses.approveHint' | translate }}</span>
+              </div>
+              <fieldset class="payout">
+                <legend>{{ 'expenses.payoutQ' | translate }}</legend>
+                <label class="radio" [class.is-off]="!my()?.policy?.reimbursementComponentId">
+                  <input type="radio" name="payout" value="Payroll" [(ngModel)]="approveClaimForm.payout" [disabled]="!my()?.policy?.reimbursementComponentId" />
+                  <span><span class="cell-main">{{ 'expenses.payout.Payroll' | translate }}</span><span class="cell-sub">{{ (my()?.policy?.reimbursementComponentId ? 'expenses.payout.payrollHint' : 'expenses.payout.payrollOff') | translate }}</span></span>
+                </label>
+                <label class="radio">
+                  <input type="radio" name="payout" value="Direct" [(ngModel)]="approveClaimForm.payout" />
+                  <span><span class="cell-main">{{ 'expenses.payout.Direct' | translate }}</span><span class="cell-sub">{{ 'expenses.payout.directHint' | translate }}</span></span>
+                </label>
+              </fieldset>
+              @if (approveClaimForm.approvedAmount; as amt) {
+                <div class="calc-card">
+                  <span class="c-num num">{{ (amt > adv ? amt - adv : 0) | amount: lang() : 'full' : 2 }}</span>
+                  <span>
+                    <span class="cell-main">{{ 'expenses.employeeGets' | translate }}</span>
+                    @if (adv > 0) { <span class="cell-sub">{{ 'expenses.afterAdvance' | translate: { amount: (adv | amount: lang()) } }}</span> }
+                    @if (adv > amt) { <span class="cell-sub">{{ 'expenses.willRecover' | translate: { amount: ((adv - amt) | amount: lang()) } }}</span> }
+                  </span>
+                </div>
+              }
+              <div class="field">
+                <label for="ac-com">{{ 'expenses.comment' | translate }}</label>
+                <input id="ac-com" [(ngModel)]="approveClaimForm.comment" maxlength="500" />
+              </div>
+            }
+          }
+
+          <!-- Approve trip -->
+          @case ('approveTrip') {
+            @if (tripTarget; as t) {
+              <div class="request-summary">
+                <span class="cell-main">{{ t.destination }} · {{ 'expenses.mode.' + t.travelMode | translate }}</span>
+                <span class="cell-sub num">{{ t.departDate | date: 'd MMM' : undefined : lang() }} – {{ t.returnDate | date: 'd MMM y' : undefined : lang() }} · {{ 'expenses.estimateN' | translate: { cur: t.currencyCode, amount: (t.estimatedCost | amount: lang()) } }}</span>
+                <span class="cell-sub reason">“{{ t.purpose }}”</span>
+              </div>
+              <div class="field">
+                <label for="at-adv">{{ 'expenses.advanceApproved' | translate }}</label>
+                <input id="at-adv" type="number" min="0" [max]="t.estimatedCost" [(ngModel)]="approveTripForm.advanceApproved" />
+                <span class="field-hint num">{{ 'expenses.advanceAsked' | translate: { amount: (t.advanceRequested | amount: lang()) } }}</span>
+              </div>
+              <div class="field">
+                <label for="at-com">{{ 'expenses.comment' | translate }}</label>
+                <input id="at-com" [(ngModel)]="approveTripForm.comment" maxlength="500" />
+              </div>
+            }
+          }
+
+          <!-- Category -->
+          @case ('category') {
+            @if (categoryForm; as f) {
+              <div class="grid-2">
+                <div class="field">
+                  <label for="k-name">{{ 'expenses.cat.name' | translate }}</label>
+                  <input id="k-name" [(ngModel)]="f.name" maxlength="100" />
+                </div>
+                <div class="field">
+                  <label for="k-code">{{ 'expenses.cat.code' | translate }}</label>
+                  <input id="k-code" class="code-input" [(ngModel)]="f.code" maxlength="20" />
+                </div>
+              </div>
+              <div class="field">
+                <label for="k-desc">{{ 'expenses.description' | translate }}</label>
+                <input id="k-desc" [(ngModel)]="f.description" maxlength="300" />
+              </div>
+              <div class="grid-2">
+                <div class="field">
+                  <label for="k-max">{{ 'expenses.cat.limit' | translate }}</label>
+                  <input id="k-max" type="number" min="1" [(ngModel)]="f.maxPerClaim" />
+                  <span class="field-hint">{{ 'expenses.cat.limitHint' | translate }}</span>
+                </div>
+                <div class="field">
+                  <label for="k-order">{{ 'expenses.cat.order' | translate }}</label>
+                  <input id="k-order" type="number" [(ngModel)]="f.sortOrder" />
+                </div>
+              </div>
+              <label class="check"><input type="checkbox" [(ngModel)]="f.receiptRequired" />{{ 'expenses.cat.alwaysReceipt' | translate }}</label>
+              <label class="check"><input type="checkbox" [(ngModel)]="f.isActive" />{{ 'expenses.cat.active' | translate }}</label>
+            }
+          }
+        }
+      </div>
+
+      <footer class="drawer-foot">
+        <button type="button" class="btn btn-quiet" (click)="closeDrawer()">{{ (d === 'viewClaim' ? 'common.close' : 'common.cancel') | translate }}</button>
+        @switch (d) {
+          @case ('claim') {
+            <button type="button" class="btn btn-ink" [disabled]="!canSendClaim() || saving()" (click)="sendClaim()">{{ (saving() ? 'common.saving' : 'expenses.submit') | translate }}</button>
+          }
+          @case ('trip') {
+            <button type="button" class="btn btn-ink" [disabled]="!canSendTrip() || saving()" (click)="sendTrip()">{{ (saving() ? 'common.saving' : 'expenses.submit') | translate }}</button>
+          }
+          @case ('approveClaim') {
+            <button type="button" class="btn btn-ink" [disabled]="!approveClaimForm.approvedAmount || saving()" (click)="confirmApproveClaim()">{{ (saving() ? 'common.saving' : 'expenses.approve') | translate }}</button>
+          }
+          @case ('approveTrip') {
+            <button type="button" class="btn btn-ink" [disabled]="approveTripForm.advanceApproved === null || saving()" (click)="confirmApproveTrip()">{{ (saving() ? 'common.saving' : 'expenses.approve') | translate }}</button>
+          }
+          @case ('category') {
+            <button type="button" class="btn btn-ink" [disabled]="!categoryForm?.name?.trim() || !categoryForm?.code?.trim() || saving()" (click)="saveCategory()">{{ (saving() ? 'common.saving' : 'common.save') | translate }}</button>
+          }
+        }
+      </footer>
+    </aside>
+  </div>
+}
