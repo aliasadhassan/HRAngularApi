@@ -13,7 +13,7 @@
       <h2>{{ c.profile.name }}</h2>
       <p class="masthead-meta">
         <span class="mono">{{ c.profile.slug }}.hr-cloud.online</span>
-        <span class="chip chip-ink">{{ c.profile.plan }}</span>
+        <span class="chip chip-ink">{{ subscription()?.planCode ?? c.profile.plan }}</span>
         @if (c.profile.ssoEnabled) {
           <span class="chip chip-moss">{{ 'admin.company.ssoOn' | translate }}</span>
         }
@@ -26,6 +26,70 @@
       <span class="material-icons-outlined" aria-hidden="true">visibility</span>
       <span>{{ 'admin.company.readOnly' | translate }}</span>
     </div>
+  }
+
+  <!-- ── Plan & license (read-only) ── -->
+  @if (subscription(); as sub) {
+  <section class="panel section">
+    <div class="section-side">
+      <h3>{{ 'admin.company.planTitle' | translate }}</h3>
+      <p>{{ 'admin.company.planHelp' | translate }}</p>
+    </div>
+    <div class="section-body">
+      @if (sub.inGrace) {
+        <div class="notice notice-warn">
+          <span class="material-icons-outlined" aria-hidden="true">schedule</span>
+          <span>{{ 'admin.company.planGrace' | translate: { end: formatDate(sub.endDate), until: formatDate(sub.graceUntil) } }}</span>
+        </div>
+      } @else if (endingSoon()) {
+        <div class="notice notice-warn">
+          <span class="material-icons-outlined" aria-hidden="true">schedule</span>
+          <span>{{ 'admin.company.planEndingSoon' | translate: { n: sub.daysLeft, end: formatDate(sub.endDate) } }}</span>
+        </div>
+      }
+
+      <dl class="plan-grid">
+        <div class="plan-item">
+          <dt>{{ 'admin.company.plan' | translate }}</dt>
+          <dd class="plan-name">
+            {{ sub.planCode }}
+            <span class="chip" [class]="statusChip(sub)">{{ 'admin.company.planStatus.' + sub.status | translate }}</span>
+          </dd>
+        </div>
+        <div class="plan-item">
+          <dt>{{ 'admin.company.planPeriod' | translate }}</dt>
+          <dd class="num">
+            {{ formatDate(sub.startDate) }} –
+            @if (sub.endDate) { {{ formatDate(sub.endDate) }} } @else { {{ 'admin.company.planNoEnd' | translate }} }
+          </dd>
+        </div>
+        <div class="plan-item">
+          <dt>{{ 'admin.company.planUsers' | translate }}</dt>
+          <dd class="num">
+            @if (sub.seatLimit) {
+              {{ 'admin.company.planSeats' | translate: { used: sub.seatsUsed, limit: sub.seatLimit } }}
+              <span class="meter" role="progressbar" [attr.aria-valuenow]="seatPercent()" aria-valuemin="0" aria-valuemax="100">
+                <span class="meter-fill" [class.is-full]="seatPercent() >= 100" [style.width.%]="seatPercent()"></span>
+              </span>
+            } @else {
+              {{ 'admin.company.planSeatsUnlimited' | translate: { used: sub.seatsUsed } }}
+            }
+          </dd>
+        </div>
+        <div class="plan-item">
+          <dt>{{ 'admin.company.planBilling' | translate }}</dt>
+          <dd class="num">
+            @if (sub.billingCycle === 'None') {
+              {{ 'admin.company.planBillingNone' | translate }}
+            } @else {
+              {{ formatAmount(sub) }} / {{ 'admin.company.planCycle.' + sub.billingCycle | translate }}
+            }
+          </dd>
+        </div>
+      </dl>
+      <p class="field-hint">{{ 'admin.company.planContact' | translate }}</p>
+    </div>
+  </section>
   }
 
   <!-- ── Profile ── -->

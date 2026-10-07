@@ -163,3 +163,53 @@
     grid-column: auto;
   }
 }
+
+/* ── Plan & license ── */
+.notice-warn {
+  background: var(--amber-soft);
+  color: #5a3c0e;
+}
+.notice-warn .material-icons-outlined {
+  color: var(--amber);
+}
+
+.plan-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px 24px;
+  margin: 0;
+}
+.plan-item dt {
+  font-size: var(--fs-12, 12px);
+  color: var(--text-muted);
+  margin-bottom: 4px;
+}
+.plan-item dd {
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.plan-name {
+  font-weight: 600;
+}
+.meter {
+  flex-basis: 100%;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--line, #ded9ce);
+  overflow: hidden;
+}
+.meter-fill {
+  display: block;
+  height: 100%;
+  background: var(--moss);
+}
+.meter-fill.is-full {
+  background: var(--oxblood);
+}
+
+@media (max-width: 720px) {
+  .plan-grid { grid-template-columns: 1fr; }
+}

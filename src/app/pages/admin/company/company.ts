@@ -7,7 +7,7 @@ import { P, PermissionService } from '../../../core/auth/permissions';
 import { AlertService } from '../../../services/alert/alert';
 import { PayrollService } from '../../payroll/payroll.service';
 import { AdminService } from '../admin.service';
-import { Company, CompanyProfile, CompanySettings } from '../admin.models';
+import { Company, CompanyProfile, CompanySettings, Subscription } from '../admin.models';
 
 type Section = 'profile' | 'regional' | 'security';
 
@@ -52,6 +52,19 @@ export class CompanyComponent {
   readonly company = signal<Company | null>(null);
   readonly saving = signal<Section | null>(null);
   readonly logoBroken = signal(false);
+  /** null = load nahi hua ya tenant ki current subscription nahi (section chhupa rehta hai) */
+  readonly subscription = signal<Subscription | null>(null);
+
+  readonly seatPercent = computed(() => {
+    const s = this.subscription();
+    return s?.seatLimit ? Math.min(100, Math.round((s.seatsUsed / s.seatLimit) * 100)) : 0;
+  });
+
+  /** End date 14 din ya kam — warning dikhao */
+  readonly endingSoon = computed(() => {
+    const s = this.subscription();
+    return !!s && !s.inGrace && s.daysLeft !== null && s.daysLeft <= 14;
+  });
 
   profile: Pick<CompanyProfile, 'name' | 'legalName' | 'logoUrl' | 'primaryEmail' | 'phone'> = {
     name: '', legalName: null, logoUrl: null, primaryEmail: null, phone: null
@@ -71,6 +84,29 @@ export class CompanyComponent {
       next: c => this.apply(c),
       error: err => this.alert.error(this.msg(err, 'admin.company.errorLoad'))
     });
+    this.api.getSubscription().subscribe({
+      next: s => this.subscription.set(s),
+      error: () => this.subscription.set(null)
+    });
+  }
+
+  // ───── Plan ─────
+  formatDate(iso: string | null): string {
+    if (!iso) return '';
+    const [y, m, d] = iso.split('-').map(Number);
+    return new Intl.DateTimeFormat(`${this.lang()}-u-nu-latn`, { day: '2-digit', month: 'short', year: 'numeric' })
+      .format(new Date(y, m - 1, d));
+  }
+
+  formatAmount(s: Subscription): string {
+    return new Intl.NumberFormat(`${this.lang()}-u-nu-latn`, { style: 'currency', currency: s.currencyCode, maximumFractionDigits: 2 })
+      .format(s.amount);
+  }
+
+  statusChip(s: Subscription): string {
+    if (s.inGrace || s.status === 'PastDue') return 'chip-amber';
+    if (s.status === 'Expired' || s.status === 'Cancelled') return 'chip-oxblood';
+    return s.status === 'Trial' ? 'chip-ink' : 'chip-moss';
   }
 
   // ───── Dirty checks ─────

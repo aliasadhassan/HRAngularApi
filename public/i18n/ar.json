@@ -545,7 +545,31 @@
       "passwordMinHint": "يُتحقق منه عند تعيين كلمة المرور أو إعادة تعيينها.",
       "maxFailed": "قفل الحساب بعد",
       "attempts": "كلمات مرور خاطئة",
-      "maxFailedHint": "يُفتح الحساب تلقائياً بعد مدة، أو يمكن للمسؤول فتحه."
+      "maxFailedHint": "يُفتح الحساب تلقائياً بعد مدة، أو يمكن للمسؤول فتحه.",
+      "planTitle": "الخطة والترخيص",
+      "planHelp": "اشتراك شركتك. تدير HR Cloud الخطط؛ تواصل معنا لتغييرها.",
+      "plan": "الخطة",
+      "planPeriod": "المدة",
+      "planNoEnd": "بدون تاريخ انتهاء",
+      "planUsers": "المستخدمون",
+      "planSeats": "{{used}} من {{limit}} مستخدمين",
+      "planSeatsUnlimited": "{{used}} مستخدمين · بلا حد",
+      "planBilling": "الفوترة",
+      "planBillingNone": "غير مفوتر",
+      "planContact": "للترقية أو التجديد أو إضافة مستخدمين، تواصل مع دعم HR Cloud.",
+      "planGrace": "انتهى اشتراكك في {{end}}. يستمر الوصول حتى {{until}}؛ جدّد لتجنب الانقطاع.",
+      "planEndingSoon": "ينتهي اشتراكك خلال {{n}} يومًا ({{end}}).",
+      "planStatus": {
+        "Trial": "تجريبي",
+        "Active": "نشط",
+        "PastDue": "مستحق الدفع",
+        "Expired": "منتهي",
+        "Cancelled": "ملغى"
+      },
+      "planCycle": {
+        "Monthly": "شهر",
+        "Yearly": "سنة"
+      }
     }
   },
   "perm": {
