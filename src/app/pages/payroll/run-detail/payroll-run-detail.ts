@@ -4,6 +4,7 @@ import { Router, RouterLink } from '@angular/router';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { AmountPipe } from '../../../shared/pipes/amount.pipe';
 import { buildGuilloche } from '../../../shared/guilloche/guilloche';
+import { utc } from '../../admin/admin.models';
 import { LanguageService } from '../../../core/i18n/language.service';
 import { AlertService } from '../../../services/alert/alert';
 import { PayrollService } from '../payroll.service';
@@ -27,6 +28,7 @@ export class PayrollRunDetailComponent {
   readonly id = input.required<string>();
 
   readonly lang = inject(LanguageService).language;
+  readonly utc = utc;
   readonly guilloche = buildGuilloche();
   readonly runChip = RUN_STATUS_CHIP;
   readonly slipChip = PAYSLIP_STATUS_CHIP;
