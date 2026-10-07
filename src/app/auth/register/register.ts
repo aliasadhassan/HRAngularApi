@@ -24,13 +24,14 @@ zxcvbnOptions.setOptions(options);
   selector: 'app-register',
   imports: [CommonModule, ReactiveFormsModule,RouterLink],
   templateUrl: './register.html',
-  styleUrls: ['./register.css']
+  styleUrls: ['../auth-shell.css']
 })
 export class RegisterComponent {
   registerForm: FormGroup;
   success = '';
   error = '';
-  today = new Date();
+  isArabic = false;
+  isSubmitting = false;
 
   hidePassword = true;
   passwordSuggestions: string[] = []; 
@@ -64,8 +65,10 @@ export class RegisterComponent {
     return;
   }
 
+  this.isSubmitting = true;
   this.authService.register(this.registerForm.value).subscribe({
     next: (res: any) => {
+      this.isSubmitting = false;
       this.alert.success('User registered successfully');
       this.error = '';
 
@@ -84,6 +87,7 @@ export class RegisterComponent {
 
     },
     error: (err) => {
+        this.isSubmitting = false;
         console.log('Backend Error Object:', err);
         this.alert.error('Registration failed');
         if (err.error && err.error.message) {

@@ -9,14 +9,14 @@ import { RouterModule } from '@angular/router';
   selector: 'app-forgot-password',
   imports: [CommonModule, FormsModule, RouterModule],
   templateUrl: './forgot-password.html',
-  styleUrl: './forgot-password.css',
+  styleUrls: ['../auth-shell.css'],
 })
 export class ForgotPasswordComponent {
   email: string = '';
   message: string = '';
   error: string = '';
   isLoading: boolean = false;
-  today = new Date();
+  isArabic = false;
 
   constructor(private authService: AuthService) {}
 

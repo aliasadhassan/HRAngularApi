@@ -20,7 +20,7 @@ interface LoginErrorBody {
   selector: 'app-login',
   imports: [CommonModule, ReactiveFormsModule, RouterLink],
   templateUrl: './login.html',
-  styleUrls: ['./login.css']
+  styleUrls: ['../auth-shell.css']
 })
 export class LoginComponent implements OnDestroy {
   loginForm: FormGroup;
