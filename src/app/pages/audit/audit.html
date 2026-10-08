@@ -1,0 +1,394 @@
+<div class="page">
+  <header class="page-intro">
+    <p>{{ 'audit.intro' | translate }}</p>
+    <div class="ranges" role="group" [attr.aria-label]="'audit.range' | translate">
+      @for (d of ranges; track d) {
+        <button type="button" class="range" [class.is-active]="days() === d" (click)="setDays(d)" [attr.aria-pressed]="days() === d">
+          {{ 'audit.days' | translate: { n: d } }}
+        </button>
+      }
+    </div>
+  </header>
+
+  <nav class="tabs">
+    <button type="button" class="tab" [class.is-active]="tab() === 'activity'" (click)="setTab('activity')">{{ 'audit.tabs.activity' | translate }}</button>
+    <button type="button" class="tab" [class.is-active]="tab() === 'changes'" (click)="setTab('changes')">{{ 'audit.tabs.changes' | translate }}</button>
+  </nav>
+
+  @if (tab() === 'activity') {
+    <!-- ───── Summary ───── -->
+    <section class="tallies">
+      <article class="tally">
+        <span class="t-label">{{ 'audit.sum.changes' | translate }}</span>
+        <span class="t-figure num">{{ summary()?.total ?? '—' }}</span>
+        <span class="t-sub">{{ 'audit.sum.changesSub' | translate: { n: summary()?.operations ?? 0 } }}</span>
+      </article>
+      <article class="tally moss">
+        <span class="t-label">{{ 'audit.actions.Created' | translate }}</span>
+        <span class="t-figure num">{{ summary()?.created ?? '—' }}</span>
+        <span class="t-sub">{{ 'audit.sum.createdSub' | translate }}</span>
+      </article>
+      <article class="tally amber">
+        <span class="t-label">{{ 'audit.actions.Updated' | translate }}</span>
+        <span class="t-figure num">{{ summary()?.updated ?? '—' }}</span>
+        <span class="t-sub">{{ 'audit.sum.updatedSub' | translate }}</span>
+      </article>
+      <article class="tally oxblood">
+        <span class="t-label">{{ 'audit.actions.Deleted' | translate }}</span>
+        <span class="t-figure num">{{ summary()?.deleted ?? '—' }}</span>
+        <span class="t-sub">{{ 'audit.sum.deletedSub' | translate }}</span>
+      </article>
+      <article class="tally">
+        <span class="t-label">{{ 'audit.sum.people' | translate }}</span>
+        <span class="t-figure num">{{ summary()?.activeUsers ?? '—' }}</span>
+        <span class="t-sub">{{ 'audit.sum.peopleSub' | translate }}</span>
+      </article>
+    </section>
+
+    <div class="overview">
+      <section class="panel chart-panel">
+        <header class="panel-head">
+          <h3>{{ 'audit.perDay' | translate }}</h3>
+          <div class="legend">
+            <span><i class="key created"></i>{{ 'audit.actions.Created' | translate }}</span>
+            <span><i class="key updated"></i>{{ 'audit.actions.Updated' | translate }}</span>
+            <span><i class="key deleted"></i>{{ 'audit.actions.Deleted' | translate }}</span>
+          </div>
+        </header>
+        @if (summary(); as s) {
+          <div class="bars" [class.dense]="s.byDay.length > 31" role="img" [attr.aria-label]="'audit.perDay' | translate">
+            @for (d of s.byDay; track d.date) {
+              <div class="bar-col" [title]="(d.date | date: 'd MMM' : 'UTC' : lang()) + ' · ' + dayTotal(d)">
+                <div class="bar">
+                  <span class="seg-deleted" [style.height]="barHeight(d.deleted)"></span>
+                  <span class="seg-updated" [style.height]="barHeight(d.updated)"></span>
+                  <span class="seg-created" [style.height]="barHeight(d.created)"></span>
+                </div>
+              </div>
+            }
+          </div>
+          <div class="bar-axis num">
+            <span>{{ s.byDay[0]?.date | date: 'd MMM' : 'UTC' : lang() }}</span>
+            <span>{{ s.byDay[s.byDay.length - 1]?.date | date: 'd MMM' : 'UTC' : lang() }}</span>
+          </div>
+        } @else {
+          <div class="bars"><span class="skeleton" style="width: 100%; height: 100%"></span></div>
+        }
+      </section>
+
+      <section class="panel side-panel">
+        <header class="panel-head"><h3>{{ 'audit.topPeople' | translate }}</h3></header>
+        <div class="rank-list">
+          @for (u of summary()?.topUsers ?? []; track u.userId) {
+            <button type="button" class="rank-row" (click)="filterUser(u.userId, u.userName)" [disabled]="!u.userId">
+              <span class="rank-name">{{ u.userName ?? ('audit.system' | translate) }}</span>
+              <span class="num">{{ u.count }}</span>
+            </button>
+          } @empty {
+            <p class="empty-line">{{ 'audit.nothingYet' | translate }}</p>
+          }
+        </div>
+        <header class="panel-head sub"><h3>{{ 'audit.topRecords' | translate }}</h3></header>
+        <div class="rank-list">
+          @for (t of summary()?.topEntities ?? []; track t.source + t.key) {
+            <button type="button" class="rank-row" (click)="filterType(t.source, t.key)">
+              <span class="rank-name">
+                <span class="material-icons-outlined src-icon" aria-hidden="true">{{ sourceIcon[t.source] }}</span>
+                {{ typeName(t.key) }}
+              </span>
+              <span class="num">{{ t.count }}</span>
+            </button>
+          } @empty {
+            <p class="empty-line">{{ 'audit.nothingYet' | translate }}</p>
+          }
+        </div>
+      </section>
+    </div>
+
+    <!-- ───── Feed ───── -->
+    <section class="panel panel-flush">
+      <header class="panel-head padded">
+        <h3>{{ 'audit.recent' | translate }}</h3>
+        <span class="panel-sub">{{ 'audit.recentSub' | translate }}</span>
+      </header>
+      <ol class="feed">
+        @if (loading()) {
+          @for (i of [1, 2, 3, 4]; track i) {
+            <li class="op"><span class="skeleton" style="width: 70%"></span></li>
+          }
+        } @else {
+          @for (op of operations(); track op.key) {
+            @let head = opHeadline(op);
+            @let when = utc(op.at);
+            @let rel = dayLabel(op.at);
+            <li class="op" [class.is-open]="isOpen(op.key)">
+              <button type="button" class="op-line" (click)="op.entries.length === 1 ? open(op.entries[0]) : toggleOp(op.key)"
+                      [attr.aria-expanded]="op.entries.length > 1 ? isOpen(op.key) : null">
+                <span class="op-icon" [class]="'op-icon ' + op.entries[0].action.toLowerCase()">
+                  <span class="material-icons-outlined" aria-hidden="true">{{ op.entries.length > 1 ? 'layers' : actionIcon[op.entries[0].action] }}</span>
+                </span>
+                <span class="op-text">
+                  <span class="cell-main">
+                    <b>{{ op.userName ?? ('audit.system' | translate) }}</b>
+                    {{ head.key | translate: head.params }}
+                  </span>
+                  <span class="cell-sub">
+                    <span class="material-icons-outlined src-icon" aria-hidden="true">{{ sourceIcon[op.source] }}</span>
+                    {{ 'audit.sources.' + op.source | translate }}
+                    @if (opRecords(op); as recs) { · {{ recs }} }
+                  </span>
+                </span>
+                <span class="op-when num">
+                  <span class="cell-main">{{ rel ? (rel | translate) : (when | date: 'd MMM' : undefined : lang()) }}</span>
+                  <span class="cell-sub">{{ when | date: 'h:mm a' : undefined : lang() }}</span>
+                </span>
+                @if (op.entries.length > 1) {
+                  <span class="material-icons-outlined chev" aria-hidden="true">{{ isOpen(op.key) ? 'expand_less' : 'expand_more' }}</span>
+                } @else {
+                  <span class="material-icons-outlined chev flip" aria-hidden="true">chevron_right</span>
+                }
+              </button>
+              @if (op.entries.length > 1 && isOpen(op.key)) {
+                <ul class="op-entries">
+                  @for (e of op.entries; track e.id) {
+                    <li>
+                      <button type="button" class="entry-line" (click)="open(e)">
+                        <span class="chip" [class]="'chip ' + actionChip[e.action]">{{ 'audit.actions.' + e.action | translate }}</span>
+                        <span class="grow">{{ typeName(e.entityType) }} @if (e.entityLabel) { · <b>{{ e.entityLabel }}</b> }</span>
+                        <span class="cell-sub">{{ changedFields(e) }}</span>
+                      </button>
+                    </li>
+                  }
+                </ul>
+              }
+            </li>
+          } @empty {
+            <li class="empty-state">
+              <span class="material-icons-outlined" aria-hidden="true">fact_check</span>
+              <h3>{{ 'audit.emptyTitle' | translate }}</h3>
+              <p>{{ 'audit.emptyBody' | translate }}</p>
+            </li>
+          }
+        }
+      </ol>
+      <ng-container *ngTemplateOutlet="more" />
+    </section>
+  } @else {
+    <!-- ───── Data changes ───── -->
+    @if (record(); as r) {
+      <div class="filter-note">
+        <span class="material-icons-outlined" aria-hidden="true">history</span>
+        {{ 'audit.historyOf' | translate: { type: typeName(r.type), label: r.label } }}
+        <button type="button" class="btn-link" (click)="clearRecord()">{{ 'audit.showAll' | translate }}</button>
+      </div>
+    }
+    @if (userFilter(); as u) {
+      <div class="filter-note">
+        <span class="material-icons-outlined" aria-hidden="true">person</span>
+        {{ 'audit.onlyUser' | translate: { name: u.name } }}
+        <button type="button" class="btn-link" (click)="clearUser()">{{ 'audit.showAll' | translate }}</button>
+      </div>
+    }
+
+    <section class="panel panel-flush">
+      @if (!record()) {
+        <div class="toolbar">
+          @if (sources.length > 1) {
+            <div class="tabs-inline" role="group" [attr.aria-label]="'audit.source' | translate">
+              <button type="button" class="seg" [class.is-active]="sourceFilter() === 'all'" (click)="setSource('all')">{{ 'audit.sources.all' | translate }}</button>
+              @for (s of sources; track s) {
+                <button type="button" class="seg" [class.is-active]="sourceFilter() === s" (click)="setSource(s)">{{ 'audit.sources.' + s | translate }}</button>
+              }
+            </div>
+          }
+          <label class="search">
+            <span class="material-icons-outlined" aria-hidden="true">search</span>
+            <input type="search" [(ngModel)]="search" (ngModelChange)="onSearch()" [placeholder]="'audit.searchPlaceholder' | translate"
+                   [attr.aria-label]="'audit.searchPlaceholder' | translate" />
+          </label>
+          <select class="select-sm" [(ngModel)]="action" (ngModelChange)="touched()" [attr.aria-label]="'audit.action' | translate">
+            <option value="">{{ 'audit.allActions' | translate }}</option>
+            @for (a of actions; track a) {
+              <option [value]="a">{{ 'audit.actions.' + a | translate }}</option>
+            }
+          </select>
+          <select class="select-sm type-select" [(ngModel)]="typeFilter" (ngModelChange)="touched()" [attr.aria-label]="'audit.recordType' | translate">
+            <option value="">{{ 'audit.allRecords' | translate }}</option>
+            @for (t of typeOptions(); track t.value) {
+              @if (sourceFilter() === 'all' || sourceFilter() === t.source) {
+                <option [value]="t.value">{{ typeName(t.type) }} ({{ t.count }})</option>
+              }
+            }
+          </select>
+          @if (filtersActive()) {
+            <button type="button" class="btn btn-quiet btn-small" (click)="clearFilters()">{{ 'audit.clear' | translate }}</button>
+          }
+        </div>
+      }
+
+      @if (failed().length && !loading()) {
+        <p class="notice notice-error inset">
+          <span class="material-icons-outlined" aria-hidden="true">error_outline</span>
+          {{ 'audit.partial' | translate }}
+        </p>
+      }
+
+      <div class="table-wrap">
+        <table class="ledger-table">
+          <thead>
+            <tr>
+              <th>{{ 'audit.when' | translate }}</th>
+              <th>{{ 'audit.who' | translate }}</th>
+              <th class="col-action">{{ 'audit.action' | translate }}</th>
+              <th>{{ 'audit.record' | translate }}</th>
+              <th class="col-wide">{{ 'audit.employee' | translate }}</th>
+              <th class="col-wide">{{ 'audit.fieldsChanged' | translate }}</th>
+              <th class="end col-action" [attr.aria-label]="'audit.open' | translate"></th>
+            </tr>
+          </thead>
+          <tbody>
+            @if (loading()) {
+              @for (i of [1, 2, 3, 4, 5]; track i) {
+                <tr>
+                  @for (c of [1, 2, 3, 4, 5, 6, 7]; track c) {
+                    <td [class.col-wide]="c === 5 || c === 6" [class.col-action]="c === 3"><span class="skeleton" style="width: 60%"></span></td>
+                  }
+                </tr>
+              }
+            } @else {
+              @for (e of visible(); track e.source + e.id) {
+                @let when = utc(e.at);
+                @let rel = dayLabel(e.at);
+                <tr class="is-link" (click)="open(e)" [class.is-deleted]="e.action === 'Deleted'">
+                  <td class="num when">
+                    <span class="cell-main">{{ rel ? (rel | translate) : (when | date: 'd MMM' : undefined : lang()) }}</span>
+                    <span class="cell-sub">{{ when | date: 'h:mm:ss a' : undefined : lang() }}</span>
+                  </td>
+                  <td>
+                    <span class="cell-main">{{ e.userName ?? ('audit.system' | translate) }}</span>
+                    <span class="cell-sub mono op-sub">{{ operationText(e.operation) }}</span>
+                  </td>
+                  <td class="col-action"><span [class]="'chip ' + actionChip[e.action]">{{ 'audit.actions.' + e.action | translate }}</span></td>
+                  <td class="rec">
+                    <span class="mobile-chip" [class]="'mobile-chip chip ' + actionChip[e.action]">{{ 'audit.actions.' + e.action | translate }}</span>
+                    <span class="cell-main">
+                      <span class="material-icons-outlined src-icon" aria-hidden="true" [title]="'audit.sources.' + e.source | translate">{{ sourceIcon[e.source] }}</span>
+                      {{ typeName(e.entityType) }}
+                    </span>
+                    <span class="cell-sub">{{ e.entityLabel ?? '—' }}</span>
+                  </td>
+                  <td class="col-wide subject">{{ e.subjectName ?? '—' }}</td>
+                  <td class="col-wide fields">{{ e.changes.length ? changedFields(e) : '—' }}</td>
+                  <td class="end col-action"><a class="go" (click)="open(e); $event.stopPropagation()"><span class="material-icons-outlined flip" aria-hidden="true">chevron_right</span></a></td>
+                </tr>
+              }
+            }
+          </tbody>
+        </table>
+      </div>
+
+      @if (!loading() && visible().length === 0) {
+        <div class="empty-state">
+          <span class="material-icons-outlined" aria-hidden="true">manage_search</span>
+          <h3>{{ 'audit.noMatchTitle' | translate }}</h3>
+          <p>{{ 'audit.noMatchBody' | translate }}</p>
+        </div>
+      }
+      <ng-container *ngTemplateOutlet="more" />
+    </section>
+  }
+</div>
+
+<ng-template #more>
+  @if (hasMore() && !loading()) {
+    <footer class="pager">
+      <span class="num">{{ 'audit.shown' | translate: { n: visible().length } }}</span>
+      <button type="button" class="btn btn-quiet btn-small" [disabled]="loadingMore()" (click)="loadMore()">
+        {{ (loadingMore() ? 'audit.loading' : 'audit.loadMore') | translate }}
+      </button>
+    </footer>
+  }
+</ng-template>
+
+@if (selected(); as e) {
+  <div class="overlay" (click)="close()">
+    <aside class="drawer drawer-wide" role="dialog" aria-modal="true" (click)="$event.stopPropagation()">
+      <header class="drawer-head">
+        <h3>
+          <span [class]="'chip ' + actionChip[e.action]">{{ 'audit.actions.' + e.action | translate }}</span>
+          {{ typeName(e.entityType) }}
+        </h3>
+        <button type="button" class="btn-link" (click)="close()" [attr.aria-label]="'common.close' | translate">
+          <span class="material-icons-outlined" aria-hidden="true">close</span>
+        </button>
+      </header>
+      <div class="drawer-body">
+        <dl class="facts">
+          <dt>{{ 'audit.record' | translate }}</dt>
+          <dd>{{ e.entityLabel ?? '—' }} <span class="cell-sub mono">{{ e.entityId }}</span></dd>
+          <dt>{{ 'audit.when' | translate }}</dt>
+          <dd class="num">{{ utc(e.at) | date: 'd MMM y, h:mm:ss a' : undefined : lang() }}</dd>
+          <dt>{{ 'audit.who' | translate }}</dt>
+          <dd>{{ e.userName ?? ('audit.system' | translate) }}</dd>
+          @if (e.subjectName) {
+            <dt>{{ 'audit.employee' | translate }}</dt>
+            <dd>{{ e.subjectName }}</dd>
+          }
+          <dt>{{ 'audit.source' | translate }}</dt>
+          <dd>{{ 'audit.sources.' + e.source | translate }}</dd>
+          <dt>{{ 'audit.request' | translate }}</dt>
+          <dd class="mono">{{ operationText(e.operation) }}</dd>
+        </dl>
+
+        <h4 class="sub-title">
+          {{ (e.action === 'Created' ? 'audit.valuesSet' : e.action === 'Deleted' ? 'audit.deletedNote' : 'audit.whatChanged') | translate }}
+        </h4>
+        @if (e.changes.length) {
+          <div class="table-wrap">
+            <table class="ledger-table diff">
+              <thead>
+                <tr>
+                  <th>{{ 'audit.field' | translate }}</th>
+                  @if (e.action !== 'Created') { <th>{{ 'audit.before' | translate }}</th> }
+                  <th>{{ (e.action === 'Created' ? 'audit.value' : 'audit.after') | translate }}</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (c of e.changes; track $index) {
+                  <tr>
+                    <td class="field-name">{{ fieldName(c.field) }}</td>
+                    @if (e.action !== 'Created') {
+                      <td class="old"><ng-container *ngTemplateOutlet="val; context: { $implicit: c.old }" /></td>
+                    }
+                    <td class="new"><ng-container *ngTemplateOutlet="val; context: { $implicit: c.new }" /></td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        } @else if (e.action !== 'Deleted') {
+          <p class="empty-line">{{ 'audit.noFields' | translate }}</p>
+        }
+      </div>
+      <footer class="drawer-foot">
+        @if (!record() || record()!.id !== e.entityId) {
+          <button type="button" class="btn btn-quiet" (click)="showHistory(e)">
+            <span class="material-icons-outlined" aria-hidden="true">history</span>{{ 'audit.recordHistory' | translate }}
+          </button>
+        }
+        <button type="button" class="btn btn-ink" (click)="close()">{{ 'common.close' | translate }}</button>
+      </footer>
+    </aside>
+  </div>
+}
+
+<ng-template #val let-v>
+  @switch (kind(v)) {
+    @case ('empty') { <span class="dim">—</span> }
+    @case ('hidden') { <span class="hidden-val" [title]="'audit.hidden' | translate">{{ v }}</span> }
+    @case ('bool') { {{ (v === 'true' ? 'audit.yes' : 'audit.no') | translate }} }
+    @case ('id') { <span class="mono" [title]="v">{{ shortId(v) }}</span> }
+    @case ('datetime') { <span class="num">{{ utc(v) | date: 'd MMM y, h:mm a' : undefined : lang() }}</span> }
+    @default { <span class="val-text">{{ v }}</span> }
+  }
+</ng-template>

@@ -62,7 +62,6 @@ const PLANNED: Route[] = [
   soon('compliance/policies', 'nav.policiesCompliance', undefined, ['policies', 'acknowledgements', 'statutory']),
   soon('compliance/health-safety', 'nav.healthSafety', undefined, ['incidents', 'inspections']),
   soon('compliance/relations', 'nav.employeeRelations', undefined, ['grievances', 'disciplinary']),
-  soon('compliance/audit', 'nav.audit', undefined, ['activity', 'dataChanges']),
 
   // AI
   soon('ai', 'nav.aiAssistant', undefined, ['chat', 'insights', 'aiRecruitment'])
@@ -97,6 +96,7 @@ export const routes: Routes = [
       { path: 'talent/recruitment', loadComponent: () => import('./pages/recruitment/recruitment').then(m => m.RecruitmentComponent), data: { titleKey: 'nav.recruitment' } },
       { path: 'requests', loadComponent: () => import('./pages/requests/requests').then(m => m.RequestsComponent), data: { titleKey: 'nav.requestsHelpdesk' } },
       { path: 'talent/lifecycle', loadComponent: () => import('./pages/lifecycle/lifecycle').then(m => m.LifecycleComponent), data: { titleKey: 'nav.onboardingExit' } },
+      { path: 'compliance/audit', loadComponent: () => import('./pages/audit/audit').then(m => m.AuditComponent), canActivate: [permissionGuard], data: { titleKey: 'nav.audit', permission: P.settingsView } },
       { path: 'reports', loadComponent: () => import('./pages/reports/reports').then(m => m.ReportsComponent), canActivate: [permissionGuard], data: { titleKey: 'nav.reports', permission: [P.employeesView, P.payrollViewAll, P.payrollApprove] } },
       { path: 'me/payslips', component: MyPayslipsComponent, data: { titleKey: 'nav.myPayslips' } },
       { path: 'me/payslips/:id', component: PayslipComponent, data: { titleKey: 'payroll.payslip.title', self: true } },
