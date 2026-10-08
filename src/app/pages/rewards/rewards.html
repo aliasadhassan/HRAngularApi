@@ -1,0 +1,1151 @@
+<div class="page">
+  <header class="page-intro">
+    <p>{{ 'rewards.intro' | translate }}</p>
+    <div class="intro-actions">
+      @switch (tab()) {
+        @case ('plans') {
+          @if (canConfigure()) {
+            <button type="button" class="btn btn-ink" (click)="newPlan()"><span class="material-icons-outlined" aria-hidden="true">add</span>{{ 'rewards.newPlan' | translate }}</button>
+          }
+        }
+        @case ('enrolments') {
+          @if (canManage()) {
+            <button type="button" class="btn btn-ink" (click)="newEnrolment()"><span class="material-icons-outlined" aria-hidden="true">person_add</span>{{ 'rewards.enrolEmployee' | translate }}</button>
+          }
+        }
+        @case ('increments') {
+          @if (canManage()) {
+            <button type="button" class="btn btn-ink" (click)="newRevision()"><span class="material-icons-outlined" aria-hidden="true">trending_up</span>{{ 'rewards.proposeIncrement' | translate }}</button>
+          }
+        }
+        @case ('bonuses') {
+          @if (canManage()) {
+            <button type="button" class="btn btn-ink" (click)="newBonusBatch()"><span class="material-icons-outlined" aria-hidden="true">add</span>{{ 'rewards.newBonus' | translate }}</button>
+          }
+        }
+      }
+    </div>
+  </header>
+
+  @if (summary(); as s) {
+    <nav class="tabs">
+      <button type="button" class="tab" [class.is-active]="tab() === 'mine'" (click)="setTab('mine')">{{ 'rewards.tabs.mine' | translate }}</button>
+      @if (s.canView || s.canConfigure) {
+        <button type="button" class="tab" [class.is-active]="tab() === 'plans'" (click)="setTab('plans')">{{ 'rewards.tabs.plans' | translate }}</button>
+      }
+      @if (s.canView) {
+        <button type="button" class="tab" [class.is-active]="tab() === 'enrolments'" (click)="setTab('enrolments')">
+          {{ 'rewards.tabs.enrolments' | translate }}
+          @if (s.pendingEnrolments) { <span class="tab-count num" [class.alert-count]="s.canManage">{{ s.pendingEnrolments }}</span> }
+        </button>
+        <button type="button" class="tab" [class.is-active]="tab() === 'increments'" (click)="setTab('increments')">
+          {{ 'rewards.tabs.increments' | translate }}
+          @if (s.pendingRevisions) { <span class="tab-count num" [class.alert-count]="s.canApprove">{{ s.pendingRevisions }}</span> }
+        </button>
+        <button type="button" class="tab" [class.is-active]="tab() === 'bonuses'" (click)="setTab('bonuses')">
+          {{ 'rewards.tabs.bonuses' | translate }}
+          @if (s.pendingBonuses) { <span class="tab-count num" [class.alert-count]="s.canApprove">{{ s.pendingBonuses }}</span> }
+        </button>
+      }
+    </nav>
+
+    @if (s.canView && tab() !== 'mine') {
+      <section class="tallies">
+        <button type="button" class="tally" (click)="show('enrolments', 'Active')">
+          <span class="t-label">{{ 'rewards.sum.covered' | translate }}</span>
+          <span class="t-figure num">{{ s.coveredEmployees }}</span>
+          <span class="t-sub">{{ 'rewards.sum.coveredSub' | translate: { n: s.activePlans } }}</span>
+        </button>
+        <article class="tally static">
+          <span class="t-label">{{ 'rewards.sum.cost' | translate }}</span>
+          <span class="t-figure num">{{ s.monthlyEmployerCost | amount: lang() : 'compact' }}<small>{{ s.currencyCode }}</small></span>
+          <span class="t-sub">{{ 'rewards.sum.costSub' | translate: { amount: money(s.monthlyEmployeeCost, s.currencyCode) } }}</span>
+        </article>
+        <button type="button" class="tally" [class.is-alert]="s.pendingEnrolments > 0 && s.canManage" (click)="show('enrolments', 'Requested')">
+          <span class="t-label">{{ 'rewards.sum.requests' | translate }}</span>
+          <span class="t-figure num">{{ s.pendingEnrolments }}</span>
+          <span class="t-sub">{{ 'rewards.sum.requestsSub' | translate }}</span>
+        </button>
+        <button type="button" class="tally" [class.is-alert]="s.pendingRevisions > 0 && s.canApprove" (click)="show('increments', 'Pending')">
+          <span class="t-label">{{ 'rewards.sum.increments' | translate }}</span>
+          <span class="t-figure num">{{ s.pendingRevisions }}</span>
+          <span class="t-sub">
+            @if (s.averageIncreaseThisYear !== null) { {{ 'rewards.sum.incrementsAvg' | translate: { n: s.revisionsAppliedThisYear, pct: pct(s.averageIncreaseThisYear) } }} }
+            @else { {{ 'rewards.sum.incrementsSub' | translate }} }
+          </span>
+        </button>
+        <button type="button" class="tally" [class.is-alert]="s.pendingBonuses > 0 && s.canApprove" (click)="show('bonuses', 'Pending')">
+          <span class="t-label">{{ 'rewards.sum.bonuses' | translate }}</span>
+          <span class="t-figure num">{{ s.pendingBonuses }}</span>
+          <span class="t-sub">{{ 'rewards.sum.bonusesSub' | translate: { amount: money(s.bonusesThisYear, s.currencyCode), n: s.bonusesThisYearCount } }}</span>
+        </button>
+      </section>
+    }
+  } @else {
+    <p class="loading-line">{{ 'common.loading' | translate }}</p>
+  }
+
+  <!-- ═══ My benefits ═══ -->
+  @if (tab() === 'mine' && summary()) {
+    @if (my(); as m) {
+      @if (!m.employeeId) {
+        <div class="notice notice-info">
+          <span class="material-icons-outlined" aria-hidden="true">badge</span>
+          <span class="grow">{{ 'rewards.notLinked' | translate }}</span>
+        </div>
+      } @else {
+        <section class="panel panel-flush">
+          <header class="list-head">
+            <h3 class="section-title">{{ 'rewards.myCoverage' | translate }}</h3>
+            @if (myMonthlyShare() || myEmployerShare()) {
+              <p class="panel-sub num">{{ 'rewards.myTotals' | translate: { you: money(myMonthlyShare(), m.currencyCode), company: money(myEmployerShare(), m.currencyCode) } }}</p>
+            }
+          </header>
+          <ul class="plain-list">
+            @for (e of myActive(); track e.id) {
+              <li class="plain-row wrap-row">
+                <span class="material-icons-outlined cat-icon sm" aria-hidden="true">{{ benefitIcon[e.benefitType] }}</span>
+                <span class="stack grow">
+                  <span class="cell-main wrap">{{ e.planName }}</span>
+                  <span class="cell-sub">
+                    {{ 'rewards.type.' + e.benefitType | translate }}
+                    @if (e.dependents) { · {{ 'rewards.dependentsN' | translate: { n: e.dependents } }} }
+                    @if (e.startDate) { · {{ 'rewards.since' | translate: { date: (e.startDate | date: 'd MMM y' : undefined : lang()) } }} }
+                    @else { · {{ 'rewards.requestedOn' | translate: { date: (utc(e.createdAt) | date: 'd MMM' : undefined : lang()) } }} }
+                  </span>
+                </span>
+                <span class="cost-pair num">
+                  <span><small>{{ 'rewards.youPay' | translate }}</small>{{ money(e.employeeMonthlyCost, e.currencyCode) }}</span>
+                  <span><small>{{ 'rewards.companyPays' | translate }}</small>{{ money(e.employerMonthlyCost, e.currencyCode) }}</span>
+                </span>
+                <span class="row-end">
+                  <span [class]="enrolChip(e)">{{ 'rewards.enrolStatus.' + e.status | translate }}</span>
+                  @if (e.canCancel) {
+                    <button type="button" class="btn-link danger-link" [disabled]="saving()" (click)="cancelRequest(e)">{{ (confirm === 'cancel:' + e.id ? 'rewards.confirmCancel' : 'rewards.cancelRequest') | translate }}</button>
+                  }
+                </span>
+              </li>
+            } @empty {
+              <li class="empty-line pad dim">{{ 'rewards.noCoverage' | translate }}</li>
+            }
+          </ul>
+          @if (myActive().length && myMonthlyShare()) {
+            <p class="foot-note">{{ 'rewards.deductionNote' | translate }}</p>
+          }
+        </section>
+      }
+
+      <section class="panel panel-flush">
+        <header class="list-head flat">
+          <h3 class="section-title">{{ 'rewards.openPlans' | translate }}</h3>
+          <p class="panel-sub">{{ 'rewards.openPlansSub' | translate }}</p>
+        </header>
+        <div class="plan-grid">
+          @for (p of myOpenPlans(); track p.id) {
+            <article class="plan-card">
+              <span class="material-icons-outlined cat-icon" aria-hidden="true">{{ benefitIcon[p.benefitType] }}</span>
+              <span class="stack grow">
+                <span class="cell-main wrap">{{ p.name }}</span>
+                <span class="cell-sub">{{ 'rewards.type.' + p.benefitType | translate }}@if (p.provider) { · {{ p.provider }} }</span>
+                @if (p.description) { <span class="cell-sub wrap desc">{{ p.description }}</span> }
+                <span class="plan-costs num">
+                  <span>{{ 'rewards.youPayMonth' | translate: { amount: money(p.employeeMonthlyCost, p.currencyCode) } }}</span>
+                  <span class="dim">{{ 'rewards.companyPaysMonth' | translate: { amount: money(p.employerMonthlyCost, p.currencyCode) } }}</span>
+                  @if (p.maxDependents) { <span class="dim">{{ 'rewards.coversDependents' | translate: { n: p.maxDependents } }}</span> }
+                </span>
+                @if (m.employeeId) {
+                  <button type="button" class="btn btn-quiet btn-small start" (click)="requestPlan(p)">{{ 'rewards.request' | translate }}</button>
+                }
+              </span>
+            </article>
+          } @empty {
+            <p class="empty-line pad dim">{{ 'rewards.noOpenPlans' | translate }}</p>
+          }
+        </div>
+      </section>
+
+      @if (m.employeeId) {
+        <section class="panel panel-flush">
+          <header class="list-head"><h3 class="section-title">{{ 'rewards.myRewards' | translate }}</h3></header>
+          <ul class="plain-list">
+            @for (h of myHistory(); track h.id) {
+              <li class="plain-row wrap-row">
+                @if (h.revision; as r) {
+                  <span class="material-icons-outlined cat-icon sm" aria-hidden="true">trending_up</span>
+                  <span class="stack grow">
+                    <span class="cell-main wrap">{{ 'rewards.reason.' + r.reason | translate }}@if (r.newTitle) { · {{ r.newTitle }} }</span>
+                    <span class="cell-sub">{{ 'rewards.effective' | translate: { date: (r.effectiveFrom | date: 'd MMM y' : undefined : lang()) } }}</span>
+                  </span>
+                  <span class="stack end num">
+                    <span class="cell-main">{{ money(r.proposedAmount, r.currencyCode) }}</span>
+                    <span class="cell-sub"><span class="up">{{ pct(r.changePercent) }}</span> · {{ 'rewards.from' | translate: { amount: money(r.currentAmount, null) } }}</span>
+                  </span>
+                } @else if (h.bonus; as b) {
+                  <span class="material-icons-outlined cat-icon sm" aria-hidden="true">workspace_premium</span>
+                  <span class="stack grow">
+                    <span class="cell-main wrap">{{ b.title }}</span>
+                    <span class="cell-sub">
+                      {{ 'rewards.bonusType.' + b.bonusType | translate }}
+                      @if (b.paidAt) { · {{ 'rewards.paidOn' | translate: { date: (utc(b.paidAt) | date: 'd MMM y' : undefined : lang()) } }} }
+                      @else if (b.payPeriodEnd) { · {{ 'rewards.inPayslip' | translate: { date: (b.payPeriodEnd | date: 'MMM y' : undefined : lang()) } }} }
+                    </span>
+                  </span>
+                  <span class="stack end num">
+                    <span class="cell-main">{{ money(b.amount, b.currencyCode) }}</span>
+                    <span><span [class]="bonusChip[b.status]">{{ 'rewards.bonusStatus.' + b.status | translate }}</span></span>
+                  </span>
+                }
+              </li>
+            } @empty {
+              <li class="empty-line pad dim">{{ 'rewards.noRewards' | translate }}</li>
+            }
+          </ul>
+        </section>
+
+        @if (myPast().length) {
+          <section class="panel panel-flush">
+            <header class="list-head"><h3 class="section-title">{{ 'rewards.pastCoverage' | translate }}</h3></header>
+            <ul class="plain-list closed-list">
+              @for (e of myPast(); track e.id) {
+                <li class="plain-row wrap-row">
+                  <span class="material-icons-outlined cat-icon sm" aria-hidden="true">{{ benefitIcon[e.benefitType] }}</span>
+                  <span class="stack grow">
+                    <span class="cell-main wrap">{{ e.planName }}</span>
+                    <span class="cell-sub">
+                      @if (e.endDate) { {{ 'rewards.endedOn' | translate: { date: (e.endDate | date: 'd MMM y' : undefined : lang()) } }} }
+                      @else { {{ utc(e.createdAt) | date: 'd MMM y' : undefined : lang() }} }
+                      @if (e.decisionNote) { · <span class="reason">“{{ e.decisionNote }}”</span> }
+                    </span>
+                  </span>
+                  <span [class]="enrolChip(e)">{{ 'rewards.enrolStatus.' + e.status | translate }}</span>
+                </li>
+              }
+            </ul>
+          </section>
+        }
+      }
+    } @else {
+      <p class="loading-line">{{ 'common.loading' | translate }}</p>
+    }
+  }
+
+  <!-- ═══ Plans ═══ -->
+  @if (tab() === 'plans') {
+    <section class="panel panel-flush">
+      <div class="table-wrap">
+        <table class="ledger-table">
+          <thead>
+            <tr>
+              <th>{{ 'rewards.plan' | translate }}</th>
+              <th class="end">{{ 'rewards.companyPays' | translate }}</th>
+              <th class="end">{{ 'rewards.employeePays' | translate }}</th>
+              <th>{{ 'rewards.dependents' | translate }}</th>
+              <th class="num-col">{{ 'rewards.enrolledCol' | translate }}</th>
+              <th class="end">{{ 'rewards.monthlyTotal' | translate }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            @if (plans() === null) {
+              <tr><td colspan="6"><p class="loading-line">{{ 'common.loading' | translate }}</p></td></tr>
+            }
+            @for (p of plans(); track p.id) {
+              <tr [class.is-link]="canConfigure()" [class.is-off]="!p.isActive" [attr.tabindex]="canConfigure() ? 0 : null" (click)="canConfigure() && editPlan(p)" (keydown.enter)="canConfigure() && editPlan(p)">
+                <td>
+                  <span class="cat-name">
+                    <span class="material-icons-outlined cat-icon sm" aria-hidden="true">{{ benefitIcon[p.benefitType] }}</span>
+                    <span class="stack">
+                      <span class="cell-main wrap">{{ p.name }}</span>
+                      <span class="cell-sub">
+                        {{ 'rewards.type.' + p.benefitType | translate }}@if (p.provider) { · {{ p.provider }} }
+                        @if (!p.isActive) { · {{ 'rewards.inactive' | translate }} }
+                        @else if (p.openForRequests) { · {{ 'rewards.openForRequests' | translate }} }
+                      </span>
+                    </span>
+                  </span>
+                </td>
+                <td class="end num">{{ money(p.employerMonthlyCost, p.currencyCode) }}</td>
+                <td class="end num">
+                  {{ money(p.employeeMonthlyCost, p.currencyCode) }}
+                  @if (p.deductionComponentName) { <span class="cell-sub">{{ 'rewards.viaComponent' | translate: { name: p.deductionComponentName } }}</span> }
+                </td>
+                <td class="num">
+                  @if (p.maxDependents) {
+                    {{ 'rewards.upTo' | translate: { n: p.maxDependents } }}
+                    @if (p.dependentMonthlyCost) { <span class="cell-sub">{{ 'rewards.perDependent' | translate: { amount: money(p.dependentMonthlyCost, null) } }}</span> }
+                  } @else { <span class="dim">{{ 'rewards.selfOnly' | translate }}</span> }
+                </td>
+                <td class="num num-col">
+                  {{ p.enrolled }}
+                  @if (p.requested) { <span class="cell-sub amber">{{ 'rewards.requestedN' | translate: { n: p.requested } }}</span> }
+                </td>
+                <td class="end num">{{ money(p.monthlyEmployerTotal, p.currencyCode) }}</td>
+              </tr>
+            } @empty {
+              @if (plans() !== null) {
+                <tr><td colspan="6" class="empty-line pad dim">{{ (canConfigure() ? 'rewards.noPlansHr' : 'rewards.noPlans') | translate }}</td></tr>
+              }
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+  }
+
+  <!-- ═══ Enrolments ═══ -->
+  @if (tab() === 'enrolments') {
+    <section class="panel panel-flush">
+      <div class="toolbar">
+        <label class="search">
+          <span class="material-icons-outlined" aria-hidden="true">search</span>
+          <input type="search" [ngModel]="enrolSearch()" (ngModelChange)="enrolSearch.set($event)" [placeholder]="'rewards.searchPh' | translate" [attr.aria-label]="'rewards.searchPh' | translate" />
+        </label>
+        <select class="select-sm" [ngModel]="enrolStatus()" (ngModelChange)="setEnrolStatus($event)" [attr.aria-label]="'rewards.status' | translate">
+          <option value="">{{ 'rewards.anyStatus' | translate }}</option>
+          @for (st of enrolmentStatuses; track st) { <option [value]="st">{{ 'rewards.enrolStatus.' + st | translate }}</option> }
+        </select>
+        <select class="select-sm" [ngModel]="enrolPlan()" (ngModelChange)="setEnrolPlan($event)" [attr.aria-label]="'rewards.plan' | translate">
+          <option value="">{{ 'rewards.allPlans' | translate }}</option>
+          @for (p of plans() ?? []; track p.id) { <option [value]="p.id">{{ p.name }}</option> }
+        </select>
+      </div>
+      <div class="table-wrap">
+        <table class="ledger-table">
+          <thead>
+            <tr>
+              <th>{{ 'rewards.employee' | translate }}</th>
+              <th>{{ 'rewards.plan' | translate }}</th>
+              <th>{{ 'rewards.status' | translate }}</th>
+              <th>{{ 'rewards.coverage' | translate }}</th>
+              <th class="end">{{ 'rewards.employeePays' | translate }}</th>
+              <th class="end">{{ 'rewards.companyPays' | translate }}</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            @if (enrolments() === null) {
+              <tr><td colspan="7"><p class="loading-line">{{ 'common.loading' | translate }}</p></td></tr>
+            }
+            @for (e of enrolRows(); track e.id) {
+              <tr class="is-link" tabindex="0" (click)="openEnrolment(e)" (keydown.enter)="openEnrolment(e)">
+                <td>
+                  <span class="cell-main">{{ e.employeeName }}</span>
+                  <span class="cell-sub"><span class="num">{{ e.employeeCode }}</span>@if (e.departmentName) { · {{ e.departmentName }} }</span>
+                </td>
+                <td>
+                  <span class="cell-main wrap">{{ e.planName }}</span>
+                  @if (e.dependents) { <span class="cell-sub">{{ 'rewards.dependentsN' | translate: { n: e.dependents } }}</span> }
+                </td>
+                <td><span [class]="enrolChip(e)">{{ 'rewards.enrolStatus.' + e.status | translate }}</span></td>
+                <td class="num">
+                  @if (e.startDate) {
+                    {{ e.startDate | date: 'd MMM y' : undefined : lang() }}@if (e.endDate) { – {{ e.endDate | date: 'd MMM y' : undefined : lang() }} }
+                  } @else { <span class="dim">{{ 'rewards.requestedOn' | translate: { date: (utc(e.createdAt) | date: 'd MMM' : undefined : lang()) } }}</span> }
+                </td>
+                <td class="end num">
+                  {{ money(e.employeeMonthlyCost, e.currencyCode) }}
+                  @if (e.employeeMonthlyCost && e.deductedInPayroll) { <span class="cell-sub">{{ 'rewards.inPayroll' | translate }}</span> }
+                </td>
+                <td class="end num">{{ money(e.employerMonthlyCost, e.currencyCode) }}</td>
+                <td class="end">
+                  @if (e.status === 'Requested' && canManage()) {
+                    <button type="button" class="btn btn-ink btn-small" [disabled]="saving()" (click)="$event.stopPropagation(); quickApproveEnrolment(e)">
+                      <span class="material-icons-outlined" aria-hidden="true">check</span>{{ 'rewards.approve' | translate }}
+                    </button>
+                  }
+                </td>
+              </tr>
+            }
+            @if (enrolments() !== null && !enrolRows().length) {
+              <tr><td colspan="7" class="empty-line pad dim">{{ 'rewards.noEnrolments' | translate }}</td></tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+  }
+
+  <!-- ═══ Increments ═══ -->
+  @if (tab() === 'increments') {
+    @if (revView() === 'proposals') {
+      <section class="panel panel-flush">
+        <div class="toolbar">
+          <div class="seg" role="group">
+            <button type="button" [class.is-on]="revView() === 'proposals'" [attr.aria-pressed]="revView() === 'proposals'" (click)="revView.set('proposals')">{{ 'rewards.proposals' | translate }}</button>
+            <button type="button" [class.is-on]="revView() === 'salaries'" [attr.aria-pressed]="revView() === 'salaries'" (click)="revView.set('salaries')">{{ 'rewards.salaries' | translate }}</button>
+          </div>
+          <select class="select-sm" [ngModel]="revStatus()" (ngModelChange)="setRevStatus($event)" [attr.aria-label]="'rewards.status' | translate">
+            <option value="">{{ 'rewards.anyStatus' | translate }}</option>
+            @for (st of revisionStatuses; track st) { <option [value]="st">{{ 'rewards.revStatus.' + st | translate }}</option> }
+          </select>
+          @if (canApprove() && pendingRevisions().length) {
+            <span class="bulk">
+              <input class="input-sm" maxlength="500" [(ngModel)]="bulkNote" [placeholder]="'rewards.noteOptional' | translate" [attr.aria-label]="'rewards.note' | translate" />
+              <button type="button" class="btn btn-ink btn-small" [disabled]="saving() || !pickedRevisions().size" (click)="approvePickedRevisions()">
+                <span class="material-icons-outlined" aria-hidden="true">done_all</span>{{ 'rewards.approveN' | translate: { n: pickedRevisions().size } }}
+              </button>
+            </span>
+          }
+        </div>
+        <div class="table-wrap">
+          <table class="ledger-table">
+            <thead>
+              <tr>
+                @if (canApprove() && pendingRevisions().length) {
+                  <th class="pick"><input type="checkbox" [checked]="allPicked('revisions')" (change)="toggleAll('revisions')" [attr.aria-label]="'rewards.pickAll' | translate" /></th>
+                }
+                <th>{{ 'rewards.employee' | translate }}</th>
+                <th>{{ 'rewards.reasonCol' | translate }}</th>
+                <th class="end">{{ 'rewards.current' | translate }}</th>
+                <th class="end">{{ 'rewards.proposed' | translate }}</th>
+                <th class="end">{{ 'rewards.change' | translate }}</th>
+                <th>{{ 'rewards.effectiveCol' | translate }}</th>
+                <th>{{ 'rewards.status' | translate }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              @if (revisions() === null) {
+                <tr><td colspan="8"><p class="loading-line">{{ 'common.loading' | translate }}</p></td></tr>
+              }
+              @for (r of revisions(); track r.id) {
+                <tr class="is-link" tabindex="0" (click)="openRevision(r)" (keydown.enter)="openRevision(r)">
+                  @if (canApprove() && pendingRevisions().length) {
+                    <td class="pick" (click)="$event.stopPropagation()">
+                      @if (r.status === 'Pending') { <input type="checkbox" [checked]="pickedRevisions().has(r.id)" (change)="toggle('revisions', r.id)" [attr.aria-label]="r.employeeName" /> }
+                    </td>
+                  }
+                  <td>
+                    <span class="cell-main">{{ r.employeeName }}</span>
+                    <span class="cell-sub">@if (r.designationTitle) { {{ r.designationTitle }} · }{{ r.departmentName }}</span>
+                  </td>
+                  <td>
+                    {{ 'rewards.reason.' + r.reason | translate }}
+                    @if (r.newTitle) { <span class="cell-sub">→ {{ r.newTitle }}</span> }
+                  </td>
+                  <td class="end num">{{ money(r.currentAmount, r.currencyCode) }}<span class="cell-sub">{{ 'rewards.basis.' + r.salaryBasis | translate }}</span></td>
+                  <td class="end num"><b>{{ money(r.proposedAmount, r.currencyCode) }}</b></td>
+                  <td class="end num"><span [class.up]="r.changePercent > 0" [class.warn]="r.changePercent < 0">{{ pct(r.changePercent) }}</span></td>
+                  <td class="num">{{ r.effectiveFrom | date: 'd MMM y' : undefined : lang() }}</td>
+                  <td><span [class]="revisionChip[r.status]">{{ 'rewards.revStatus.' + r.status | translate }}</span></td>
+                </tr>
+              }
+              @if (revisions() !== null && !revisions()!.length) {
+                <tr><td colspan="8" class="empty-line pad dim">{{ 'rewards.noRevisions' | translate }}</td></tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </section>
+    } @else {
+      <section class="panel panel-flush">
+        <div class="toolbar">
+          <div class="seg" role="group">
+            <button type="button" [class.is-on]="revView() === 'proposals'" [attr.aria-pressed]="revView() === 'proposals'" (click)="revView.set('proposals')">{{ 'rewards.proposals' | translate }}</button>
+            <button type="button" [class.is-on]="revView() === 'salaries'" [attr.aria-pressed]="revView() === 'salaries'" (click)="revView.set('salaries')">{{ 'rewards.salaries' | translate }}</button>
+          </div>
+          <label class="search">
+            <span class="material-icons-outlined" aria-hidden="true">search</span>
+            <input type="search" [ngModel]="salarySearch()" (ngModelChange)="salarySearch.set($event)" [placeholder]="'rewards.searchPeoplePh' | translate" [attr.aria-label]="'rewards.searchPeoplePh' | translate" />
+          </label>
+          <select class="select-sm" [ngModel]="salaryDept()" (ngModelChange)="salaryDept.set($event)" [attr.aria-label]="'rewards.department' | translate">
+            <option value="">{{ 'rewards.allDepartments' | translate }}</option>
+            @for (d of lookups().departments; track d.id) { <option [value]="d.id">{{ d.name }}</option> }
+          </select>
+          @if (canManage()) {
+            <span class="bulk">
+              <button type="button" class="btn btn-ink btn-small" [disabled]="!pickedPeople().size" (click)="newRevBatch()">
+                <span class="material-icons-outlined" aria-hidden="true">trending_up</span>{{ 'rewards.incrementN' | translate: { n: pickedPeople().size } }}
+              </button>
+            </span>
+          }
+        </div>
+        <div class="table-wrap">
+          <table class="ledger-table">
+            <thead>
+              <tr>
+                @if (canManage()) {
+                  <th class="pick"><input type="checkbox" [checked]="allPicked('people')" (change)="toggleAll('people')" [attr.aria-label]="'rewards.pickAll' | translate" /></th>
+                }
+                <th>{{ 'rewards.employee' | translate }}</th>
+                <th class="end">{{ 'rewards.currentSalary' | translate }}</th>
+                <th class="end">{{ 'rewards.monthly' | translate }}</th>
+                <th>{{ 'rewards.sinceCol' | translate }}</th>
+                <th>{{ 'rewards.lastChange' | translate }}</th>
+                @if (canManage()) { <th></th> }
+              </tr>
+            </thead>
+            <tbody>
+              @if (salaries() === null) {
+                <tr><td colspan="7"><p class="loading-line">{{ 'common.loading' | translate }}</p></td></tr>
+              }
+              @for (s of salaryRows(); track s.employeeId) {
+                <tr>
+                  @if (canManage()) {
+                    <td class="pick">
+                      @if (s.currentAmount !== null && !s.hasPendingRevision) {
+                        <input type="checkbox" [checked]="pickedPeople().has(s.employeeId)" (change)="toggle('people', s.employeeId)" [attr.aria-label]="s.employeeName" />
+                      }
+                    </td>
+                  }
+                  <td>
+                    <span class="cell-main">{{ s.employeeName }}</span>
+                    <span class="cell-sub">@if (s.designationTitle) { {{ s.designationTitle }} · }{{ s.departmentName }}</span>
+                  </td>
+                  <td class="end num">
+                    @if (s.currentAmount !== null) { {{ money(s.currentAmount, s.currencyCode) }}<span class="cell-sub">{{ 'rewards.basis.' + s.salaryBasis | translate }}</span> }
+                    @else { <span class="dim">{{ 'rewards.noSalary' | translate }}</span> }
+                  </td>
+                  <td class="end num">{{ s.monthlyEquivalent === null ? '—' : money(s.monthlyEquivalent, null) }}</td>
+                  <td class="num">{{ s.currentFrom ? (s.currentFrom | date: 'd MMM y' : undefined : lang()) : '—' }}</td>
+                  <td class="num">
+                    @if (s.lastChangeOn) { {{ s.lastChangeOn | date: 'MMM y' : undefined : lang() }} <span class="up">{{ pct(s.lastChangePercent) }}</span> }
+                    @else { <span class="dim">{{ 'rewards.never' | translate }}</span> }
+                  </td>
+                  @if (canManage()) {
+                    <td class="end">
+                      @if (s.hasPendingRevision) { <span class="chip chip-amber">{{ 'rewards.revStatus.Pending' | translate }}</span> }
+                      @else if (s.currentAmount !== null) { <button type="button" class="btn btn-quiet btn-small" (click)="newRevision(s)">{{ 'rewards.propose' | translate }}</button> }
+                    </td>
+                  }
+                </tr>
+              }
+              @if (salaries() !== null && !salaryRows().length) {
+                <tr><td colspan="7" class="empty-line pad dim">{{ 'rewards.noPeople' | translate }}</td></tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </section>
+    }
+  }
+
+  <!-- ═══ Bonuses ═══ -->
+  @if (tab() === 'bonuses') {
+    <section class="panel panel-flush">
+      <div class="toolbar">
+        <select class="select-sm" [ngModel]="bonusStatus()" (ngModelChange)="setBonusStatus($event)" [attr.aria-label]="'rewards.status' | translate">
+          <option value="">{{ 'rewards.anyStatus' | translate }}</option>
+          @for (st of bonusStatuses; track st) { <option [value]="st">{{ 'rewards.bonusStatus.' + st | translate }}</option> }
+        </select>
+        <select class="select-sm" [ngModel]="bonusType()" (ngModelChange)="setBonusType($event)" [attr.aria-label]="'rewards.bonusTypeCol' | translate">
+          <option value="">{{ 'rewards.allTypes' | translate }}</option>
+          @for (t of bonusTypes; track t) { <option [value]="t">{{ 'rewards.bonusType.' + t | translate }}</option> }
+        </select>
+        @if (bonuses()?.length) { <span class="cell-sub num">{{ 'rewards.listTotal' | translate: { n: bonuses()!.length, amount: money(bonusTotal(), currency()) } }}</span> }
+        @if (canApprove() && pendingBonuses().length) {
+          <span class="bulk">
+            <select class="select-sm" [(ngModel)]="payout" [attr.aria-label]="'rewards.payout' | translate">
+              <option value="Payroll">{{ 'rewards.payoutPayroll' | translate }}</option>
+              <option value="Direct">{{ 'rewards.payoutDirect' | translate }}</option>
+            </select>
+            <button type="button" class="btn btn-ink btn-small" [disabled]="saving() || !pickedBonuses().size" (click)="approvePickedBonuses()">
+              <span class="material-icons-outlined" aria-hidden="true">done_all</span>{{ 'rewards.approveN' | translate: { n: pickedBonuses().size } }}
+            </button>
+          </span>
+        }
+      </div>
+      <div class="table-wrap">
+        <table class="ledger-table">
+          <thead>
+            <tr>
+              @if (canApprove() && pendingBonuses().length) {
+                <th class="pick"><input type="checkbox" [checked]="allPicked('bonuses')" (change)="toggleAll('bonuses')" [attr.aria-label]="'rewards.pickAll' | translate" /></th>
+              }
+              <th>{{ 'rewards.employee' | translate }}</th>
+              <th>{{ 'rewards.bonus' | translate }}</th>
+              <th class="end">{{ 'rewards.amount' | translate }}</th>
+              <th>{{ 'rewards.status' | translate }}</th>
+              <th>{{ 'rewards.payout' | translate }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            @if (bonuses() === null) {
+              <tr><td colspan="6"><p class="loading-line">{{ 'common.loading' | translate }}</p></td></tr>
+            }
+            @for (b of bonuses(); track b.id) {
+              <tr class="is-link" tabindex="0" (click)="openBonus(b)" (keydown.enter)="openBonus(b)">
+                @if (canApprove() && pendingBonuses().length) {
+                  <td class="pick" (click)="$event.stopPropagation()">
+                    @if (b.status === 'Pending') { <input type="checkbox" [checked]="pickedBonuses().has(b.id)" (change)="toggle('bonuses', b.id)" [attr.aria-label]="b.employeeName" /> }
+                  </td>
+                }
+                <td>
+                  <span class="cell-main">{{ b.employeeName }}</span>
+                  <span class="cell-sub"><span class="num">{{ b.employeeCode }}</span>@if (b.departmentName) { · {{ b.departmentName }} }</span>
+                </td>
+                <td>
+                  <span class="cell-main wrap">{{ b.title }}</span>
+                  <span class="cell-sub">{{ 'rewards.bonusType.' + b.bonusType | translate }} · {{ b.payComponentName }}</span>
+                </td>
+                <td class="end num"><b>{{ money(b.amount, b.currencyCode) }}</b></td>
+                <td><span [class]="bonusChip[b.status]">{{ 'rewards.bonusStatus.' + b.status | translate }}</span></td>
+                <td class="num">
+                  @if (b.payoutMethod === 'Payroll') { {{ b.payPeriodEnd ? ('rewards.periodOf' | translate: { date: (b.payPeriodEnd | date: 'MMM y' : undefined : lang()) }) : ('rewards.payoutPayroll' | translate) }} }
+                  @else if (b.payoutMethod === 'Direct') { {{ 'rewards.payoutDirect' | translate }} }
+                  @else { <span class="dim">—</span> }
+                </td>
+              </tr>
+            }
+            @if (bonuses() !== null && !bonuses()!.length) {
+              <tr><td colspan="6" class="empty-line pad dim">{{ 'rewards.noBonuses' | translate }}</td></tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+  }
+</div>
+
+@if (drawer(); as d) {
+  <div class="overlay" (click)="closeDrawer()">
+    <aside class="drawer" [class.drawer-wide]="d === 'revBatch' || d === 'bonusBatch' || d === 'plan'" role="dialog" aria-modal="true" (click)="$event.stopPropagation()">
+      <header class="drawer-head">
+        <h3>
+          @switch (d) {
+            @case ('request') { {{ 'rewards.requestTitle' | translate }} }
+            @case ('plan') { {{ (planForm?.id ? 'rewards.editPlan' : 'rewards.newPlan') | translate }} }
+            @case ('enrol') { {{ 'rewards.enrolEmployee' | translate }} }
+            @case ('enrolment') { {{ enrolment()?.planName }} }
+            @case ('revision') { {{ 'rewards.revisionTitle' | translate: { name: revision()?.employeeName ?? '' } }} }
+            @case ('revisionEdit') { {{ (revisionForm?.id ? 'rewards.editRevision' : 'rewards.proposeIncrement') | translate }} }
+            @case ('revBatch') { {{ 'rewards.batchIncrement' | translate }} }
+            @case ('bonus') { {{ bonus()?.title }} }
+            @case ('bonusEdit') { {{ 'rewards.editBonus' | translate }} }
+            @case ('bonusBatch') { {{ 'rewards.newBonus' | translate }} }
+          }
+        </h3>
+        <button type="button" class="btn-link" (click)="closeDrawer()" [attr.aria-label]="'common.close' | translate">
+          <span class="material-icons-outlined" aria-hidden="true">close</span>
+        </button>
+      </header>
+
+      <div class="drawer-body">
+        @switch (d) {
+          <!-- Employee request -->
+          @case ('request') {
+            @if (requestForm; as f) {
+              @if (requestedPlan(); as p) {
+                <div class="plan-head">
+                  <span class="material-icons-outlined cat-icon" aria-hidden="true">{{ benefitIcon[p.benefitType] }}</span>
+                  <span class="stack">
+                    <span class="cell-main wrap">{{ p.name }}</span>
+                    <span class="cell-sub">{{ 'rewards.type.' + p.benefitType | translate }}@if (p.provider) { · {{ p.provider }} }</span>
+                  </span>
+                </div>
+                @if (p.description) { <p class="pre desc">{{ p.description }}</p> }
+                <div class="form-grid two">
+                  @if (p.maxDependents) {
+                    <div class="field">
+                      <label for="r-dep">{{ 'rewards.dependents' | translate }}</label>
+                      <select id="r-dep" [(ngModel)]="f.dependents">
+                        @for (n of dependentOptions(p.maxDependents); track n) { <option [ngValue]="n">{{ n ? ('rewards.dependentsN' | translate: { n }) : ('rewards.justMe' | translate) }}</option> }
+                      </select>
+                    </div>
+                  }
+                  <div class="field span-all">
+                    <label for="r-note">{{ 'rewards.noteToHr' | translate }}</label>
+                    <textarea id="r-note" rows="3" maxlength="500" [(ngModel)]="f.note"></textarea>
+                  </div>
+                </div>
+                <dl class="facts cost-facts">
+                  <div><dt>{{ 'rewards.youPay' | translate }}</dt><dd class="num">{{ money(planCost(p, f.dependents).employee, p.currencyCode) }} <span class="cell-sub">{{ 'rewards.perMonth' | translate }}</span></dd></div>
+                  <div><dt>{{ 'rewards.companyPays' | translate }}</dt><dd class="num">{{ money(planCost(p, f.dependents).employer, p.currencyCode) }} <span class="cell-sub">{{ 'rewards.perMonth' | translate }}</span></dd></div>
+                </dl>
+                <p class="field-hint">{{ (p.deductionComponentId && p.employeeMonthlyCost ? 'rewards.requestHintDeduct' : 'rewards.requestHint') | translate }}</p>
+              }
+            }
+          }
+
+          <!-- Plan -->
+          @case ('plan') {
+            @if (planForm; as f) {
+              <div class="form-grid">
+                <div class="field span-2">
+                  <label for="p-name">{{ 'rewards.planName' | translate }}</label>
+                  <input id="p-name" maxlength="100" [(ngModel)]="f.name" />
+                </div>
+                <div class="field">
+                  <label for="p-type">{{ 'rewards.typeCol' | translate }}</label>
+                  <select id="p-type" [(ngModel)]="f.benefitType">
+                    @for (t of benefitTypes; track t) { <option [value]="t">{{ 'rewards.type.' + t | translate }}</option> }
+                  </select>
+                </div>
+                <div class="field span-2">
+                  <label for="p-prov">{{ 'rewards.provider' | translate }}</label>
+                  <input id="p-prov" maxlength="150" [(ngModel)]="f.provider" [placeholder]="'rewards.providerPh' | translate" />
+                </div>
+                <div class="field">
+                  <label for="p-cur">{{ 'rewards.currency' | translate }}</label>
+                  <input id="p-cur" maxlength="3" [(ngModel)]="f.currencyCode" class="upper" />
+                </div>
+                <div class="field span-all">
+                  <label for="p-desc">{{ 'rewards.description' | translate }}</label>
+                  <textarea id="p-desc" rows="3" maxlength="1000" [(ngModel)]="f.description" [placeholder]="'rewards.descriptionPh' | translate"></textarea>
+                </div>
+                <div class="field">
+                  <label for="p-er">{{ 'rewards.companyPaysMo' | translate }}</label>
+                  <input id="p-er" type="number" min="0" step="any" [(ngModel)]="f.employerMonthlyCost" />
+                </div>
+                <div class="field">
+                  <label for="p-ee">{{ 'rewards.employeePaysMo' | translate }}</label>
+                  <input id="p-ee" type="number" min="0" step="any" [(ngModel)]="f.employeeMonthlyCost" />
+                </div>
+                <div class="field">
+                  <label for="p-ded">{{ 'rewards.deductVia' | translate }}</label>
+                  <select id="p-ded" [(ngModel)]="f.deductionComponentId">
+                    <option value="">{{ 'rewards.noDeduction' | translate }}</option>
+                    @for (c of lookups().deductionComponents; track c.id) { <option [value]="c.id">{{ c.name }}@if (c.extra) { · {{ c.extra }} }</option> }
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="p-max">{{ 'rewards.maxDependents' | translate }}</label>
+                  <input id="p-max" type="number" min="0" max="10" [(ngModel)]="f.maxDependents" />
+                </div>
+                <div class="field">
+                  <label for="p-dc">{{ 'rewards.dependentCost' | translate }}</label>
+                  <input id="p-dc" type="number" min="0" step="any" [(ngModel)]="f.dependentMonthlyCost" [disabled]="!f.maxDependents" />
+                </div>
+                <div class="field">
+                  <label for="p-so">{{ 'rewards.sortOrder' | translate }}</label>
+                  <input id="p-so" type="number" min="0" max="999" [(ngModel)]="f.sortOrder" />
+                </div>
+              </div>
+              @for (e of planErrors(); track e) { <p class="err">{{ e | translate }}</p> }
+              <div class="checks">
+                <label class="check-inline"><input type="checkbox" [(ngModel)]="f.openForRequests" />{{ 'rewards.openLong' | translate }}</label>
+                <label class="check-inline"><input type="checkbox" [(ngModel)]="f.isActive" />{{ 'rewards.activeLong' | translate }}</label>
+              </div>
+              <p class="field-hint">{{ 'rewards.planHint' | translate }}</p>
+              @if (editingPlan(); as p) {
+                <div class="inline-actions start">
+                  <span class="cell-sub">{{ 'rewards.planUsage' | translate: { n: p.enrolled, r: p.requested } }}</span>
+                  <button type="button" class="btn-link danger-link push" [disabled]="saving()" (click)="deletePlan()">{{ (confirm === 'delete' ? 'rewards.confirmDelete' : 'common.delete') | translate }}</button>
+                </div>
+              }
+            }
+          }
+
+          <!-- HR enrol -->
+          @case ('enrol') {
+            @if (enrolForm; as f) {
+              <div class="form-grid two">
+                <div class="field span-all">
+                  <label for="e-plan">{{ 'rewards.plan' | translate }}</label>
+                  <select id="e-plan" [(ngModel)]="f.planId" (ngModelChange)="f.dependents = 0">
+                    <option value="">{{ 'rewards.pick' | translate }}</option>
+                    @for (p of activePlans(); track p.id) { <option [value]="p.id">{{ p.name }}</option> }
+                  </select>
+                </div>
+                <div class="field span-all">
+                  <label for="e-emp">{{ 'rewards.employee' | translate }}</label>
+                  <select id="e-emp" [(ngModel)]="f.employeeId">
+                    <option value="">{{ 'rewards.pick' | translate }}</option>
+                    @for (p of lookups().employees; track p.id) { <option [value]="p.id">{{ p.name }}@if (p.extra) { · {{ p.extra }} }</option> }
+                  </select>
+                </div>
+                @if (enrolPlanPicked(); as p) {
+                  @if (p.maxDependents) {
+                    <div class="field">
+                      <label for="e-dep">{{ 'rewards.dependents' | translate }}</label>
+                      <select id="e-dep" [(ngModel)]="f.dependents">
+                        @for (n of dependentOptions(p.maxDependents); track n) { <option [ngValue]="n">{{ n }}</option> }
+                      </select>
+                    </div>
+                  }
+                }
+                <div class="field">
+                  <label for="e-start">{{ 'rewards.startDate' | translate }}</label>
+                  <input id="e-start" type="date" [(ngModel)]="f.startDate" />
+                </div>
+                <div class="field span-all">
+                  <label for="e-note">{{ 'rewards.note' | translate }}</label>
+                  <input id="e-note" maxlength="500" [(ngModel)]="f.note" />
+                </div>
+              </div>
+              @if (enrolPlanPicked(); as p) {
+                <dl class="facts cost-facts">
+                  <div><dt>{{ 'rewards.employeePays' | translate }}</dt><dd class="num">{{ money(planCost(p, f.dependents).employee, p.currencyCode) }}</dd></div>
+                  <div><dt>{{ 'rewards.companyPays' | translate }}</dt><dd class="num">{{ money(planCost(p, f.dependents).employer, p.currencyCode) }}</dd></div>
+                </dl>
+              }
+            }
+          }
+
+          <!-- Enrolment -->
+          @case ('enrolment') {
+            @if (enrolment(); as e) {
+              <div class="case-head">
+                <span class="cell-sub">{{ 'rewards.type.' + e.benefitType | translate }}</span>
+                <span [class]="enrolChip(e)">{{ 'rewards.enrolStatus.' + e.status | translate }}</span>
+              </div>
+              <dl class="facts">
+                <div><dt>{{ 'rewards.employee' | translate }}</dt><dd>{{ e.employeeName }}<span class="cell-sub">{{ e.employeeCode }}@if (e.departmentName) { · {{ e.departmentName }} }</span></dd></div>
+                <div><dt>{{ 'rewards.dependents' | translate }}</dt><dd class="num">{{ e.dependents }}</dd></div>
+                @if (e.startDate) { <div><dt>{{ 'rewards.startDate' | translate }}</dt><dd class="num">{{ e.startDate | date: 'd MMM y' : undefined : lang() }}</dd></div> }
+                @if (e.endDate) { <div><dt>{{ 'rewards.endDate' | translate }}</dt><dd class="num">{{ e.endDate | date: 'd MMM y' : undefined : lang() }}</dd></div> }
+                <div><dt>{{ 'rewards.employeePays' | translate }}</dt><dd class="num">{{ money(e.employeeMonthlyCost, e.currencyCode) }}@if (e.employeeMonthlyCost) { <span class="cell-sub">{{ (e.deductedInPayroll ? 'rewards.inPayroll' : 'rewards.notInPayroll') | translate }}</span> }</dd></div>
+                <div><dt>{{ 'rewards.companyPays' | translate }}</dt><dd class="num">{{ money(e.employerMonthlyCost, e.currencyCode) }}</dd></div>
+                <div><dt>{{ 'rewards.requestedCol' | translate }}</dt><dd class="num">{{ utc(e.createdAt) | date: 'd MMM y' : undefined : lang() }}</dd></div>
+                @if (e.decidedAt) { <div><dt>{{ 'rewards.decided' | translate }}</dt><dd class="num">{{ utc(e.decidedAt) | date: 'd MMM y' : undefined : lang() }}</dd></div> }
+              </dl>
+              @if (e.employeeNote) { <p class="confirm-note"><b>{{ 'rewards.employeeNote' | translate }}</b> {{ e.employeeNote }}</p> }
+              @if (e.decisionNote) { <p class="confirm-note"><b>{{ 'rewards.hrNote' | translate }}</b> {{ e.decisionNote }}</p> }
+
+              @if (canManage()) {
+                @if (enrolAction; as a) {
+                  <div class="task-form">
+                    <p>{{ 'rewards.act.' + a + 'Hint' | translate }}</p>
+                    <div class="form-grid two">
+                      @if (a === 'approve' || a === 'end') {
+                        <div class="field">
+                          <label for="a-date">{{ (a === 'end' ? 'rewards.endDate' : 'rewards.startDate') | translate }}</label>
+                          <input id="a-date" type="date" [(ngModel)]="actionDate" />
+                        </div>
+                      }
+                      @if ((a === 'approve' || a === 'dependents') && (planOf(e)?.maxDependents ?? 0) > 0) {
+                        <div class="field">
+                          <label for="a-dep">{{ 'rewards.dependents' | translate }}</label>
+                          <select id="a-dep" [(ngModel)]="actionDependents">
+                            @for (n of dependentOptions(planOf(e)?.maxDependents ?? 0); track n) { <option [ngValue]="n">{{ n }}</option> }
+                          </select>
+                        </div>
+                      }
+                      @if (a !== 'dependents') {
+                        <div class="field span-all">
+                          <textarea rows="2" maxlength="500" [(ngModel)]="actionNote" [placeholder]="(a === 'reject' ? 'rewards.noteRequired' : 'rewards.noteOptional') | translate" [attr.aria-label]="'rewards.note' | translate"></textarea>
+                        </div>
+                      }
+                    </div>
+                    <div class="inline-actions">
+                      <button type="button" class="btn btn-quiet btn-small" (click)="enrolAction = null">{{ 'common.cancel' | translate }}</button>
+                      <button type="button" class="btn btn-small" [class.btn-ink]="a !== 'reject' && a !== 'end'" [class.btn-danger]="a === 'reject' || a === 'end'"
+                        [disabled]="saving() || !canRunEnrolAction()" (click)="runEnrolAction()">{{ 'rewards.act.' + a | translate }}</button>
+                    </div>
+                  </div>
+                } @else {
+                  <div class="inline-actions start wrap">
+                    @if (e.status === 'Requested') {
+                      <button type="button" class="btn btn-ink btn-small" (click)="startEnrolAction('approve')"><span class="material-icons-outlined" aria-hidden="true">check</span>{{ 'rewards.act.approve' | translate }}</button>
+                      <button type="button" class="btn btn-quiet btn-small" (click)="startEnrolAction('reject')">{{ 'rewards.act.reject' | translate }}</button>
+                    }
+                    @if (e.status === 'Active') {
+                      @if ((planOf(e)?.maxDependents ?? 0) > 0) {
+                        <button type="button" class="btn btn-quiet btn-small" (click)="startEnrolAction('dependents')">{{ 'rewards.act.dependents' | translate }}</button>
+                      }
+                      <button type="button" class="btn-link danger-link push" (click)="startEnrolAction('end')">{{ 'rewards.act.end' | translate }}</button>
+                    }
+                  </div>
+                }
+              }
+            }
+          }
+
+          <!-- Revision -->
+          @case ('revision') {
+            @if (revision(); as r) {
+              <div class="case-head">
+                <span class="cell-sub">{{ 'rewards.reason.' + r.reason | translate }}@if (r.designationTitle) { · {{ r.designationTitle }} }</span>
+                <span [class]="revisionChip[r.status]">{{ 'rewards.revStatus.' + r.status | translate }}</span>
+              </div>
+              <div class="change-card num">
+                <span class="stack"><small>{{ 'rewards.current' | translate }}</small><b>{{ money(r.currentAmount, r.currencyCode) }}</b></span>
+                <span class="material-icons-outlined dim flip" aria-hidden="true">arrow_forward</span>
+                <span class="stack"><small>{{ 'rewards.proposed' | translate }}</small><b>{{ money(r.proposedAmount, r.currencyCode) }}</b></span>
+                <span class="change-pct" [class.up]="r.changePercent > 0" [class.warn]="r.changePercent < 0">{{ pct(r.changePercent) }}</span>
+              </div>
+              <dl class="facts">
+                <div><dt>{{ 'rewards.employee' | translate }}</dt><dd>{{ r.employeeName }}<span class="cell-sub">{{ r.employeeCode }}@if (r.departmentName) { · {{ r.departmentName }} }</span></dd></div>
+                <div><dt>{{ 'rewards.basisCol' | translate }}</dt><dd>{{ 'rewards.basis.' + r.salaryBasis | translate }}</dd></div>
+                <div><dt>{{ 'rewards.effectiveCol' | translate }}</dt><dd class="num">{{ r.effectiveFrom | date: 'd MMM y' : undefined : lang() }}</dd></div>
+                @if (r.newTitle) { <div><dt>{{ 'rewards.newTitle' | translate }}</dt><dd>{{ r.newTitle }}</dd></div> }
+                <div><dt>{{ 'rewards.proposedOn' | translate }}</dt><dd class="num">{{ utc(r.createdAt) | date: 'd MMM y' : undefined : lang() }}</dd></div>
+                @if (r.decidedAt) { <div><dt>{{ 'rewards.decided' | translate }}</dt><dd class="num">{{ utc(r.decidedAt) | date: 'd MMM y' : undefined : lang() }}</dd></div> }
+              </dl>
+              @if (r.justification) { <p class="pre desc">{{ r.justification }}</p> }
+              @if (r.decisionNote) { <p class="confirm-note"><b>{{ 'rewards.hrNote' | translate }}</b> {{ r.decisionNote }}</p> }
+              @if (r.status === 'Pending') {
+                <ng-container [ngTemplateOutlet]="rowActions" />
+              }
+            }
+          }
+
+          <!-- Revision form -->
+          @case ('revisionEdit') {
+            @if (revisionForm; as f) {
+              <div class="form-grid two">
+                @if (!f.id) {
+                  <div class="field span-all">
+                    <label for="v-emp">{{ 'rewards.employee' | translate }}</label>
+                    <select id="v-emp" [(ngModel)]="f.employeeId" (ngModelChange)="f.proposedAmount = null">
+                      <option value="">{{ 'rewards.pick' | translate }}</option>
+                      @for (s of salaries() ?? []; track s.employeeId) {
+                        @if (s.currentAmount !== null && !s.hasPendingRevision) { <option [value]="s.employeeId">{{ s.employeeName }} · {{ s.employeeCode }}</option> }
+                      }
+                    </select>
+                  </div>
+                }
+                @if (revisionBase(); as b) {
+                  <p class="span-all base-line num">
+                    {{ 'rewards.currentIs' | translate: { amount: money(b.amount, b.currency), basis: ('rewards.basis.' + b.basis | translate) } }}
+                    @if (b.from) { · {{ 'rewards.since' | translate: { date: (b.from | date: 'd MMM y' : undefined : lang()) } }} }
+                  </p>
+                  <div class="field span-all">
+                    <span class="group-label">{{ 'rewards.quickPct' | translate }}</span>
+                    <span class="pct-pick">
+                      @for (p of [5, 8, 10, 15, 20]; track p) { <button type="button" class="cat-chip" [class.is-picked]="revisionPercent() === p" (click)="applyPercent(p)">+{{ p }}%</button> }
+                    </span>
+                  </div>
+                }
+                <div class="field">
+                  <label for="v-amt">{{ 'rewards.newAmount' | translate }}</label>
+                  <input id="v-amt" type="number" min="0" step="any" [(ngModel)]="f.proposedAmount" />
+                  @if (revisionPercent(); as p) { <span class="cell-sub num" [class.up]="p > 0" [class.warn]="p < 0">{{ pct(p) }}</span> }
+                </div>
+                <div class="field">
+                  <label for="v-from">{{ 'rewards.effectiveCol' | translate }}</label>
+                  <input id="v-from" type="date" [(ngModel)]="f.effectiveFrom" />
+                </div>
+                <div class="field">
+                  <label for="v-reason">{{ 'rewards.reasonCol' | translate }}</label>
+                  <select id="v-reason" [(ngModel)]="f.reason">
+                    @for (r of revisionReasons; track r) { <option [value]="r">{{ 'rewards.reason.' + r | translate }}</option> }
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="v-title">{{ 'rewards.newTitle' | translate }}</label>
+                  <input id="v-title" maxlength="150" [(ngModel)]="f.newTitle" [placeholder]="'rewards.optional' | translate" />
+                </div>
+                <div class="field span-all">
+                  <label for="v-just">{{ 'rewards.justification' | translate }}</label>
+                  <textarea id="v-just" rows="3" maxlength="1000" [(ngModel)]="f.justification"></textarea>
+                </div>
+              </div>
+              @for (e of revisionErrors(); track e) { <p class="err">{{ e | translate }}</p> }
+              <p class="field-hint">{{ 'rewards.revisionHint' | translate }}</p>
+            }
+          }
+
+          <!-- Batch increment -->
+          @case ('revBatch') {
+            @if (revBatchForm; as f) {
+              <div class="form-grid">
+                <div class="field">
+                  <label for="b-pct">{{ 'rewards.percent' | translate }}</label>
+                  <input id="b-pct" type="number" min="-49" max="100" step="0.5" [(ngModel)]="f.percent" />
+                </div>
+                <div class="field">
+                  <label for="b-from">{{ 'rewards.effectiveCol' | translate }}</label>
+                  <input id="b-from" type="date" [(ngModel)]="f.effectiveFrom" />
+                </div>
+                <div class="field">
+                  <label for="b-reason">{{ 'rewards.reasonCol' | translate }}</label>
+                  <select id="b-reason" [(ngModel)]="f.reason">
+                    @for (r of revisionReasons; track r) { <option [value]="r">{{ 'rewards.reason.' + r | translate }}</option> }
+                  </select>
+                </div>
+                <div class="field span-all">
+                  <label for="b-just">{{ 'rewards.justification' | translate }}</label>
+                  <input id="b-just" maxlength="1000" [(ngModel)]="f.justification" [placeholder]="'rewards.justificationPh' | translate" />
+                </div>
+              </div>
+              <div class="table-wrap preview">
+                <table class="ledger-table">
+                  <thead>
+                    <tr>
+                      <th>{{ 'rewards.employee' | translate }}</th>
+                      <th class="end">{{ 'rewards.current' | translate }}</th>
+                      <th class="end">{{ 'rewards.proposed' | translate }}</th>
+                      <th></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (r of revBatchRows(); track r.employeeId) {
+                      <tr>
+                        <td><span class="cell-main">{{ r.employeeName }}</span><span class="cell-sub">{{ r.departmentName }}</span></td>
+                        <td class="end num">{{ money(r.currentAmount, r.currencyCode) }}</td>
+                        <td class="end num"><b>{{ r.proposed === null ? '—' : money(r.proposed, r.currencyCode) }}</b></td>
+                        <td class="end"><button type="button" class="btn-link" (click)="toggle('people', r.employeeId)" [attr.aria-label]="'rewards.remove' | translate"><span class="material-icons-outlined" aria-hidden="true">close</span></button></td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+              <p class="field-hint">{{ 'rewards.batchHint' | translate }}</p>
+            }
+          }
+
+          <!-- Bonus -->
+          @case ('bonus') {
+            @if (bonus(); as b) {
+              <div class="case-head">
+                <span class="cell-sub">{{ 'rewards.bonusType.' + b.bonusType | translate }} · {{ b.payComponentName }}</span>
+                <span [class]="bonusChip[b.status]">{{ 'rewards.bonusStatus.' + b.status | translate }}</span>
+              </div>
+              <div class="change-card num"><span class="stack"><small>{{ 'rewards.amount' | translate }}</small><b>{{ money(b.amount, b.currencyCode) }}</b></span></div>
+              <dl class="facts">
+                <div><dt>{{ 'rewards.employee' | translate }}</dt><dd>{{ b.employeeName }}<span class="cell-sub">{{ b.employeeCode }}@if (b.departmentName) { · {{ b.departmentName }} }</span></dd></div>
+                <div><dt>{{ 'rewards.proposedOn' | translate }}</dt><dd class="num">{{ utc(b.createdAt) | date: 'd MMM y' : undefined : lang() }}</dd></div>
+                @if (b.decidedAt) { <div><dt>{{ 'rewards.decided' | translate }}</dt><dd class="num">{{ utc(b.decidedAt) | date: 'd MMM y' : undefined : lang() }}</dd></div> }
+                @if (b.payoutMethod) {
+                  <div><dt>{{ 'rewards.payout' | translate }}</dt><dd>
+                    {{ (b.payoutMethod === 'Payroll' ? 'rewards.payoutPayroll' : 'rewards.payoutDirect') | translate }}
+                    @if (b.payPeriodStart && b.payPeriodEnd) { <span class="cell-sub num">{{ b.payPeriodStart | date: 'd MMM' : undefined : lang() }} – {{ b.payPeriodEnd | date: 'd MMM y' : undefined : lang() }}</span> }
+                  </dd></div>
+                }
+                @if (b.paidAt) { <div><dt>{{ 'rewards.paidCol' | translate }}</dt><dd class="num">{{ utc(b.paidAt) | date: 'd MMM y' : undefined : lang() }}</dd></div> }
+              </dl>
+              @if (b.reason) { <p class="pre desc">{{ b.reason }}</p> }
+              @if (b.decisionNote) { <p class="confirm-note"><b>{{ 'rewards.hrNote' | translate }}</b> {{ b.decisionNote }}</p> }
+              @if (b.status === 'Pending') {
+                @if (canApprove() && !rowAction) {
+                  <div class="field payout-field">
+                    <label for="bo-pay">{{ 'rewards.payout' | translate }}</label>
+                    <select id="bo-pay" [(ngModel)]="payout">
+                      <option value="Payroll">{{ 'rewards.payoutPayroll' | translate }}</option>
+                      <option value="Direct">{{ 'rewards.payoutDirect' | translate }}</option>
+                    </select>
+                  </div>
+                }
+                <ng-container [ngTemplateOutlet]="rowActions" />
+              }
+              @if (b.status === 'Approved' && b.payoutMethod === 'Payroll') { <p class="field-hint">{{ 'rewards.payrollPaidHint' | translate }}</p> }
+              @if (b.status === 'Approved' && b.payoutMethod === 'Direct' && canManage()) {
+                <div class="inline-actions start">
+                  <button type="button" class="btn btn-ink btn-small" [disabled]="saving()" (click)="markPaid()"><span class="material-icons-outlined" aria-hidden="true">paid</span>{{ 'rewards.markPaid' | translate }}</button>
+                </div>
+              }
+            }
+          }
+
+          <!-- Bonus form (edit one / new for many) -->
+          @case ('bonusEdit') {
+            <ng-container [ngTemplateOutlet]="bonusFields" />
+          }
+          @case ('bonusBatch') {
+            <ng-container [ngTemplateOutlet]="bonusFields" />
+            @if (bonusForm; as f) {
+              <span class="group-label">{{ 'rewards.who' | translate }}</span>
+              <div class="toolbar picker-bar">
+                <label class="search">
+                  <span class="material-icons-outlined" aria-hidden="true">search</span>
+                  <input type="search" [(ngModel)]="pickerSearch" [placeholder]="'rewards.searchPeoplePh' | translate" [attr.aria-label]="'rewards.searchPeoplePh' | translate" />
+                </label>
+                <select class="select-sm" [(ngModel)]="pickerDept" [attr.aria-label]="'rewards.department' | translate">
+                  <option value="">{{ 'rewards.allDepartments' | translate }}</option>
+                  @for (dd of lookups().departments; track dd.id) { <option [value]="dd.id">{{ dd.name }}</option> }
+                </select>
+              </div>
+              <div class="table-wrap preview">
+                <table class="ledger-table">
+                  <thead>
+                    <tr>
+                      <th class="pick"><input type="checkbox" [checked]="allPicked('people')" (change)="toggleAll('people')" [attr.aria-label]="'rewards.pickAll' | translate" /></th>
+                      <th>{{ 'rewards.employee' | translate }}</th>
+                      <th class="end">{{ 'rewards.monthly' | translate }}</th>
+                      <th class="end">{{ 'rewards.bonus' | translate }}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @if (salaries() === null) { <tr><td colspan="4"><p class="loading-line">{{ 'common.loading' | translate }}</p></td></tr> }
+                    @for (s of pickerRows(); track s.employeeId) {
+                      <tr class="is-link" (click)="toggle('people', s.employeeId)">
+                        <td class="pick"><input type="checkbox" [checked]="pickedPeople().has(s.employeeId)" (click)="$event.stopPropagation()" (change)="toggle('people', s.employeeId)" [attr.aria-label]="s.employeeName" /></td>
+                        <td><span class="cell-main">{{ s.employeeName }}</span><span class="cell-sub">{{ s.departmentName }}</span></td>
+                        <td class="end num">{{ s.monthlyEquivalent === null ? '—' : money(s.monthlyEquivalent, null) }}</td>
+                        <td class="end num">@if (pickedPeople().has(s.employeeId)) { <b>{{ bonusFor(s) === null ? '—' : money(bonusFor(s), null) }}</b> }</td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+              <p class="base-line num">{{ 'rewards.batchTotal' | translate: { n: pickedPeople().size, amount: money(bonusBatchTotal(), currency()) } }}</p>
+              <p class="field-hint">{{ 'rewards.bonusHint' | translate }}</p>
+            }
+          }
+        }
+      </div>
+
+      @if (d === 'request' || d === 'plan' || d === 'enrol' || d === 'revisionEdit' || d === 'revBatch' || d === 'bonusEdit' || d === 'bonusBatch') {
+        <footer class="drawer-foot">
+          <button type="button" class="btn btn-quiet" (click)="closeDrawer()">{{ 'common.cancel' | translate }}</button>
+          @switch (d) {
+            @case ('request') { <button type="button" class="btn btn-ink" [disabled]="saving()" (click)="saveRequest()">{{ 'rewards.sendRequest' | translate }}</button> }
+            @case ('plan') { <button type="button" class="btn btn-ink" [disabled]="!canSavePlan() || saving()" (click)="savePlan()">{{ 'common.save' | translate }}</button> }
+            @case ('enrol') { <button type="button" class="btn btn-ink" [disabled]="!canSaveEnrol() || saving()" (click)="saveEnrol()">{{ 'rewards.enrol' | translate }}</button> }
+            @case ('revisionEdit') { <button type="button" class="btn btn-ink" [disabled]="!canSaveRevision() || saving()" (click)="saveRevision()">{{ (revisionForm?.id ? 'common.save' : 'rewards.propose') | translate }}</button> }
+            @case ('revBatch') { <button type="button" class="btn btn-ink" [disabled]="!canSaveRevBatch() || saving()" (click)="saveRevBatch()">{{ 'rewards.proposeForN' | translate: { n: pickedPeople().size } }}</button> }
+            @case ('bonusEdit') { <button type="button" class="btn btn-ink" [disabled]="!canSaveBonus() || saving()" (click)="saveBonus()">{{ 'common.save' | translate }}</button> }
+            @case ('bonusBatch') { <button type="button" class="btn btn-ink" [disabled]="!canSaveBonus() || saving()" (click)="saveBonus()">{{ 'rewards.proposeForN' | translate: { n: pickedPeople().size } }}</button> }
+          }
+        </footer>
+      }
+    </aside>
+  </div>
+}
+
+<!-- Pending increment / bonus: approve, reject, edit, cancel -->
+<ng-template #rowActions>
+  @if (rowAction; as a) {
+    <div class="task-form">
+      <p>{{ 'rewards.act.' + a + 'RowHint' | translate }}</p>
+      @if (a === 'reject') {
+        <textarea rows="2" maxlength="500" [(ngModel)]="actionNote" [placeholder]="'rewards.noteRequired' | translate" [attr.aria-label]="'rewards.note' | translate"></textarea>
+      }
+      <div class="inline-actions">
+        <button type="button" class="btn btn-quiet btn-small" (click)="rowAction = null">{{ 'common.cancel' | translate }}</button>
+        <button type="button" class="btn btn-danger btn-small" [disabled]="saving() || (a === 'reject' && !actionNote.trim())" (click)="runRowAction()">{{ 'rewards.act.' + a | translate }}</button>
+      </div>
+    </div>
+  } @else {
+    <div class="inline-actions start wrap">
+      @if (canApprove()) {
+        <button type="button" class="btn btn-ink btn-small" [disabled]="saving()" (click)="approveOne()"><span class="material-icons-outlined" aria-hidden="true">check</span>{{ 'rewards.act.approve' | translate }}</button>
+        <button type="button" class="btn btn-quiet btn-small" (click)="startRowAction('reject')">{{ 'rewards.act.reject' | translate }}</button>
+      }
+      @if (canManage()) {
+        <button type="button" class="btn btn-quiet btn-small" (click)="drawer() === 'revision' ? editRevision() : editBonus()">{{ 'common.edit' | translate }}</button>
+        <button type="button" class="btn-link danger-link push" (click)="startRowAction('cancel')">{{ 'rewards.act.cancel' | translate }}</button>
+      }
+    </div>
+  }
+</ng-template>
+
+<ng-template #bonusFields>
+  @if (bonusForm; as f) {
+    <div class="form-grid">
+      <div class="field span-2">
+        <label for="bn-title">{{ 'rewards.bonusTitle' | translate }}</label>
+        <input id="bn-title" maxlength="150" [(ngModel)]="f.title" [placeholder]="'rewards.bonusTitlePh' | translate" />
+      </div>
+      <div class="field">
+        <label for="bn-type">{{ 'rewards.bonusTypeCol' | translate }}</label>
+        <select id="bn-type" [(ngModel)]="f.bonusType">
+          @for (t of bonusTypes; track t) { <option [value]="t">{{ 'rewards.bonusType.' + t | translate }}</option> }
+        </select>
+      </div>
+      @if (!f.id) {
+        <div class="field">
+          <label for="bn-basis">{{ 'rewards.basisCol' | translate }}</label>
+          <select id="bn-basis" [(ngModel)]="f.basis">
+            <option value="Fixed">{{ 'rewards.fixed' | translate }}</option>
+            <option value="PercentOfMonthlySalary">{{ 'rewards.pctMonthly' | translate }}</option>
+          </select>
+        </div>
+      }
+      <div class="field">
+        <label for="bn-val">{{ (f.basis === 'Fixed' ? 'rewards.amount' : 'rewards.percent') | translate }}</label>
+        <input id="bn-val" type="number" min="0" step="any" [(ngModel)]="f.value" />
+      </div>
+      <div class="field">
+        <label for="bn-comp">{{ 'rewards.component' | translate }}</label>
+        <select id="bn-comp" [(ngModel)]="f.payComponentId">
+          @for (c of lookups().earningComponents; track c.id) { <option [value]="c.id">{{ c.name }}@if (c.extra) { · {{ c.extra }} }</option> }
+        </select>
+      </div>
+      <div class="field span-all">
+        <label for="bn-reason">{{ 'rewards.why' | translate }}</label>
+        <input id="bn-reason" maxlength="1000" [(ngModel)]="f.reason" />
+      </div>
+    </div>
+    @if (!lookups().earningComponents.length) { <p class="err">{{ 'rewards.err.noEarning' | translate }}</p> }
+  }
+</ng-template>
