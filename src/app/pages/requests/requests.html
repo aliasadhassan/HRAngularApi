@@ -1,0 +1,706 @@
+<div class="page">
+  <header class="page-intro">
+    <p>{{ 'requests.intro' | translate }}</p>
+    <div class="intro-actions">
+      @if (tab() === 'categories' && canConfigure()) {
+        <button type="button" class="btn btn-quiet" [disabled]="saving()" (click)="addDefaults()">
+          <span class="material-icons-outlined" aria-hidden="true">auto_awesome</span>{{ 'requests.addDefaults' | translate }}
+        </button>
+        <button type="button" class="btn btn-ink" (click)="newCategory()">
+          <span class="material-icons-outlined" aria-hidden="true">add</span>{{ 'requests.newCategory' | translate }}
+        </button>
+      } @else if ((linked() || isAgent()) && summary()?.hasCategories) {
+        <button type="button" class="btn btn-ink" (click)="newTicket()">
+          <span class="material-icons-outlined" aria-hidden="true">add</span>{{ 'requests.newRequest' | translate }}
+        </button>
+      }
+    </div>
+  </header>
+
+  @if (summary(); as s) {
+    <nav class="tabs">
+      <button type="button" class="tab" [class.is-active]="tab() === 'mine'" (click)="setTab('mine')">
+        {{ 'requests.tabs.mine' | translate }}
+        @if (s.myActive) { <span class="tab-count num">{{ s.myActive }}</span> }
+      </button>
+      @if (showApprovals()) {
+        <button type="button" class="tab" [class.is-active]="tab() === 'approvals'" (click)="setTab('approvals')">
+          {{ 'requests.tabs.approvals' | translate }}
+          @if (s.awaitingMyApproval + others().length) { <span class="tab-count num alert-count">{{ s.awaitingMyApproval + others().length }}</span> }
+        </button>
+      }
+      @if (s.canViewQueue) {
+        <button type="button" class="tab" [class.is-active]="tab() === 'queue'" (click)="setTab('queue')">
+          {{ 'requests.tabs.queue' | translate }}
+          @if (s.queueOpen) { <span class="tab-count num">{{ s.queueOpen }}</span> }
+        </button>
+      }
+      @if (s.canConfigure) {
+        <button type="button" class="tab" [class.is-active]="tab() === 'categories'" (click)="setTab('categories')">{{ 'requests.tabs.categories' | translate }}</button>
+      }
+    </nav>
+  } @else {
+    <p class="loading-line">{{ 'common.loading' | translate }}</p>
+  }
+
+  <!-- ═══ My requests ═══ -->
+  @if (tab() === 'mine' && summary(); as s) {
+    @if (!s.hasCategories) {
+      <div class="notice notice-info">
+        <span class="material-icons-outlined" aria-hidden="true">info</span>
+        <span class="grow">{{ (s.canConfigure ? 'requests.noCategoriesHr' : 'requests.noCategories') | translate }}</span>
+        @if (s.canConfigure) {
+          <button type="button" class="btn btn-ink btn-small" [disabled]="saving()" (click)="addDefaults()">{{ 'requests.addDefaults' | translate }}</button>
+        }
+      </div>
+    } @else if (!linked()) {
+      <div class="notice notice-info">
+        <span class="material-icons-outlined" aria-hidden="true">badge</span>
+        <span class="grow">{{ 'requests.notLinked' | translate }}</span>
+      </div>
+    }
+
+    @if (linked() && s.hasCategories) {
+      <section class="panel panel-flush">
+        <header class="list-head flat">
+          <h3 class="section-title">{{ 'requests.askTitle' | translate }}</h3>
+          <p class="panel-sub">{{ 'requests.askSub' | translate }}</p>
+        </header>
+        <div class="cat-grid">
+          @for (c of lookups().categories; track c.id) {
+            <button type="button" class="cat-card" (click)="newTicket(c.id)">
+              <span class="material-icons-outlined cat-icon" aria-hidden="true">{{ c.icon || 'support_agent' }}</span>
+              <span class="stack">
+                <span class="cell-main wrap">{{ c.name }}</span>
+                @if (c.description) { <span class="cell-sub wrap">{{ c.description }}</span> }
+                <span class="cat-meta">
+                  @if (hoursLabel(c.resolutionHours); as h) { <span class="meta"><span class="material-icons-outlined" aria-hidden="true">schedule</span>{{ h.key | translate: { n: h.n } }}</span> }
+                  @if (c.needsManagerApproval) { <span class="meta"><span class="material-icons-outlined" aria-hidden="true">approval</span>{{ 'requests.needsApproval' | translate }}</span> }
+                  @if (c.isConfidential) { <span class="meta"><span class="material-icons-outlined" aria-hidden="true">lock</span>{{ 'requests.confidential' | translate }}</span> }
+                </span>
+              </span>
+            </button>
+          }
+        </div>
+      </section>
+    }
+
+    @if (linked()) {
+      <section class="panel panel-flush">
+        <header class="list-head">
+          <h3 class="section-title">{{ 'requests.myOpen' | translate }}</h3>
+        </header>
+        @if (mine() === null) {
+          <p class="loading-line">{{ 'common.loading' | translate }}</p>
+        } @else {
+          <ul class="plain-list">
+            @for (t of mineOpen(); track t.id) {
+              <li><ng-container *ngTemplateOutlet="row; context: { $implicit: t, who: false }" /></li>
+            } @empty {
+              <li class="empty-line pad dim">{{ 'requests.noOpen' | translate }}</li>
+            }
+          </ul>
+        }
+        @if (mineClosed().length) {
+          <button type="button" class="more-btn" (click)="showClosed.set(!showClosed())">
+            <span class="material-icons-outlined" aria-hidden="true">{{ showClosed() ? 'expand_less' : 'expand_more' }}</span>
+            {{ (showClosed() ? 'requests.hideClosed' : 'requests.showClosed') | translate: { n: mineClosed().length } }}
+          </button>
+          @if (showClosed()) {
+            <ul class="plain-list closed-list">
+              @for (t of mineClosed(); track t.id) {
+                <li><ng-container *ngTemplateOutlet="row; context: { $implicit: t, who: false }" /></li>
+              }
+            </ul>
+          }
+        }
+      </section>
+    }
+  }
+
+  <!-- ═══ Approvals ═══ -->
+  @if (tab() === 'approvals') {
+    <section class="panel panel-flush">
+      <header class="list-head">
+        <h3 class="section-title">{{ 'requests.awaiting' | translate }}</h3>
+        <p class="panel-sub">{{ 'requests.awaitingSub' | translate }}</p>
+      </header>
+      @if (approvals() === null) {
+        <p class="loading-line">{{ 'common.loading' | translate }}</p>
+      } @else {
+        <ul class="plain-list">
+          @for (t of pendingApprovals(); track t.id) {
+            <li class="plain-row wrap-row">
+              <span class="material-icons-outlined cat-icon sm" aria-hidden="true">{{ t.categoryIcon || 'support_agent' }}</span>
+              <span class="stack grow">
+                <span class="cell-main wrap">{{ t.employeeName }} · {{ t.subject }}</span>
+                <span class="cell-sub"><span class="num">{{ t.code }}</span> · {{ t.categoryName }} · {{ utc(t.createdAt) | date: 'd MMM, HH:mm' : undefined : lang() }}</span>
+              </span>
+              <span class="row-btns">
+                <button type="button" class="btn btn-quiet btn-small" (click)="openTicket(t.id)">{{ 'common.open' | translate }}</button>
+                <button type="button" class="btn btn-ink btn-small" [disabled]="saving()" (click)="quickApprove(t)">
+                  <span class="material-icons-outlined" aria-hidden="true">check</span>{{ 'requests.approve' | translate }}
+                </button>
+              </span>
+            </li>
+          } @empty {
+            <li class="empty-line pad dim">{{ 'requests.noPending' | translate }}</li>
+          }
+        </ul>
+      }
+    </section>
+
+    @if (others().length) {
+      <section class="panel panel-flush">
+        <header class="list-head">
+          <h3 class="section-title">{{ 'requests.otherTitle' | translate }}</h3>
+          <p class="panel-sub">{{ 'requests.otherSub' | translate }}</p>
+        </header>
+        <ul class="plain-list">
+          @for (o of others(); track o.id) {
+            <li>
+              <a class="plain-row as-btn" [routerLink]="o.link" [queryParams]="o.queryParams">
+                <span class="material-icons-outlined cat-icon sm" aria-hidden="true">{{ o.icon }}</span>
+                <span class="stack grow">
+                  @if (o.person) { <span class="cell-main wrap">{{ o.person }}</span> }
+                  <span class="cell-sub wrap">{{ o.titleKey | translate: o.params }}</span>
+                </span>
+                <span class="material-icons-outlined dim flip" aria-hidden="true">chevron_right</span>
+              </a>
+            </li>
+          }
+        </ul>
+      </section>
+    }
+
+    @if (decidedApprovals().length) {
+      <section class="panel panel-flush">
+        <header class="list-head"><h3 class="section-title">{{ 'requests.decided' | translate }}</h3></header>
+        <ul class="plain-list">
+          @for (t of decidedApprovals(); track t.id) {
+            <li><ng-container *ngTemplateOutlet="row; context: { $implicit: t, who: true }" /></li>
+          }
+        </ul>
+      </section>
+    }
+  }
+
+  <!-- ═══ Helpdesk queue ═══ -->
+  @if (tab() === 'queue' && summary(); as s) {
+    <section class="tallies">
+      <button type="button" class="tally" [class.is-picked]="!assignee() && !overdueOnly() && activeOnly() && !status()" (click)="showQueue('')">
+        <span class="t-label">{{ 'requests.sum.open' | translate }}</span>
+        <span class="t-figure num">{{ s.queueOpen }}</span>
+        <span class="t-sub">{{ 'requests.sum.openSub' | translate }}</span>
+      </button>
+      <button type="button" class="tally" [class.is-alert]="s.unassigned > 0" [class.is-picked]="assignee() === 'none'" (click)="showQueue('none')">
+        <span class="t-label">{{ 'requests.sum.unassigned' | translate }}</span>
+        <span class="t-figure num">{{ s.unassigned }}</span>
+        <span class="t-sub">{{ 'requests.sum.unassignedSub' | translate }}</span>
+      </button>
+      @if (s.myEmployeeId) {
+        <button type="button" class="tally" [class.is-picked]="assignee() === 'me'" (click)="showQueue('me')">
+          <span class="t-label">{{ 'requests.sum.mine' | translate }}</span>
+          <span class="t-figure num">{{ s.assignedToMe }}</span>
+          <span class="t-sub">{{ 'requests.sum.mineSub' | translate }}</span>
+        </button>
+      }
+      <button type="button" class="tally" [class.is-alert]="s.overdue > 0" [class.is-picked]="overdueOnly()" (click)="showQueue('', true)">
+        <span class="t-label">{{ 'requests.sum.overdue' | translate }}</span>
+        <span class="t-figure num">{{ s.overdue }}</span>
+        <span class="t-sub">{{ 'requests.sum.overdueSub' | translate }}</span>
+      </button>
+      <article class="tally static">
+        <span class="t-label">{{ 'requests.sum.resolved' | translate }}</span>
+        <span class="t-figure num">{{ s.resolvedLast30 }}</span>
+        <span class="t-sub">
+          @if (s.averageResolutionHours !== null) { {{ 'requests.sum.avg' | translate: { n: (s.averageResolutionHours | number: '1.0-1' : lang()) } }} }
+          @else { {{ 'requests.sum.last30' | translate }} }
+        </span>
+      </article>
+      <article class="tally static">
+        <span class="t-label">{{ 'requests.sum.satisfaction' | translate }}</span>
+        <span class="t-figure num">@if (s.satisfaction !== null) { {{ s.satisfaction | number: '1.1-1' : lang() }}<small>/5</small> } @else { — }</span>
+        <span class="t-sub">{{ 'requests.sum.satisfactionSub' | translate }}</span>
+      </article>
+    </section>
+
+    <section class="panel panel-flush">
+      <div class="toolbar">
+        <label class="search">
+          <span class="material-icons-outlined" aria-hidden="true">search</span>
+          <input type="search" [ngModel]="search()" (ngModelChange)="onSearch($event)" [placeholder]="'requests.searchPh' | translate" [attr.aria-label]="'requests.searchPh' | translate" />
+        </label>
+        <select class="select-sm" [ngModel]="status()" (ngModelChange)="setStatus($event)" [attr.aria-label]="'requests.statusCol' | translate">
+          <option value="">{{ 'requests.anyStatus' | translate }}</option>
+          @for (st of statuses; track st) { <option [value]="st">{{ 'requests.status.' + st | translate }}</option> }
+        </select>
+        <select class="select-sm" [ngModel]="categoryId()" (ngModelChange)="setCategory($event)" [attr.aria-label]="'requests.category' | translate">
+          <option value="">{{ 'requests.allCategories' | translate }}</option>
+          @for (c of lookups().categories; track c.id) { <option [value]="c.id">{{ c.name }}</option> }
+        </select>
+        <select class="select-sm" [ngModel]="assignee()" (ngModelChange)="setAssignee($event)" [attr.aria-label]="'requests.assignee' | translate">
+          <option value="">{{ 'requests.anyone' | translate }}</option>
+          @if (s.myEmployeeId) { <option value="me">{{ 'requests.assignedMe' | translate }}</option> }
+          <option value="none">{{ 'requests.unassigned' | translate }}</option>
+          @for (p of lookups().people; track p.id) { <option [value]="p.id">{{ p.name }}</option> }
+        </select>
+        @if (!status()) {
+          <label class="check-inline">
+            <input type="checkbox" [ngModel]="activeOnly()" (ngModelChange)="setActiveOnly($event)" />{{ 'requests.activeOnly' | translate }}
+          </label>
+        }
+        @if (overdueOnly()) {
+          <button type="button" class="chip chip-oxblood chip-x" (click)="overdueOnly.set(false)">
+            {{ 'requests.sum.overdue' | translate }}<span class="material-icons-outlined" aria-hidden="true">close</span>
+          </button>
+        }
+      </div>
+      <div class="table-wrap">
+        <table class="ledger-table">
+          <thead>
+            <tr>
+              <th>{{ 'requests.request' | translate }}</th>
+              <th>{{ 'requests.employee' | translate }}</th>
+              <th>{{ 'requests.priority' | translate }}</th>
+              <th>{{ 'requests.statusCol' | translate }}</th>
+              <th>{{ 'requests.assignee' | translate }}</th>
+              <th>{{ 'requests.due' | translate }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            @if (queue() === null) {
+              <tr><td colspan="6"><p class="loading-line">{{ 'common.loading' | translate }}</p></td></tr>
+            }
+            @for (t of queueRows(); track t.id) {
+              <tr class="is-link" tabindex="0" (click)="openTicket(t.id)" (keydown.enter)="openTicket(t.id)">
+                <td class="subj-cell">
+                  <span class="cell-main wrap">@if (t.isConfidential) { <span class="material-icons-outlined inline-icon" aria-hidden="true">lock</span> }{{ t.subject }}</span>
+                  <span class="cell-sub"><span class="num">{{ t.code }}</span> · {{ t.categoryName }}</span>
+                </td>
+                <td>
+                  <span class="cell-main">{{ t.employeeName }}</span>
+                  <span class="cell-sub">{{ t.departmentName }}</span>
+                </td>
+                <td><span [class]="priorityChip[t.priority]">{{ 'requests.prio.' + t.priority | translate }}</span></td>
+                <td><span [class]="statusChip[t.status]">{{ 'requests.status.' + t.status | translate }}</span></td>
+                <td>@if (t.assigneeName) { {{ t.assigneeName }} } @else { <span class="dim">{{ 'requests.unassigned' | translate }}</span> }</td>
+                <td class="num"><ng-container *ngTemplateOutlet="due; context: { $implicit: t }" /></td>
+              </tr>
+            }
+            @if (queue() !== null && !queueRows().length) {
+              <tr><td colspan="6" class="empty-line pad dim">{{ 'requests.queueEmpty' | translate }}</td></tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+  }
+
+  <!-- ═══ Categories ═══ -->
+  @if (tab() === 'categories') {
+    <section class="panel panel-flush">
+      <div class="table-wrap">
+        <table class="ledger-table">
+          <thead>
+            <tr>
+              <th>{{ 'requests.category' | translate }}</th>
+              <th>{{ 'requests.sla' | translate }}</th>
+              <th>{{ 'requests.rules' | translate }}</th>
+              <th>{{ 'requests.defaultAssignee' | translate }}</th>
+              <th class="num-col">{{ 'requests.openCol' | translate }}</th>
+              <th class="num-col">{{ 'requests.totalCol' | translate }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            @if (categories() === null) {
+              <tr><td colspan="6"><p class="loading-line">{{ 'common.loading' | translate }}</p></td></tr>
+            }
+            @for (c of categories(); track c.id) {
+              <tr class="is-link" [class.is-off]="!c.isActive" tabindex="0" (click)="editCategory(c)" (keydown.enter)="editCategory(c)">
+                <td>
+                  <span class="cat-name">
+                    <span class="material-icons-outlined cat-icon sm" aria-hidden="true">{{ c.icon || 'support_agent' }}</span>
+                    <span class="stack">
+                      <span class="cell-main wrap">{{ c.name }}</span>
+                      @if (!c.isActive) { <span class="cell-sub">{{ 'requests.inactive' | translate }}</span> }
+                      @else if (c.description) { <span class="cell-sub wrap">{{ c.description }}</span> }
+                    </span>
+                  </span>
+                </td>
+                <td class="num">@if (hoursLabel(c.resolutionHours); as h) { {{ h.key | translate: { n: h.n } }} } @else { <span class="dim">—</span> }</td>
+                <td>
+                  <span class="rules">
+                    @if (c.needsManagerApproval) { <span class="chip chip-amber">{{ 'requests.needsApproval' | translate }}</span> }
+                    @if (c.isConfidential) { <span class="chip chip-ink">{{ 'requests.confidential' | translate }}</span> }
+                    @if (!c.needsManagerApproval && !c.isConfidential) { <span class="dim">—</span> }
+                  </span>
+                </td>
+                <td>@if (c.defaultAssigneeName) { {{ c.defaultAssigneeName }} } @else { <span class="dim">{{ 'requests.unassigned' | translate }}</span> }</td>
+                <td class="num num-col">{{ c.openTickets }}</td>
+                <td class="num num-col">{{ c.totalTickets }}</td>
+              </tr>
+            } @empty {
+              @if (categories() !== null) {
+                <tr><td colspan="6" class="empty-line pad dim">{{ 'requests.noCategoriesHr' | translate }}</td></tr>
+              }
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+  }
+</div>
+
+<!-- Ticket row (lists) -->
+<ng-template #row let-t let-who="who">
+  <button type="button" class="plain-row as-btn" (click)="openTicket(t.id)">
+    <span class="material-icons-outlined cat-icon sm" aria-hidden="true">{{ t.categoryIcon || 'support_agent' }}</span>
+    <span class="stack grow">
+      <span class="cell-main wrap">@if (who) { {{ t.employeeName }} · }{{ t.subject }}</span>
+      <span class="cell-sub"><span class="num">{{ t.code }}</span> · {{ t.categoryName }} · {{ utc(t.lastActivityAt) | date: 'd MMM' : undefined : lang() }}@if (t.assigneeName && !who) { · {{ t.assigneeName }} }</span>
+    </span>
+    <span class="row-end">
+      <span [class]="chipOf(t)">{{ 'requests.status.' + t.status | translate }}</span>
+      @if (t.satisfactionRating) { <span class="stars num" [attr.aria-label]="'requests.ratedN' | translate: { n: t.satisfactionRating }">★ {{ t.satisfactionRating }}</span> }
+      @else if (isActive(t.status)) { <span class="cell-sub"><ng-container *ngTemplateOutlet="due; context: { $implicit: t }" /></span> }
+    </span>
+  </button>
+</ng-template>
+
+<!-- Due / overdue -->
+<ng-template #due let-t>
+  @if (isActive(t.status) && hoursLeft(t.dueAt); as h) {
+    @if (h < 0) { <span class="warn">{{ (abs(h) >= 48 ? 'requests.lateDays' : 'requests.lateHours') | translate: { n: abs(h) >= 48 ? (abs(h) / 24 | number: '1.0-0') : abs(h) } }}</span> }
+    @else { {{ (h >= 48 ? 'requests.dueDays' : 'requests.dueHours') | translate: { n: h >= 48 ? (h / 24 | number: '1.0-0') : h } }} }
+  } @else if (isActive(t.status) && t.dueAt) {
+    <span class="amber">{{ 'requests.dueNow' | translate }}</span>
+  } @else if (t.resolvedAt) {
+    <span class="dim">{{ utc(t.resolvedAt) | date: 'd MMM' : undefined : lang() }}</span>
+  } @else {
+    <span class="dim">—</span>
+  }
+</ng-template>
+
+@if (drawer(); as d) {
+  <div class="overlay" (click)="closeDrawer()">
+    <aside class="drawer" [class.drawer-wide]="d !== 'category'" role="dialog" aria-modal="true" (click)="$event.stopPropagation()">
+      <header class="drawer-head">
+        <h3>
+          @switch (d) {
+            @case ('ticket') { {{ ticket()?.ticket?.subject ?? ('common.loading' | translate) }} }
+            @case ('ticketEdit') { {{ (ticketForm?.id ? 'requests.editRequest' : 'requests.newRequest') | translate }} }
+            @case ('category') { {{ (categoryForm?.id ? 'requests.editCategory' : 'requests.newCategory') | translate }} }
+          }
+        </h3>
+        <button type="button" class="btn-link" (click)="closeDrawer()" [attr.aria-label]="'common.close' | translate">
+          <span class="material-icons-outlined" aria-hidden="true">close</span>
+        </button>
+      </header>
+
+      <div class="drawer-body">
+        @switch (d) {
+          <!-- Ticket -->
+          @case ('ticket') {
+            @if (ticket(); as td) {
+              @let t = td.ticket;
+              <div class="case-head">
+                <span class="cell-sub"><span class="num">{{ t.code }}</span> · {{ t.categoryName }}@if (t.isConfidential) { · <span class="material-icons-outlined inline-icon" aria-hidden="true">lock</span>{{ 'requests.confidential' | translate }} }</span>
+                <span class="head-chips">
+                  <span [class]="priorityChip[t.priority]">{{ 'requests.prio.' + t.priority | translate }}</span>
+                  <span [class]="statusChip[t.status]">{{ 'requests.status.' + t.status | translate }}</span>
+                </span>
+              </div>
+
+              @if (t.status === 'PendingApproval' && td.isRequester) {
+                <p class="confirm-note">{{ 'requests.waitingApprover' | translate: { name: t.approverName || '—' } }}</p>
+              }
+              @if (t.status === 'WaitingOnEmployee' && td.isRequester) {
+                <p class="confirm-note">{{ 'requests.waitingOnYou' | translate }}</p>
+              }
+              @if (t.status === 'Rejected' && td.decisionNote) {
+                <p class="confirm-note"><b>{{ 'requests.rejectedBy' | translate: { name: t.approverName || '—' } }}</b> {{ td.decisionNote }}</p>
+              }
+
+              <dl class="facts">
+                @if (!td.isRequester) { <div><dt>{{ 'requests.employee' | translate }}</dt><dd>{{ t.employeeName }}<span class="cell-sub">{{ t.employeeCode }} · {{ t.departmentName }}</span></dd></div> }
+                <div><dt>{{ 'requests.raised' | translate }}</dt><dd class="num">{{ utc(t.createdAt) | date: 'd MMM y, HH:mm' : undefined : lang() }}</dd></div>
+                <div><dt>{{ 'requests.assignee' | translate }}</dt><dd>{{ t.assigneeName || ('requests.unassigned' | translate) }}</dd></div>
+                @if (t.dueAt && !isFinal(t.status)) { <div><dt>{{ 'requests.due' | translate }}</dt><dd class="num">{{ utc(t.dueAt) | date: 'd MMM, HH:mm' : undefined : lang() }} <ng-container *ngTemplateOutlet="due; context: { $implicit: t }" /></dd></div> }
+                @if (t.approverName && t.status !== 'PendingApproval') { <div><dt>{{ 'requests.approvedBy' | translate }}</dt><dd>{{ t.approverName }}</dd></div> }
+                @if (t.resolvedAt) { <div><dt>{{ 'requests.resolvedOn' | translate }}</dt><dd class="num">{{ utc(t.resolvedAt) | date: 'd MMM y' : undefined : lang() }}</dd></div> }
+                @if (td.closedAt) { <div><dt>{{ 'requests.closedOn' | translate }}</dt><dd class="num">{{ utc(td.closedAt) | date: 'd MMM y' : undefined : lang() }}</dd></div> }
+              </dl>
+
+              @if (td.description) { <p class="pre desc">{{ td.description }}</p> }
+              @if (td.link) {
+                <a class="link-line break" [href]="td.link" target="_blank" rel="noopener noreferrer">
+                  <span class="material-icons-outlined inline-icon" aria-hidden="true">link</span>{{ td.link }}
+                </a>
+              }
+              @if (td.resolution) {
+                <div class="resolution">
+                  <span class="mini-label">{{ 'requests.resolution' | translate }}</span>
+                  <p class="pre">{{ td.resolution }}</p>
+                </div>
+              }
+
+              <!-- Actions -->
+              @if (action; as a) {
+                <div class="task-form">
+                  <p>{{ 'requests.act.' + a + 'Hint' | translate }}</p>
+                  @if (a === 'confirm') {
+                    <div class="rating-pick" role="radiogroup" [attr.aria-label]="'requests.rateTitle' | translate">
+                      @for (r of ratings; track r) {
+                        <button type="button" class="rate-btn" [class.is-picked]="actionRating === r" (click)="actionRating = actionRating === r ? null : r">
+                          <b>{{ r }}</b><span>{{ 'requests.rating.' + r | translate }}</span>
+                        </button>
+                      }
+                    </div>
+                  } @else {
+                    <textarea rows="3" maxlength="4000" [(ngModel)]="actionNote" [placeholder]="(needsNote(a) ? 'requests.noteRequired' : 'requests.noteOptional') | translate" [attr.aria-label]="'requests.note' | translate"></textarea>
+                  }
+                  <div class="inline-actions">
+                    <button type="button" class="btn btn-quiet btn-small" (click)="action = null">{{ 'common.cancel' | translate }}</button>
+                    <button type="button" class="btn btn-small" [class.btn-ink]="a !== 'reject' && a !== 'cancel'" [class.btn-danger]="a === 'reject' || a === 'cancel'"
+                      [disabled]="saving() || (needsNote(a) && !actionNote.trim())" (click)="runAction()">{{ 'requests.act.' + a | translate }}</button>
+                  </div>
+                </div>
+              } @else {
+                <div class="inline-actions start wrap">
+                  @if (td.canApprove) {
+                    <button type="button" class="btn btn-ink btn-small" (click)="startAction('approve')"><span class="material-icons-outlined" aria-hidden="true">check</span>{{ 'requests.act.approve' | translate }}</button>
+                    <button type="button" class="btn btn-quiet btn-small" (click)="startAction('reject')">{{ 'requests.act.reject' | translate }}</button>
+                  }
+                  @if (td.canWork) {
+                    @if (t.status === 'Open' || t.status === 'WaitingOnEmployee') {
+                      <button type="button" class="btn btn-quiet btn-small" [disabled]="saving()" (click)="setTicketStatus('InProgress')"><span class="material-icons-outlined" aria-hidden="true">play_arrow</span>{{ 'requests.start' | translate }}</button>
+                    }
+                    @if (t.status === 'Open' || t.status === 'InProgress') {
+                      <button type="button" class="btn btn-quiet btn-small" (click)="startAction('wait')">{{ 'requests.act.wait' | translate }}</button>
+                    }
+                    @if (isActive(t.status)) {
+                      <button type="button" class="btn btn-ink btn-small" (click)="startAction('resolve')"><span class="material-icons-outlined" aria-hidden="true">task_alt</span>{{ 'requests.act.resolve' | translate }}</button>
+                    }
+                    @if (t.status === 'Resolved' && !td.isRequester) {
+                      <button type="button" class="btn btn-quiet btn-small" [disabled]="saving()" (click)="setTicketStatus('Closed')">{{ 'requests.closeNow' | translate }}</button>
+                    }
+                  }
+                  @if (td.canConfirm) {
+                    <button type="button" class="btn btn-ink btn-small" (click)="startAction('confirm')"><span class="material-icons-outlined" aria-hidden="true">thumb_up</span>{{ 'requests.act.confirm' | translate }}</button>
+                  }
+                  @if (td.canReopen) {
+                    <button type="button" class="btn btn-quiet btn-small" (click)="startAction('reopen')">{{ 'requests.act.reopen' | translate }}</button>
+                  }
+                  @if (td.canEdit) { <button type="button" class="btn btn-quiet btn-small" (click)="editTicket()">{{ 'common.edit' | translate }}</button> }
+                  @if (td.canCancel) { <button type="button" class="btn-link danger-link push" (click)="startAction('cancel')">{{ 'requests.act.cancel' | translate }}</button> }
+                </div>
+              }
+
+              @if (td.canAssign) {
+                <div class="assign-row">
+                  <label class="mini-label" for="t-as">{{ 'requests.assignee' | translate }}</label>
+                  <select id="t-as" class="select-sm grow" [(ngModel)]="assignTo">
+                    <option value="">{{ 'requests.unassigned' | translate }}</option>
+                    @for (p of lookups().people; track p.id) { <option [value]="p.id">{{ p.name }}@if (p.extra) { · {{ p.extra }} }</option> }
+                  </select>
+                  <button type="button" class="btn btn-quiet btn-small" [disabled]="saving() || assignTo === (t.assigneeEmployeeId ?? '')" (click)="assign()">{{ 'requests.assign' | translate }}</button>
+                  @if (summary()?.myEmployeeId && t.assigneeEmployeeId !== summary()?.myEmployeeId) {
+                    <button type="button" class="btn-link" [disabled]="saving()" (click)="assign(true)">{{ 'requests.assignMe' | translate }}</button>
+                  }
+                </div>
+              }
+
+              @if (td.canRate && t.status === 'Closed') {
+                <div class="rate-line">
+                  <span class="mini-label">{{ 'requests.rateTitle' | translate }}</span>
+                  <span class="stars-pick">
+                    @for (r of ratings; track r) {
+                      <button type="button" class="star" [class.is-on]="(t.satisfactionRating ?? 0) >= r" [disabled]="saving()" (click)="rate(r)" [attr.aria-label]="'requests.rating.' + r | translate">★</button>
+                    }
+                  </span>
+                </div>
+              }
+
+              <!-- Conversation -->
+              <section class="sub-panel">
+                <header class="sub-head"><h4>{{ 'requests.conversation' | translate }}</h4></header>
+                <ul class="convo">
+                  @for (a of visibleActivities(td); track a.id) {
+                    @if (isConversation(a)) {
+                      <li class="bubble" [class.is-me]="a.byMe" [class.is-internal]="a.kind === 'InternalNote'">
+                        <span class="b-head">
+                          <b>{{ a.byMe ? ('requests.you' | translate) : (a.byName || '—') }}</b>
+                          @if (a.kind === 'InternalNote') { <span class="chip chip-amber">{{ 'requests.internal' | translate }}</span> }
+                          <span class="dim num">{{ utc(a.at) | date: 'd MMM, HH:mm' : undefined : lang() }}</span>
+                        </span>
+                        <span class="pre">{{ a.note }}</span>
+                      </li>
+                    } @else {
+                      <li class="event">
+                        <span class="material-icons-outlined" aria-hidden="true">{{ kindIcon[a.kind] || 'circle' }}</span>
+                        <span class="grow">
+                          {{ eventKey(a) | translate: { name: a.byName || '—', status: ('requests.status.' + a.toStatus | translate), note: a.note || '' } }}
+                          @if (eventNote(a); as n) { <span class="reason">“{{ n }}”</span> }
+                        </span>
+                        <span class="dim num">{{ utc(a.at) | date: 'd MMM, HH:mm' : undefined : lang() }}</span>
+                      </li>
+                    }
+                  }
+                </ul>
+                @if (td.canComment) {
+                  <div class="reply-box" [class.is-internal]="internal">
+                    <textarea rows="3" maxlength="4000" [(ngModel)]="comment" [placeholder]="(internal ? 'requests.internalPh' : 'requests.replyPh') | translate" [attr.aria-label]="'requests.reply' | translate"></textarea>
+                    <div class="inline-actions">
+                      @if (td.canInternalNote) {
+                        <label class="check-inline push-end">
+                          <input type="checkbox" [(ngModel)]="internal" />{{ 'requests.internalToggle' | translate }}
+                        </label>
+                      }
+                      <button type="button" class="btn btn-ink btn-small" [disabled]="!comment.trim() || saving()" (click)="sendComment()">
+                        <span class="material-icons-outlined" aria-hidden="true">send</span>{{ (internal ? 'requests.addNote' : 'requests.send') | translate }}
+                      </button>
+                    </div>
+                  </div>
+                }
+              </section>
+            } @else {
+              <p class="loading-line">{{ 'common.loading' | translate }}</p>
+            }
+          }
+
+          <!-- New / edit request -->
+          @case ('ticketEdit') {
+            @if (ticketForm; as f) {
+              @if (!f.id) {
+                <span class="group-label">{{ 'requests.whatAbout' | translate }}</span>
+                <div class="cat-pick">
+                  @for (c of lookups().categories; track c.id) {
+                    <button type="button" class="cat-chip" [class.is-picked]="f.categoryId === c.id" (click)="pickCategory(c.id)">
+                      <span class="material-icons-outlined" aria-hidden="true">{{ c.icon || 'support_agent' }}</span>{{ c.name }}
+                    </button>
+                  }
+                </div>
+                @if (pickedCategory(); as c) {
+                  <p class="field-hint">
+                    @if (c.description) { {{ c.description }} }
+                    @if (hoursLabel(c.resolutionHours); as h) { {{ 'requests.slaHint' | translate: { time: (h.key | translate: { n: h.n }) } }} }
+                    @if (c.needsManagerApproval) { {{ 'requests.approvalHint' | translate }} }
+                    @if (c.isConfidential) { {{ 'requests.confidentialHint' | translate }} }
+                  </p>
+                }
+              }
+              <div class="form-grid">
+                @if (f.id) {
+                  <div class="field span-all">
+                    <label for="t-cat">{{ 'requests.category' | translate }}</label>
+                    <select id="t-cat" [(ngModel)]="f.categoryId">
+                      @for (c of lookups().categories; track c.id) { <option [value]="c.id">{{ c.name }}</option> }
+                    </select>
+                  </div>
+                }
+                @if (!f.id && isAgent()) {
+                  <div class="field span-all">
+                    <label for="t-emp">{{ 'requests.raiseFor' | translate }}</label>
+                    <select id="t-emp" [(ngModel)]="f.employeeId">
+                      <option value="">{{ (linked() ? 'requests.myself' : 'requests.pick') | translate }}</option>
+                      @for (p of lookups().people; track p.id) { <option [value]="p.id">{{ p.name }}@if (p.extra) { · {{ p.extra }} }</option> }
+                    </select>
+                  </div>
+                }
+                <div class="field span-2">
+                  <label for="t-sub">{{ 'requests.subject' | translate }}</label>
+                  <input id="t-sub" maxlength="200" [(ngModel)]="f.subject" [placeholder]="'requests.subjectPh' | translate" />
+                </div>
+                <div class="field">
+                  <label for="t-pr">{{ 'requests.priority' | translate }}</label>
+                  <select id="t-pr" [(ngModel)]="f.priority">
+                    @for (p of priorities; track p) { <option [value]="p">{{ 'requests.prio.' + p | translate }}</option> }
+                  </select>
+                </div>
+                <div class="field span-all">
+                  <label for="t-desc">{{ 'requests.details' | translate }}</label>
+                  <textarea id="t-desc" rows="5" maxlength="4000" [(ngModel)]="f.description" [placeholder]="'requests.detailsPh' | translate"></textarea>
+                </div>
+                <div class="field span-all">
+                  <label for="t-link">{{ 'requests.link' | translate }}</label>
+                  <input id="t-link" type="url" maxlength="500" [(ngModel)]="f.link" placeholder="https://" />
+                  @if (!linkOk(f.link)) { <p class="err">{{ 'requests.linkBad' | translate }}</p> }
+                </div>
+              </div>
+              <p class="field-hint">{{ 'requests.linkHint' | translate }}</p>
+            }
+          }
+
+          <!-- Category -->
+          @case ('category') {
+            @if (categoryForm; as f) {
+              <div class="form-grid two">
+                <div class="field span-all">
+                  <label for="c-name">{{ 'requests.catName' | translate }}</label>
+                  <input id="c-name" maxlength="100" [(ngModel)]="f.name" />
+                </div>
+                <div class="field span-all">
+                  <label for="c-desc">{{ 'requests.catDesc' | translate }}</label>
+                  <input id="c-desc" maxlength="300" [(ngModel)]="f.description" />
+                </div>
+                <div class="field">
+                  <label for="c-icon">{{ 'requests.icon' | translate }}</label>
+                  <span class="icon-input">
+                    <span class="material-icons-outlined" aria-hidden="true">{{ iconOk(f.icon) && f.icon.trim() ? f.icon.trim() : 'support_agent' }}</span>
+                    <input id="c-icon" maxlength="40" [(ngModel)]="f.icon" placeholder="support_agent" />
+                  </span>
+                  @if (!iconOk(f.icon)) { <p class="err">{{ 'requests.iconBad' | translate }}</p> }
+                </div>
+                <div class="field">
+                  <label for="c-sla">{{ 'requests.slaHours' | translate }}</label>
+                  <input id="c-sla" type="number" min="1" max="2000" [(ngModel)]="f.resolutionHours" />
+                </div>
+                <div class="field span-all">
+                  <label for="c-as">{{ 'requests.defaultAssignee' | translate }}</label>
+                  <select id="c-as" [(ngModel)]="f.defaultAssigneeEmployeeId">
+                    <option value="">{{ 'requests.unassigned' | translate }}</option>
+                    @for (p of lookups().people; track p.id) { <option [value]="p.id">{{ p.name }}@if (p.extra) { · {{ p.extra }} }</option> }
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="c-so">{{ 'requests.sortOrder' | translate }}</label>
+                  <input id="c-so" type="number" min="0" max="999" [(ngModel)]="f.sortOrder" />
+                </div>
+              </div>
+              <div class="checks">
+                <label class="check-inline">
+                  <input type="checkbox" [(ngModel)]="f.needsManagerApproval" [disabled]="f.isConfidential" />{{ 'requests.needsApprovalLong' | translate }}
+                </label>
+                <label class="check-inline">
+                  <input type="checkbox" [ngModel]="f.isConfidential" (ngModelChange)="setConfidential($event)" />{{ 'requests.confidentialLong' | translate }}
+                </label>
+                <label class="check-inline">
+                  <input type="checkbox" [(ngModel)]="f.isActive" />{{ 'requests.activeLong' | translate }}
+                </label>
+              </div>
+              <p class="field-hint">{{ 'requests.categoryHint' | translate }}</p>
+              @if (editingCategory(); as c) {
+                <div class="inline-actions start">
+                  <span class="cell-sub">{{ 'requests.catUsage' | translate: { open: c.openTickets, total: c.totalTickets } }}</span>
+                  <button type="button" class="btn-link danger-link push" [disabled]="saving()" (click)="deleteCategory()">{{ (confirm === 'delete' ? 'requests.confirmDelete' : 'common.delete') | translate }}</button>
+                </div>
+              }
+            }
+          }
+        }
+      </div>
+
+      @if (d === 'ticketEdit' || d === 'category') {
+        <footer class="drawer-foot">
+          <button type="button" class="btn btn-quiet" (click)="closeDrawer()">{{ 'common.cancel' | translate }}</button>
+          @if (d === 'ticketEdit') {
+            <button type="button" class="btn btn-ink" [disabled]="!canSaveTicket() || saving()" (click)="saveTicket()">{{ (ticketForm?.id ? 'common.save' : 'requests.submit') | translate }}</button>
+          } @else {
+            <button type="button" class="btn btn-ink" [disabled]="!canSaveCategory() || saving()" (click)="saveCategory()">{{ 'common.save' | translate }}</button>
+          }
+        </footer>
+      }
+    </aside>
+  </div>
+}
