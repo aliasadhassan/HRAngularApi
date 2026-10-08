@@ -126,7 +126,7 @@ export class SidebarComponent {
         { icon: 'policy', label: 'nav.policiesCompliance', route: '/app/compliance/policies' },
         { icon: 'health_and_safety', label: 'nav.healthSafety', route: '/app/compliance/health-safety' },
         { icon: 'gavel', label: 'nav.employeeRelations', route: '/app/compliance/relations' },
-        { icon: 'fact_check', label: 'nav.audit', route: '/app/compliance/audit' }
+        { icon: 'fact_check', label: 'nav.audit', route: '/app/compliance/audit', permission: P.settingsView }
       ]
     }
   ];
