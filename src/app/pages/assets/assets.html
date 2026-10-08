@@ -1,0 +1,851 @@
+<div class="page">
+  <header class="page-intro">
+    <p>{{ 'assets.intro' | translate }}</p>
+    @if (tab() === 'inventory' && (canManage || canEditCategories)) {
+      <div class="intro-actions">
+        @if (canEditCategories) {
+          <button type="button" class="btn btn-quiet" (click)="openCategories()">
+            <span class="material-icons-outlined" aria-hidden="true">category</span>{{ 'assets.categories' | translate }}
+          </button>
+        }
+        @if (canManage) {
+          <button type="button" class="btn btn-ink" [disabled]="!activeCategories().length" (click)="openNew()">
+            <span class="material-icons-outlined" aria-hidden="true">add</span>{{ 'assets.add' | translate }}
+          </button>
+        }
+      </div>
+    }
+  </header>
+
+  @if (canView) {
+    <nav class="tabs">
+      <button type="button" class="tab" [class.is-active]="tab() === 'inventory'" (click)="setTab('inventory')">
+        {{ 'assets.tabs.inventory' | translate }}
+        @if (summary()?.total) { <span class="tab-count num">{{ summary()!.total }}</span> }
+      </button>
+      <button type="button" class="tab" [class.is-active]="tab() === 'assignments'" (click)="setTab('assignments')">
+        {{ 'assets.tabs.assignments' | translate }}
+        @if (summary()?.assigned) { <span class="tab-count num">{{ summary()!.assigned }}</span> }
+      </button>
+      <button type="button" class="tab" [class.is-active]="tab() === 'returns'" (click)="setTab('returns')">
+        {{ 'assets.tabs.returns' | translate }}
+        @if (summary()?.returnsDue) { <span class="tab-count num" [class.alert-count]="summary()!.overdueReturns > 0 || summary()!.withLeavers > 0">{{ summary()!.returnsDue }}</span> }
+      </button>
+      <button type="button" class="tab" [class.is-active]="tab() === 'history'" (click)="setTab('history')">{{ 'assets.tabs.history' | translate }}</button>
+      <button type="button" class="tab" [class.is-active]="tab() === 'mine'" (click)="setTab('mine')">
+        {{ 'assets.tabs.mine' | translate }}
+        @if (myCurrent().length) { <span class="tab-count num" [class.alert-count]="myUnconfirmed() > 0">{{ myCurrent().length }}</span> }
+      </button>
+    </nav>
+  }
+
+  <!-- ═══ My assets ═══ -->
+  @if (tab() === 'mine') {
+    @if (mine() === null) {
+      <p class="loading-line">{{ 'common.loading' | translate }}</p>
+    } @else if (!mine()!.length) {
+      <section class="panel">
+        <div class="empty-state">
+          <span class="material-icons-outlined" aria-hidden="true">devices</span>
+          <h3>{{ 'assets.noMine' | translate }}</h3>
+          <p>{{ 'assets.noMineBody' | translate }}</p>
+        </div>
+      </section>
+    } @else {
+      @if (myUnconfirmed() > 0) {
+        <div class="notice notice-info">
+          <span class="material-icons-outlined" aria-hidden="true">how_to_reg</span>
+          <span class="grow">{{ 'assets.confirmHint' | translate: { n: myUnconfirmed() } }}</span>
+        </div>
+      }
+      <div class="my-grid">
+        @for (m of myCurrent(); track m.assignmentId) {
+          <article class="my-card" [class.is-pending]="!m.acknowledgedAt">
+            <span class="cat-badge lg"><span class="material-icons-outlined" aria-hidden="true">{{ m.categoryIcon || 'inventory_2' }}</span></span>
+            <div class="my-text">
+              <span class="tag num">{{ m.assetTag }}</span>
+              <span class="my-name">{{ m.name }}</span>
+              <span class="cell-sub">{{ m.categoryName }}@if (describe(m)) { · {{ describe(m) }} }</span>
+              <span class="cell-sub">
+                {{ 'assets.since' | translate }} {{ m.assignedOn | date: 'd MMM y' : undefined : lang() }}
+                @if (m.dueBack) { · {{ 'assets.dueBack' | translate }} <span class="num" [class.warn]="m.dueBack < today">{{ m.dueBack | date: 'd MMM y' : undefined : lang() }}</span> }
+              </span>
+              @if (m.assignNote) { <span class="cell-sub reason">“{{ m.assignNote }}”</span> }
+            </div>
+            <div class="my-foot">
+              @if (m.acknowledgedAt) {
+                <span class="chip chip-moss">{{ 'assets.received' | translate }}</span>
+              } @else {
+                <button type="button" class="btn btn-ink btn-small" [disabled]="busy() === m.assignmentId" (click)="acknowledge(m)">
+                  <span class="material-icons-outlined" aria-hidden="true">how_to_reg</span>{{ 'assets.confirmReceipt' | translate }}
+                </button>
+              }
+            </div>
+          </article>
+        }
+      </div>
+      @if (myPast().length) {
+        <section class="panel panel-flush">
+          <header class="list-head"><h3 class="section-title">{{ 'assets.myPast' | translate }}</h3></header>
+          <ul class="plain-list">
+            @for (m of myPast(); track m.assignmentId) {
+              <li class="plain-row">
+                <span class="cat-badge sm"><span class="material-icons-outlined" aria-hidden="true">{{ m.categoryIcon || 'inventory_2' }}</span></span>
+                <span class="grow"><span class="cell-main">{{ m.name }}</span> <span class="cell-sub">{{ m.assetTag }}</span></span>
+                <span class="cell-sub num">{{ m.assignedOn | date: 'd MMM y' : undefined : lang() }} – {{ m.returnedOn | date: 'd MMM y' : undefined : lang() }}</span>
+              </li>
+            }
+          </ul>
+        </section>
+      }
+    }
+  }
+
+  <!-- ═══ Tallies (HR tabs) ═══ -->
+  @if (tab() !== 'mine' && tab() !== 'history') {
+    @if (summary(); as s) {
+      <section class="tallies">
+        <button type="button" class="tally" [class.is-picked]="tab() === 'inventory' && status() === 'Available'" (click)="showStatus('Available')">
+          <span class="t-label">{{ 'assets.status.Available' | translate }}</span>
+          <span class="t-figure num">{{ s.available }}</span>
+          <span class="t-sub">{{ 'assets.sum.ofTotal' | translate: { n: s.total } }}</span>
+        </button>
+        <button type="button" class="tally" [class.is-picked]="tab() === 'inventory' && status() === 'Assigned'" (click)="showStatus('Assigned')">
+          <span class="t-label">{{ 'assets.status.Assigned' | translate }}</span>
+          <span class="t-figure num">{{ s.assigned }}</span>
+          @if (s.unacknowledged) { <span class="t-sub">{{ 'assets.sum.unconfirmed' | translate: { n: s.unacknowledged } }}</span> }
+        </button>
+        <button type="button" class="tally" [class.is-alert]="s.overdueReturns > 0 || s.withLeavers > 0" (click)="setTab('returns')">
+          <span class="t-label">{{ 'assets.sum.returnsDue' | translate }}</span>
+          <span class="t-figure num">{{ s.returnsDue }}</span>
+          <span class="t-sub">
+            @if (s.overdueReturns) { {{ 'assets.sum.overdue' | translate: { n: s.overdueReturns } }} }
+            @if (s.overdueReturns && s.withLeavers) { · }
+            @if (s.withLeavers) { {{ 'assets.sum.leavers' | translate: { n: s.withLeavers } }} }
+          </span>
+        </button>
+        <button type="button" class="tally" [class.is-picked]="tab() === 'inventory' && status() === 'InRepair'" (click)="showStatus('InRepair')">
+          <span class="t-label">{{ 'assets.status.InRepair' | translate }}</span>
+          <span class="t-figure num">{{ s.inRepair }}</span>
+          @if (s.warrantyExpiring) { <span class="t-sub">{{ 'assets.sum.warranty' | translate: { n: s.warrantyExpiring } }}</span> }
+        </button>
+        <article class="tally static">
+          <span class="t-label">{{ 'assets.sum.value' | translate }}</span>
+          <span class="t-figure num">{{ s.totalValue | number: '1.0-0' : lang() }}</span>
+          <span class="t-sub">{{ 'assets.sum.valueSub' | translate }}</span>
+        </article>
+      </section>
+    }
+  }
+
+  <!-- ═══ Inventory ═══ -->
+  @if (tab() === 'inventory') {
+    @if (categories() && !categories()!.length && canEditCategories) {
+      <div class="notice notice-info">
+        <span class="material-icons-outlined" aria-hidden="true">category</span>
+        <span class="grow">{{ 'assets.noCategoriesHint' | translate }}</span>
+        <button type="button" class="btn btn-quiet btn-small" [disabled]="saving()" (click)="createStarter()">{{ 'assets.starter' | translate }}</button>
+      </div>
+    }
+
+    <section class="panel panel-flush">
+      <div class="toolbar">
+        <label class="search">
+          <span class="material-icons-outlined" aria-hidden="true">search</span>
+          <input type="search" [ngModel]="search()" (ngModelChange)="onSearch($event)" [placeholder]="'assets.searchPh' | translate" [attr.aria-label]="'assets.searchPh' | translate" />
+        </label>
+        <select class="select-sm" [ngModel]="categoryId()" (ngModelChange)="setCategory($event)" [attr.aria-label]="'assets.category' | translate">
+          <option value="">{{ 'assets.allCategories' | translate }}</option>
+          @for (c of categories() ?? []; track c.id) { <option [value]="c.id">{{ c.name }}</option> }
+        </select>
+        <select class="select-sm" [ngModel]="status()" (ngModelChange)="setStatus($event)" [attr.aria-label]="'assets.statusCol' | translate">
+          <option value="">{{ 'assets.anyStatus' | translate }}</option>
+          @for (s of statuses; track s) { <option [value]="s">{{ 'assets.status.' + s | translate }}</option> }
+        </select>
+      </div>
+      <div class="table-wrap">
+        <table class="ledger-table">
+          <thead>
+            <tr>
+              <th>{{ 'assets.asset' | translate }}</th>
+              <th>{{ 'assets.holder' | translate }}</th>
+              <th>{{ 'assets.location' | translate }}</th>
+              <th>{{ 'assets.condition' | translate }}</th>
+              <th>{{ 'assets.warranty' | translate }}</th>
+              <th>{{ 'assets.statusCol' | translate }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            @if (items() === null) {
+              <tr><td colspan="6"><p class="loading-line">{{ 'common.loading' | translate }}</p></td></tr>
+            }
+            @for (a of items(); track a.id) {
+              <tr class="is-link" tabindex="0" (click)="open(a.id)" (keydown.enter)="open(a.id)">
+                <td>
+                  <div class="asset-cell">
+                    <span class="cat-badge" [attr.title]="a.categoryName"><span class="material-icons-outlined" aria-hidden="true">{{ a.categoryIcon || 'inventory_2' }}</span></span>
+                    <span class="stack">
+                      <span class="cell-main">{{ a.name }}</span>
+                      <span class="cell-sub"><span class="tag num">{{ a.assetTag }}</span>@if (describe(a)) { · {{ describe(a) }} }</span>
+                    </span>
+                  </div>
+                </td>
+                <td>
+                  @if (a.holderName) {
+                    <span class="cell-main">{{ a.holderName }}</span>
+                    <span class="cell-sub">{{ a.holderCode }} · {{ 'assets.since' | translate }} {{ a.assignedOn | date: 'd MMM y' : undefined : lang() }}</span>
+                  } @else { <span class="dim">—</span> }
+                </td>
+                <td>@if (a.locationName) { {{ a.locationName }} } @else { <span class="dim">—</span> }</td>
+                <td><span class="cond" [attr.data-c]="a.condition">{{ 'assets.cond.' + a.condition | translate }}</span></td>
+                <td class="num">
+                  @if (a.warrantyUntil) {
+                    <span [class.warn]="a.warrantyUntil < today" [class.amber]="warrantySoon(a.warrantyUntil)">{{ a.warrantyUntil | date: 'MMM y' : undefined : lang() }}</span>
+                  } @else { <span class="dim">—</span> }
+                </td>
+                <td><span [class]="statusChip[a.status]">{{ 'assets.status.' + a.status | translate }}</span></td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="6">
+                  <div class="empty-state">
+                    <span class="material-icons-outlined" aria-hidden="true">devices</span>
+                    <h3>{{ (search() || status() || categoryId() ? 'assets.noMatch' : 'assets.noAssets') | translate }}</h3>
+                    <p>{{ (search() || status() || categoryId() ? 'assets.noMatchBody' : 'assets.noAssetsBody') | translate }}</p>
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+  }
+
+  <!-- ═══ Assignments ═══ -->
+  @if (tab() === 'assignments') {
+    <section class="panel panel-flush">
+      <div class="toolbar">
+        <label class="search">
+          <span class="material-icons-outlined" aria-hidden="true">search</span>
+          <input type="search" [ngModel]="search()" (ngModelChange)="onSearch($event)" [placeholder]="'assets.searchAssignPh' | translate" [attr.aria-label]="'assets.searchAssignPh' | translate" />
+        </label>
+      </div>
+      <div class="table-wrap">
+        <table class="ledger-table">
+          <thead>
+            <tr>
+              <th>{{ 'people.employee' | translate }}</th>
+              <th>{{ 'assets.asset' | translate }}</th>
+              <th>{{ 'assets.since' | translate }}</th>
+              <th>{{ 'assets.dueBack' | translate }}</th>
+              <th>{{ 'assets.receipt' | translate }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            @if (assignments() === null) {
+              <tr><td colspan="5"><p class="loading-line">{{ 'common.loading' | translate }}</p></td></tr>
+            }
+            @for (x of assignments(); track x.id) {
+              <tr class="is-link" tabindex="0" (click)="open(x.assetId)" (keydown.enter)="open(x.assetId)">
+                <td>
+                  <span class="cell-main">{{ x.employeeName }}</span>
+                  <span class="cell-sub">{{ x.employeeCode }}@if (x.departmentName) { · {{ x.departmentName }} }
+                    @if (x.employmentStatus === 'OnNotice' || x.employmentStatus === 'Exited') { · <span class="warn">{{ 'people.status.' + x.employmentStatus | translate }}</span> }
+                  </span>
+                </td>
+                <td>
+                  <div class="asset-cell">
+                    <span class="cat-badge sm" [attr.title]="x.categoryName"><span class="material-icons-outlined" aria-hidden="true">{{ x.categoryIcon || 'inventory_2' }}</span></span>
+                    <span class="stack"><span class="cell-main">{{ x.assetName }}</span><span class="cell-sub tag num">{{ x.assetTag }}</span></span>
+                  </div>
+                </td>
+                <td class="num">{{ x.assignedOn | date: 'd MMM y' : undefined : lang() }}</td>
+                <td class="num">
+                  @if (x.dueBack) { <span [class.warn]="x.dueBack < today">{{ x.dueBack | date: 'd MMM y' : undefined : lang() }}</span> }
+                  @else { <span class="dim">{{ 'assets.noDueBack' | translate }}</span> }
+                </td>
+                <td>
+                  @if (x.acknowledgedAt) { <span class="chip chip-moss">{{ 'assets.received' | translate }}</span> }
+                  @else { <span class="chip chip-amber">{{ 'assets.pending' | translate }}</span> }
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="5">
+                  <div class="empty-state">
+                    <span class="material-icons-outlined" aria-hidden="true">assignment_ind</span>
+                    <h3>{{ 'assets.noAssignments' | translate }}</h3>
+                    <p>{{ 'assets.noAssignmentsBody' | translate }}</p>
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+  }
+
+  <!-- ═══ Returns ═══ -->
+  @if (tab() === 'returns') {
+    <section class="panel panel-flush">
+      <header class="list-head">
+        <div>
+          <h3 class="section-title">{{ 'assets.dueTitle' | translate }}</h3>
+          <p class="panel-sub">{{ 'assets.dueSub' | translate }}</p>
+        </div>
+      </header>
+      @if (due() === null) {
+        <p class="loading-line">{{ 'common.loading' | translate }}</p>
+      } @else {
+        <ul class="due-list">
+          @for (x of due(); track x.id) {
+            @let why = dueReason(x);
+            <li class="due-row" [class.is-late]="why !== 'soon'">
+              <span class="cat-badge"><span class="material-icons-outlined" aria-hidden="true">{{ x.categoryIcon || 'inventory_2' }}</span></span>
+              <div class="stack">
+                <span class="cell-main wrap">{{ x.assetName }} <span class="cell-sub tag num">{{ x.assetTag }}</span></span>
+                <span class="cell-sub">{{ x.employeeName }} · {{ x.employeeCode }}@if (x.departmentName) { · {{ x.departmentName }} }</span>
+              </div>
+              <div class="why">
+                @switch (why) {
+                  @case ('exited') { <span class="chip chip-oxblood">{{ 'assets.why.exited' | translate }}</span> }
+                  @case ('leaving') {
+                    <span class="chip chip-oxblood">{{ 'assets.why.leaving' | translate }}</span>
+                    @if (x.lastWorkingDay) { <span class="cell-sub num">{{ 'assets.lastDay' | translate }} {{ x.lastWorkingDay | date: 'd MMM' : undefined : lang() }}</span> }
+                  }
+                  @case ('overdue') {
+                    <span class="chip chip-oxblood">{{ 'assets.why.overdue' | translate }}</span>
+                    <span class="cell-sub num warn">{{ 'assets.daysLate' | translate: { n: -daysTo(x.dueBack!) } }}</span>
+                  }
+                  @default {
+                    <span class="chip chip-amber">{{ 'assets.why.soon' | translate }}</span>
+                    <span class="cell-sub num">{{ x.dueBack | date: 'd MMM' : undefined : lang() }}</span>
+                  }
+                }
+              </div>
+              @if (canManage) {
+                <button type="button" class="btn btn-quiet btn-small" (click)="open(x.assetId, true)">
+                  <span class="material-icons-outlined" aria-hidden="true">assignment_return</span>{{ 'assets.recordReturn' | translate }}
+                </button>
+              }
+            </li>
+          } @empty {
+            <li class="empty-state">
+              <span class="material-icons-outlined" aria-hidden="true">task_alt</span>
+              <h3>{{ 'assets.noDue' | translate }}</h3>
+              <p>{{ 'assets.noDueBody' | translate }}</p>
+            </li>
+          }
+        </ul>
+      }
+    </section>
+
+    <section class="panel panel-flush">
+      <header class="list-head"><h3 class="section-title">{{ 'assets.returnedTitle' | translate }}</h3></header>
+      <div class="table-wrap">
+        <table class="ledger-table">
+          <thead>
+            <tr>
+              <th>{{ 'assets.returnedOn' | translate }}</th>
+              <th>{{ 'assets.asset' | translate }}</th>
+              <th>{{ 'people.employee' | translate }}</th>
+              <th>{{ 'assets.conditionInOut' | translate }}</th>
+              <th>{{ 'assets.note' | translate }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (x of returned(); track x.id) {
+              <tr class="is-link" tabindex="0" (click)="open(x.assetId)" (keydown.enter)="open(x.assetId)">
+                <td class="num">{{ x.returnedOn | date: 'd MMM y' : undefined : lang() }}</td>
+                <td><span class="cell-main">{{ x.assetName }}</span><span class="cell-sub tag num">{{ x.assetTag }}</span></td>
+                <td><span class="cell-main">{{ x.employeeName }}</span><span class="cell-sub">{{ x.employeeCode }}</span></td>
+                <td>
+                  <span class="cond" [attr.data-c]="x.conditionOut">{{ 'assets.cond.' + x.conditionOut | translate }}</span>
+                  <span class="dim"> → </span>
+                  <span class="cond" [attr.data-c]="x.conditionIn">{{ 'assets.cond.' + x.conditionIn | translate }}</span>
+                </td>
+                <td class="note-cell">@if (x.returnNote) { {{ x.returnNote }} } @else { <span class="dim">—</span> }</td>
+              </tr>
+            } @empty {
+              <tr><td colspan="5"><p class="dim empty-line pad">{{ 'assets.noReturned' | translate }}</p></td></tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+  }
+
+  <!-- ═══ History ═══ -->
+  @if (tab() === 'history') {
+    <section class="panel panel-flush">
+      <div class="toolbar">
+        <label class="search">
+          <span class="material-icons-outlined" aria-hidden="true">search</span>
+          <input type="search" [ngModel]="search()" (ngModelChange)="onSearch($event)" [placeholder]="'assets.searchHistoryPh' | translate" [attr.aria-label]="'assets.searchHistoryPh' | translate" />
+        </label>
+        <select class="select-sm" [ngModel]="eventType()" (ngModelChange)="setEventType($event)" [attr.aria-label]="'assets.eventType' | translate">
+          <option value="">{{ 'assets.allEvents' | translate }}</option>
+          @for (t of eventTypes; track t) { <option [value]="t">{{ 'assets.event.' + t | translate }}</option> }
+        </select>
+        <label class="date-range">
+          <span class="sr-only">{{ 'assets.from' | translate }}</span>
+          <input type="date" [ngModel]="from()" (ngModelChange)="setRange($event, to())" [attr.aria-label]="'assets.from' | translate" />
+          <span class="dim">–</span>
+          <input type="date" [ngModel]="to()" (ngModelChange)="setRange(from(), $event)" [attr.aria-label]="'assets.to' | translate" />
+        </label>
+      </div>
+      @if (events() === null) {
+        <p class="loading-line">{{ 'common.loading' | translate }}</p>
+      } @else {
+        <ol class="timeline">
+          @for (e of events(); track e.id) {
+            <li class="tl-row">
+              <span class="tl-icon" [attr.data-t]="e.type"><span class="material-icons-outlined" aria-hidden="true">{{ eventIcon[e.type] }}</span></span>
+              <div class="stack">
+                <span class="tl-line">
+                  <button type="button" class="btn-link tag num" (click)="open(e.assetId)">{{ e.assetTag }}</button>
+                  {{ e.assetName }} · <strong>{{ 'assets.event.' + e.type | translate }}</strong>
+                  @if (e.employeeName) { · {{ e.employeeName }} }
+                  @if (e.type === 'StatusChanged') { → {{ 'assets.status.' + e.status | translate }} }
+                </span>
+                @if (e.detail) { <span class="cell-sub reason">“{{ e.detail }}”</span> }
+              </div>
+              <span class="cell-sub num tl-when">
+                {{ e.at | date: 'd MMM y, HH:mm' : undefined : lang() }}
+                @if (e.byName) { <span class="cell-sub">{{ e.byName }}</span> }
+              </span>
+            </li>
+          } @empty {
+            <li class="empty-state">
+              <span class="material-icons-outlined" aria-hidden="true">history</span>
+              <h3>{{ 'assets.noHistory' | translate }}</h3>
+              <p>{{ 'assets.noHistoryBody' | translate }}</p>
+            </li>
+          }
+        </ol>
+      }
+    </section>
+  }
+</div>
+
+@if (drawer(); as d) {
+  <div class="overlay" (click)="closeDrawer()">
+    <aside class="drawer" [class.drawer-wide]="d !== 'categories'" role="dialog" aria-modal="true" (click)="$event.stopPropagation()">
+      <header class="drawer-head">
+        <h3>
+          @switch (d) {
+            @case ('asset') { {{ detail()?.name ?? ('common.loading' | translate) }} }
+            @case ('edit') { {{ (assetForm?.id ? 'assets.editAsset' : 'assets.add') | translate }} }
+            @case ('categories') { {{ 'assets.categories' | translate }} }
+          }
+        </h3>
+        <button type="button" class="btn-link" (click)="closeDrawer()" [attr.aria-label]="'common.close' | translate">
+          <span class="material-icons-outlined" aria-hidden="true">close</span>
+        </button>
+      </header>
+
+      <div class="drawer-body">
+        @switch (d) {
+          <!-- Asset detail -->
+          @case ('asset') {
+            @if (detail(); as a) {
+              <div class="case-head">
+                <div class="asset-cell">
+                  <span class="cat-badge lg"><span class="material-icons-outlined" aria-hidden="true">{{ a.categoryIcon || 'inventory_2' }}</span></span>
+                  <span class="stack">
+                    <span class="tag num big">{{ a.assetTag }}</span>
+                    <span class="cell-sub">{{ a.categoryName }}@if (describe(a)) { · {{ describe(a) }} }</span>
+                  </span>
+                </div>
+                <span [class]="statusChip[a.status]">{{ 'assets.status.' + a.status | translate }}</span>
+              </div>
+
+              <dl class="facts">
+                <div><dt>{{ 'assets.condition' | translate }}</dt><dd><span class="cond" [attr.data-c]="a.condition">{{ 'assets.cond.' + a.condition | translate }}</span></dd></div>
+                <div><dt>{{ 'assets.location' | translate }}</dt><dd>{{ a.locationName || '—' }}</dd></div>
+                <div><dt>{{ 'assets.purchased' | translate }}</dt><dd class="num">@if (a.purchaseDate) { {{ a.purchaseDate | date: 'd MMM y' : undefined : lang() }} } @else { — }</dd></div>
+                <div><dt>{{ 'assets.cost' | translate }}</dt><dd class="num">@if (a.purchaseCost !== null) { {{ a.purchaseCost | number: '1.2-2' : lang() }} } @else { — }</dd></div>
+                <div>
+                  <dt>{{ 'assets.warranty' | translate }}</dt>
+                  <dd class="num">
+                    @if (a.warrantyUntil) { <span [class.warn]="a.warrantyUntil < today" [class.amber]="warrantySoon(a.warrantyUntil)">{{ a.warrantyUntil | date: 'd MMM y' : undefined : lang() }}</span> } @else { — }
+                  </dd>
+                </div>
+                @if (a.vendor) { <div><dt>{{ 'assets.vendor' | translate }}</dt><dd>{{ a.vendor }}</dd></div> }
+                @if (a.notes) { <div class="span-all"><dt>{{ 'assets.notes' | translate }}</dt><dd class="pre">{{ a.notes }}</dd></div> }
+              </dl>
+
+              <!-- Holder / assign / return -->
+              <section class="sub-panel">
+                <header class="sub-head">
+                  <h4>{{ 'assets.holder' | translate }}</h4>
+                </header>
+                @if (holder(); as h) {
+                  <div class="holder">
+                    <div class="stack">
+                      <span class="cell-main">{{ h.employeeName }}</span>
+                      <span class="cell-sub">{{ h.employeeCode }}@if (h.departmentName) { · {{ h.departmentName }} }
+                        @if (h.employmentStatus === 'OnNotice' || h.employmentStatus === 'Exited') { · <span class="warn">{{ 'people.status.' + h.employmentStatus | translate }}</span> }
+                        @if (h.lastWorkingDay) { · {{ 'assets.lastDay' | translate }} {{ h.lastWorkingDay | date: 'd MMM y' : undefined : lang() }} }
+                      </span>
+                      <span class="cell-sub">
+                        {{ 'assets.since' | translate }} {{ h.assignedOn | date: 'd MMM y' : undefined : lang() }} ·
+                        @if (h.acknowledgedAt) { {{ 'assets.receivedOn' | translate }} {{ h.acknowledgedAt | date: 'd MMM y' : undefined : lang() }} }
+                        @else { <span class="amber">{{ 'assets.notConfirmed' | translate }}</span> }
+                      </span>
+                      @if (h.assignNote) { <span class="cell-sub reason">“{{ h.assignNote }}”</span> }
+                    </div>
+                    <div class="due-box">
+                      <span class="cell-sub">{{ 'assets.dueBack' | translate }}</span>
+                      @if (dueBackForm === null) {
+                        <span class="num">
+                          @if (h.dueBack) { <span [class.warn]="h.dueBack < today">{{ h.dueBack | date: 'd MMM y' : undefined : lang() }}</span> }
+                          @else { <span class="dim">{{ 'assets.noDueBack' | translate }}</span> }
+                        </span>
+                        @if (canManage && !returnForm) { <button type="button" class="btn-link" (click)="dueBackForm = h.dueBack ?? ''">{{ 'common.edit' | translate }}</button> }
+                      } @else {
+                        <input type="date" [min]="h.assignedOn" [(ngModel)]="dueBackForm" [attr.aria-label]="'assets.dueBack' | translate" />
+                        <span class="inline-actions">
+                          <button type="button" class="btn-link" (click)="dueBackForm = null">{{ 'common.cancel' | translate }}</button>
+                          <button type="button" class="btn btn-ink btn-small" [disabled]="saving() || (!!dueBackForm && dueBackForm < h.assignedOn)" (click)="saveDueBack()">{{ 'common.save' | translate }}</button>
+                        </span>
+                      }
+                    </div>
+                  </div>
+
+                  @if (returnForm; as f) {
+                    <div class="task-form">
+                      <div class="form-grid">
+                        <div class="field">
+                          <label for="r-date">{{ 'assets.returnedOn' | translate }}</label>
+                          <input id="r-date" type="date" [min]="h.assignedOn" [max]="today" [(ngModel)]="f.returnedOn" />
+                        </div>
+                        <div class="field">
+                          <label for="r-cond">{{ 'assets.conditionIn' | translate }}</label>
+                          <select id="r-cond" [ngModel]="f.condition" (ngModelChange)="onReturnCondition($event)">
+                            @for (c of conditions; track c) { <option [value]="c">{{ 'assets.cond.' + c | translate }}</option> }
+                          </select>
+                        </div>
+                        <div class="field">
+                          <label for="r-next">{{ 'assets.afterReturn' | translate }}</label>
+                          <select id="r-next" [(ngModel)]="f.nextStatus">
+                            @for (s of afterReturn; track s) { <option [value]="s">{{ 'assets.status.' + s | translate }}</option> }
+                          </select>
+                        </div>
+                        <div class="field span-all">
+                          <label for="r-note">{{ (f.nextStatus === 'Lost' ? 'assets.noteRequired' : 'assets.note') | translate }}</label>
+                          <input id="r-note" [(ngModel)]="f.note" maxlength="500" [placeholder]="'assets.returnNotePh' | translate" />
+                        </div>
+                      </div>
+                      <div class="inline-actions">
+                        <button type="button" class="btn btn-quiet btn-small" (click)="returnForm = null">{{ 'common.cancel' | translate }}</button>
+                        <button type="button" class="btn btn-ink btn-small" [disabled]="!canReturn() || saving()" (click)="saveReturn()">{{ 'assets.recordReturn' | translate }}</button>
+                      </div>
+                    </div>
+                  } @else if (canManage) {
+                    <div class="inline-actions start">
+                      <button type="button" class="btn btn-ink btn-small" (click)="startReturn()">
+                        <span class="material-icons-outlined" aria-hidden="true">assignment_return</span>{{ 'assets.recordReturn' | translate }}
+                      </button>
+                    </div>
+                  }
+                } @else {
+                  @if (assignForm; as f) {
+                    <div class="task-form">
+                      <label class="search">
+                        <span class="material-icons-outlined" aria-hidden="true">search</span>
+                        <input type="search" [(ngModel)]="staffSearch" [placeholder]="'assets.findEmployee' | translate" [attr.aria-label]="'assets.findEmployee' | translate" />
+                      </label>
+                      <ul class="pick-list" role="listbox" [attr.aria-label]="'people.employee' | translate">
+                        @for (p of filteredStaff(); track p.id) {
+                          <li>
+                            <button type="button" role="option" class="pick" [class.is-picked]="f.employeeId === p.id" [attr.aria-selected]="f.employeeId === p.id" (click)="f.employeeId = p.id">
+                              <span class="cell-main">{{ p.name }}</span><span class="cell-sub">{{ p.code }}</span>
+                            </button>
+                          </li>
+                        } @empty {
+                          <li class="dim empty-line pad">{{ (staff().length ? 'assets.noEmployeeMatch' : 'common.loading') | translate }}</li>
+                        }
+                      </ul>
+                      <div class="form-grid">
+                        <div class="field">
+                          <label for="a-on">{{ 'assets.assignedOn' | translate }}</label>
+                          <input id="a-on" type="date" [(ngModel)]="f.assignedOn" />
+                        </div>
+                        <div class="field">
+                          <label for="a-due">{{ 'assets.dueBackOptional' | translate }}</label>
+                          <input id="a-due" type="date" [min]="f.assignedOn" [(ngModel)]="f.dueBack" />
+                        </div>
+                        <div class="field span-all">
+                          <label for="a-note">{{ 'assets.note' | translate }}</label>
+                          <input id="a-note" [(ngModel)]="f.note" maxlength="500" [placeholder]="'assets.assignNotePh' | translate" />
+                        </div>
+                      </div>
+                      <p class="field-hint">{{ 'assets.assignHint' | translate: { cond: ('assets.cond.' + a.condition | translate) } }}</p>
+                      <div class="inline-actions">
+                        <button type="button" class="btn btn-quiet btn-small" (click)="assignForm = null">{{ 'common.cancel' | translate }}</button>
+                        <button type="button" class="btn btn-ink btn-small" [disabled]="!f.employeeId || !f.assignedOn || (!!f.dueBack && f.dueBack < f.assignedOn) || saving()" (click)="saveAssign()">{{ 'assets.assign' | translate }}</button>
+                      </div>
+                    </div>
+                  } @else {
+                    <p class="dim">{{ (a.status === 'Available' ? 'assets.nobodyHas' : 'assets.cannotAssign') | translate }}</p>
+                    @if (canManage && a.status === 'Available') {
+                      <div class="inline-actions start">
+                        <button type="button" class="btn btn-ink btn-small" (click)="startAssign()">
+                          <span class="material-icons-outlined" aria-hidden="true">person_add_alt</span>{{ 'assets.assign' | translate }}
+                        </button>
+                      </div>
+                    }
+                  }
+                }
+              </section>
+
+              <!-- Status -->
+              @if (canManage && a.status !== 'Assigned') {
+                <section class="sub-panel">
+                  <header class="sub-head"><h4>{{ 'assets.changeStatus' | translate }}</h4></header>
+                  @if (statusForm; as f) {
+                    <div class="task-form">
+                      <p class="cell-main">{{ 'assets.status.' + a.status | translate }} → {{ 'assets.status.' + f.status | translate }}</p>
+                      <div class="field">
+                        <label for="s-note">{{ (needsNote(f.status) ? 'assets.noteRequired' : 'assets.note') | translate }}</label>
+                        <input id="s-note" [(ngModel)]="f.note" maxlength="500" />
+                      </div>
+                      <div class="inline-actions">
+                        <button type="button" class="btn btn-quiet btn-small" (click)="statusForm = null">{{ 'common.cancel' | translate }}</button>
+                        <button type="button" class="btn btn-ink btn-small" [disabled]="(needsNote(f.status) && !f.note.trim()) || saving()" (click)="saveStatus()">{{ 'common.save' | translate }}</button>
+                      </div>
+                    </div>
+                  } @else {
+                    <div class="status-btns">
+                      @for (s of statusOptions(a); track s) {
+                        <button type="button" class="btn btn-quiet btn-small" (click)="startStatus(s)">{{ 'assets.toStatus.' + s | translate }}</button>
+                      }
+                    </div>
+                  }
+                </section>
+              }
+
+              <!-- Past holders -->
+              @if (pastAssignments().length) {
+                <section class="sub-panel">
+                  <header class="sub-head"><h4>{{ 'assets.pastHolders' | translate }}</h4></header>
+                  <ul class="plain-list">
+                    @for (x of pastAssignments(); track x.id) {
+                      <li class="plain-row">
+                        <span class="grow stack">
+                          <span class="cell-main">{{ x.employeeName }}</span>
+                          @if (x.returnNote) { <span class="cell-sub reason">“{{ x.returnNote }}”</span> }
+                        </span>
+                        <span class="cell-sub num">{{ x.assignedOn | date: 'd MMM y' : undefined : lang() }} – {{ x.returnedOn | date: 'd MMM y' : undefined : lang() }}</span>
+                        <span class="cond" [attr.data-c]="x.conditionIn">{{ 'assets.cond.' + x.conditionIn | translate }}</span>
+                      </li>
+                    }
+                  </ul>
+                </section>
+              }
+
+              <!-- History -->
+              <section class="sub-panel">
+                <header class="sub-head"><h4>{{ 'assets.tabs.history' | translate }}</h4></header>
+                <ol class="timeline compact">
+                  @for (e of a.events; track e.id) {
+                    <li class="tl-row">
+                      <span class="tl-icon" [attr.data-t]="e.type"><span class="material-icons-outlined" aria-hidden="true">{{ eventIcon[e.type] }}</span></span>
+                      <div class="stack">
+                        <span class="tl-line">
+                          <strong>{{ 'assets.event.' + e.type | translate }}</strong>
+                          @if (e.employeeName) { · {{ e.employeeName }} }
+                          @if (e.type === 'StatusChanged') { → {{ 'assets.status.' + e.status | translate }} }
+                        </span>
+                        @if (e.detail) { <span class="cell-sub reason">“{{ e.detail }}”</span> }
+                      </div>
+                      <span class="cell-sub num tl-when">{{ e.at | date: 'd MMM y, HH:mm' : undefined : lang() }}@if (e.byName) { <span class="cell-sub">{{ e.byName }}</span> }</span>
+                    </li>
+                  }
+                </ol>
+              </section>
+
+              @if (confirm === 'delete') {
+                <div class="notice notice-warn">
+                  <span class="material-icons-outlined" aria-hidden="true">warning_amber</span>
+                  <span>{{ 'assets.confirmDelete' | translate }}</span>
+                </div>
+              }
+            } @else {
+              <p class="loading-line">{{ 'common.loading' | translate }}</p>
+            }
+          }
+
+          <!-- Add / edit -->
+          @case ('edit') {
+            @if (assetForm; as f) {
+              <div class="form-grid">
+                <div class="field span-2">
+                  <label for="e-name">{{ 'assets.name' | translate }}</label>
+                  <input id="e-name" [(ngModel)]="f.name" maxlength="150" [placeholder]="'assets.namePh' | translate" />
+                </div>
+                <div class="field">
+                  <label for="e-tag">{{ 'assets.tag' | translate }}</label>
+                  <input id="e-tag" class="num" [(ngModel)]="f.assetTag" maxlength="40" [placeholder]="tagHint || 'AST-0001'" />
+                  @if (!f.id) { <span class="field-hint">{{ 'assets.tagHint' | translate }}</span> }
+                </div>
+                <div class="field">
+                  <label for="e-cat">{{ 'assets.category' | translate }}</label>
+                  <select id="e-cat" [(ngModel)]="f.categoryId">
+                    @for (c of formCategories(); track c.id) { <option [value]="c.id">{{ c.name }}</option> }
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="e-brand">{{ 'assets.brand' | translate }}</label>
+                  <input id="e-brand" [(ngModel)]="f.brand" maxlength="100" />
+                </div>
+                <div class="field">
+                  <label for="e-model">{{ 'assets.model' | translate }}</label>
+                  <input id="e-model" [(ngModel)]="f.model" maxlength="100" />
+                </div>
+                <div class="field">
+                  <label for="e-sn">{{ 'assets.serial' | translate }}</label>
+                  <input id="e-sn" class="num" [(ngModel)]="f.serialNumber" maxlength="100" />
+                </div>
+                <div class="field">
+                  <label for="e-loc">{{ 'assets.location' | translate }}</label>
+                  <select id="e-loc" [(ngModel)]="f.locationId">
+                    <option [ngValue]="null">{{ 'assets.noLocation' | translate }}</option>
+                    @for (l of locations(); track l.id) { <option [ngValue]="l.id">{{ l.name }}</option> }
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="e-cond">{{ 'assets.condition' | translate }}</label>
+                  <select id="e-cond" [(ngModel)]="f.condition">
+                    @for (c of conditions; track c) { <option [value]="c">{{ 'assets.cond.' + c | translate }}</option> }
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="e-pd">{{ 'assets.purchased' | translate }}</label>
+                  <input id="e-pd" type="date" [(ngModel)]="f.purchaseDate" />
+                </div>
+                <div class="field">
+                  <label for="e-cost">{{ 'assets.cost' | translate }}</label>
+                  <input id="e-cost" class="num" type="number" min="0" step="0.01" [(ngModel)]="f.purchaseCost" />
+                </div>
+                <div class="field">
+                  <label for="e-wr">{{ 'assets.warrantyUntil' | translate }}</label>
+                  <input id="e-wr" type="date" [min]="f.purchaseDate" [(ngModel)]="f.warrantyUntil" />
+                </div>
+                <div class="field span-2">
+                  <label for="e-vendor">{{ 'assets.vendor' | translate }}</label>
+                  <input id="e-vendor" [(ngModel)]="f.vendor" maxlength="150" />
+                </div>
+                <div class="field span-all">
+                  <label for="e-notes">{{ 'assets.notes' | translate }}</label>
+                  <textarea id="e-notes" rows="2" [(ngModel)]="f.notes" maxlength="1000"></textarea>
+                </div>
+              </div>
+              @if (f.warrantyUntil && f.purchaseDate && f.warrantyUntil < f.purchaseDate) { <p class="err">{{ 'assets.problem.warranty' | translate }}</p> }
+            }
+          }
+
+          <!-- Categories -->
+          @case ('categories') {
+            @if (categoryForm; as f) {
+              <div class="task-form">
+                <div class="field">
+                  <label for="c-name">{{ 'assets.catName' | translate }}</label>
+                  <input id="c-name" [(ngModel)]="f.name" maxlength="100" />
+                </div>
+                <div class="field">
+                  <label for="c-desc">{{ 'assets.catDesc' | translate }}</label>
+                  <input id="c-desc" [(ngModel)]="f.description" maxlength="300" />
+                </div>
+                <span class="group-label">{{ 'assets.icon' | translate }}</span>
+                <div class="icon-grid" role="radiogroup" [attr.aria-label]="'assets.icon' | translate">
+                  @for (i of categoryIcons; track i) {
+                    <button type="button" role="radio" class="icon-pick" [class.is-picked]="f.icon === i" [attr.aria-checked]="f.icon === i" [attr.aria-label]="i" (click)="f.icon = i">
+                      <span class="material-icons-outlined" aria-hidden="true">{{ i }}</span>
+                    </button>
+                  }
+                </div>
+                <label class="check"><input type="checkbox" [(ngModel)]="f.isActive" />{{ 'assets.catActive' | translate }}</label>
+                @if (f.id && confirm === 'deleteCategory') {
+                  <div class="notice notice-warn">
+                    <span class="material-icons-outlined" aria-hidden="true">warning_amber</span>
+                    <span>{{ 'assets.confirmDeleteCategory' | translate }}</span>
+                  </div>
+                }
+                <div class="inline-actions">
+                  @if (f.id) {
+                    <button type="button" class="btn btn-quiet btn-small foot-start" [class.btn-danger]="confirm === 'deleteCategory'" [disabled]="saving()" (click)="deleteCategory()">
+                      {{ (confirm === 'deleteCategory' ? 'assets.confirmDeleteBtn' : 'common.delete') | translate }}
+                    </button>
+                  }
+                  <button type="button" class="btn btn-quiet btn-small" (click)="categoryForm = null">{{ 'common.cancel' | translate }}</button>
+                  <button type="button" class="btn btn-ink btn-small" [disabled]="!f.name.trim() || saving()" (click)="saveCategory()">{{ 'common.save' | translate }}</button>
+                </div>
+              </div>
+            } @else {
+              <button type="button" class="btn btn-quiet btn-small add-line" (click)="newCategory()">
+                <span class="material-icons-outlined" aria-hidden="true">add</span>{{ 'assets.newCategory' | translate }}
+              </button>
+            }
+            @if (categories() && !categories()!.length) {
+              <div class="notice notice-info">
+                <span class="material-icons-outlined" aria-hidden="true">category</span>
+                <span class="grow">{{ 'assets.noCategoriesHint' | translate }}</span>
+                <button type="button" class="btn btn-quiet btn-small" [disabled]="saving()" (click)="createStarter()">{{ 'assets.starter' | translate }}</button>
+              </div>
+            }
+            <ul class="plain-list bordered">
+              @for (c of categories() ?? []; track c.id) {
+                <li>
+                  <button type="button" class="plain-row as-btn" [class.is-off]="!c.isActive" (click)="editCategory(c)">
+                    <span class="cat-badge sm"><span class="material-icons-outlined" aria-hidden="true">{{ c.icon || 'inventory_2' }}</span></span>
+                    <span class="grow stack">
+                      <span class="cell-main">{{ c.name }}</span>
+                      @if (c.description) { <span class="cell-sub">{{ c.description }}</span> }
+                    </span>
+                    @if (!c.isActive) { <span class="chip chip-muted">{{ 'assets.inactive' | translate }}</span> }
+                    <span class="cell-sub num">{{ 'assets.nAssets' | translate: { n: c.assetCount } }}</span>
+                  </button>
+                </li>
+              }
+            </ul>
+          }
+        }
+      </div>
+
+      <footer class="drawer-foot">
+        @switch (d) {
+          @case ('asset') {
+            @if (detail(); as a) {
+              @if (canManage) {
+                @if (!a.assignments.length) {
+                  <button type="button" class="btn btn-quiet foot-start" [class.btn-danger]="confirm === 'delete'" [disabled]="saving()" (click)="removeAsset()">
+                    {{ (confirm === 'delete' ? 'assets.confirmDeleteBtn' : 'common.delete') | translate }}
+                  </button>
+                }
+                <button type="button" class="btn btn-quiet" (click)="closeDrawer()">{{ 'common.close' | translate }}</button>
+                <button type="button" class="btn btn-ink" (click)="edit()">
+                  <span class="material-icons-outlined" aria-hidden="true">edit</span>{{ 'common.edit' | translate }}
+                </button>
+              } @else {
+                <button type="button" class="btn btn-quiet" (click)="closeDrawer()">{{ 'common.close' | translate }}</button>
+              }
+            } @else {
+              <button type="button" class="btn btn-quiet" (click)="closeDrawer()">{{ 'common.close' | translate }}</button>
+            }
+          }
+          @case ('edit') {
+            <button type="button" class="btn btn-quiet" (click)="assetForm?.id ? open(assetForm!.id!) : closeDrawer()">{{ 'common.cancel' | translate }}</button>
+            <button type="button" class="btn btn-ink" [disabled]="!canSaveAsset() || saving()" (click)="saveAsset()">{{ (saving() ? 'common.saving' : 'common.save') | translate }}</button>
+          }
+          @default {
+            <button type="button" class="btn btn-quiet" (click)="closeDrawer()">{{ 'common.close' | translate }}</button>
+          }
+        }
+      </footer>
+    </aside>
+  </div>
+}
