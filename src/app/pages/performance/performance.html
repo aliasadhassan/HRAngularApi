@@ -1,0 +1,973 @@
+<div class="page">
+  <header class="page-intro">
+    <p>{{ 'performance.intro' | translate }}</p>
+    <div class="intro-actions">
+      @if (tab() === 'cycles' && canManage) {
+        <button type="button" class="btn btn-ink" (click)="newCycle()">
+          <span class="material-icons-outlined" aria-hidden="true">add</span>{{ 'performance.newCycle' | translate }}
+        </button>
+      }
+      @if ((tab() === 'goals' && hasTeam()) || (tab() === 'mine' && my()?.linked)) {
+        <button type="button" class="btn btn-ink" (click)="newGoal()">
+          <span class="material-icons-outlined" aria-hidden="true">add</span>{{ 'performance.addGoal' | translate }}
+        </button>
+      }
+    </div>
+  </header>
+
+  @if (hasTeam()) {
+    <nav class="tabs">
+      <button type="button" class="tab" [class.is-active]="tab() === 'reviews'" (click)="setTab('reviews')">
+        {{ 'performance.tabs.reviews' | translate }}
+        @if (summary()?.reviews) { <span class="tab-count num" [class.alert-count]="summary()!.overdueReviews > 0">{{ summary()!.reviews }}</span> }
+      </button>
+      <button type="button" class="tab" [class.is-active]="tab() === 'goals'" (click)="setTab('goals')">
+        {{ 'performance.tabs.goals' | translate }}
+        @if (summary()?.goalsOpen) { <span class="tab-count num" [class.alert-count]="summary()!.goalsAtRisk > 0">{{ summary()!.goalsOpen }}</span> }
+      </button>
+      @if (canView) {
+        <button type="button" class="tab" [class.is-active]="tab() === 'cycles'" (click)="setTab('cycles')">{{ 'performance.tabs.cycles' | translate }}</button>
+      }
+      <button type="button" class="tab" [class.is-active]="tab() === 'mine'" (click)="setTab('mine')">
+        {{ 'performance.tabs.mine' | translate }}
+        @if (summary()?.myActions) { <span class="tab-count num alert-count">{{ summary()!.myActions }}</span> }
+      </button>
+    </nav>
+  }
+
+  <!-- ═══ My performance ═══ -->
+  @if (tab() === 'mine') {
+    @if (my() === null) {
+      <p class="loading-line">{{ 'common.loading' | translate }}</p>
+    } @else if (!my()!.linked) {
+      <section class="panel">
+        <div class="empty-state">
+          <span class="material-icons-outlined" aria-hidden="true">link_off</span>
+          <h3>{{ 'performance.notLinked' | translate }}</h3>
+          <p>{{ 'performance.notLinkedBody' | translate }}</p>
+        </div>
+      </section>
+    } @else {
+      @for (r of mySelfPending(); track r.id) {
+        <div class="notice notice-info">
+          <span class="material-icons-outlined" aria-hidden="true">edit_note</span>
+          <span class="grow">
+            {{ 'performance.selfDueHint' | translate: { cycle: r.cycleName } }}
+            @if (r.dueOn) { <span class="num" [class.warn]="r.isOverdue">{{ 'performance.dueOn' | translate }} {{ r.dueOn | date: 'd MMM' : undefined : lang() }}</span> }
+          </span>
+          <button type="button" class="btn btn-ink btn-small" (click)="openReview(r.id)">{{ 'performance.writeSelf' | translate }}</button>
+        </div>
+      }
+      @for (r of myToAck(); track r.id) {
+        <div class="notice notice-info">
+          <span class="material-icons-outlined" aria-hidden="true">mark_email_unread</span>
+          <span class="grow">{{ 'performance.sharedHint' | translate: { cycle: r.cycleName } }}</span>
+          <button type="button" class="btn btn-ink btn-small" (click)="openReview(r.id)">{{ 'performance.readReview' | translate }}</button>
+        </div>
+      }
+
+      @if (my()!.toReview.length) {
+        <section class="panel panel-flush">
+          <header class="list-head">
+            <h3 class="section-title">{{ 'performance.toReview' | translate }}</h3>
+            <p class="panel-sub">{{ 'performance.toReviewSub' | translate: { n: managerQueue() } }}</p>
+          </header>
+          <ul class="plain-list">
+            @for (r of my()!.toReview; track r.id) {
+              <li>
+                <button type="button" class="plain-row as-btn wrap-row" (click)="openReview(r.id)">
+                  <span class="avatar">{{ r.employeeName.charAt(0) }}</span>
+                  <span class="grow stack">
+                    <span class="cell-main">{{ r.employeeName }}</span>
+                    <span class="cell-sub">{{ r.designationTitle || r.employeeCode }} · {{ r.cycleName }}</span>
+                  </span>
+                  @if (r.dueOn) { <span class="cell-sub num" [class.warn]="r.isOverdue">{{ r.dueOn | date: 'd MMM' : undefined : lang() }}</span> }
+                  <span [class]="reviewChip[r.status]">{{ 'performance.status.' + r.status | translate }}</span>
+                </button>
+              </li>
+            }
+          </ul>
+        </section>
+      }
+
+      <section class="panel panel-flush">
+        <header class="list-head row-head">
+          <h3 class="section-title">{{ 'performance.myGoals' | translate }}</h3>
+          @if (myOpenGoals().length) {
+            <span class="cell-sub">{{ 'performance.openCount' | translate: { n: myOpenGoals().length } }}</span>
+          }
+        </header>
+        @if (!my()!.goals.length) {
+          <div class="empty-state">
+            <span class="material-icons-outlined" aria-hidden="true">flag</span>
+            <h3>{{ 'performance.noMyGoals' | translate }}</h3>
+            <p>{{ 'performance.noMyGoalsBody' | translate }}</p>
+            <button type="button" class="btn btn-quiet btn-small" (click)="newGoal()">{{ 'performance.addGoal' | translate }}</button>
+          </div>
+        } @else {
+          <div class="goal-grid">
+            @for (g of myOpenGoals(); track g.id) {
+              <button type="button" class="goal-card" [attr.data-s]="g.status" (click)="openGoal(g.id)">
+                <span class="goal-top">
+                  <span [class]="goalChip[g.status]">{{ 'performance.goalStatus.' + g.status | translate }}</span>
+                  @if (g.weight !== null) { <span class="cell-sub num">{{ 'performance.weightN' | translate: { n: g.weight } }}</span> }
+                </span>
+                <span class="goal-title">{{ g.title }}</span>
+                <span class="progress" [attr.aria-label]="g.progress + '%'"><span class="bar" [style.width.%]="g.progress"></span></span>
+                <span class="goal-foot">
+                  <span class="num pct">{{ g.progress }}%</span>
+                  <span class="cell-sub num" [class.warn]="g.isOverdue">{{ 'performance.dueOn' | translate }} {{ g.dueDate | date: 'd MMM y' : undefined : lang() }}</span>
+                </span>
+                @if (g.cycleName) { <span class="cell-sub">{{ g.cycleName }}</span> }
+              </button>
+            }
+          </div>
+          @if (myClosedGoals().length) {
+            <ul class="plain-list closed-list">
+              @for (g of myClosedGoals(); track g.id) {
+                <li>
+                  <button type="button" class="plain-row as-btn" (click)="openGoal(g.id)">
+                    <span class="material-icons-outlined done-icon" [class.dim]="g.status === 'Cancelled'" aria-hidden="true">{{ g.status === 'Completed' ? 'check_circle' : 'block' }}</span>
+                    <span class="grow cell-main wrap">{{ g.title }}</span>
+                    <span [class]="goalChip[g.status]">{{ 'performance.goalStatus.' + g.status | translate }}</span>
+                  </button>
+                </li>
+              }
+            </ul>
+          }
+        }
+      </section>
+
+      <section class="panel panel-flush">
+        <header class="list-head"><h3 class="section-title">{{ 'performance.myReviews' | translate }}</h3></header>
+        <ul class="plain-list">
+          @for (r of my()!.reviews; track r.id) {
+            <li>
+              <button type="button" class="plain-row as-btn wrap-row" (click)="openReview(r.id)">
+                <span class="grow stack">
+                  <span class="cell-main">{{ r.cycleName }}</span>
+                  <span class="cell-sub">
+                    @if (r.reviewerName) { {{ 'performance.reviewer' | translate }}: {{ r.reviewerName }} }
+                    @if (r.acknowledgedAt) { · {{ 'performance.acknowledgedOn' | translate }} {{ r.acknowledgedAt | date: 'd MMM y' : undefined : lang() }} }
+                  </span>
+                </span>
+                @if (r.managerRating) {
+                  <span class="rating" [attr.data-r]="r.managerRating"><b class="num">{{ r.managerRating }}</b>{{ ratingLabel(r.managerRating) }}</span>
+                }
+                <span [class]="reviewChip[r.status]">{{ 'performance.status.' + r.status | translate }}</span>
+              </button>
+            </li>
+          } @empty {
+            <li class="dim empty-line pad">{{ 'performance.noMyReviews' | translate }}</li>
+          }
+        </ul>
+      </section>
+    }
+  }
+
+  <!-- ═══ Tallies ═══ -->
+  @if ((tab() === 'reviews' || tab() === 'goals') && summary(); as s) {
+    @if (tab() === 'reviews') {
+      @if (s.activeCycleName) {
+        <p class="cycle-line">
+          <span class="material-icons-outlined inline-icon" aria-hidden="true">event_repeat</span>
+          <strong>{{ s.activeCycleName }}</strong>
+          @if (s.selfReviewDue) { · {{ 'performance.selfDue' | translate }} <span class="num">{{ s.selfReviewDue | date: 'd MMM' : undefined : lang() }}</span> }
+          @if (s.managerReviewDue) { · {{ 'performance.managerDue' | translate }} <span class="num">{{ s.managerReviewDue | date: 'd MMM' : undefined : lang() }}</span> }
+        </p>
+      } @else if (canManage) {
+        <div class="notice notice-info">
+          <span class="material-icons-outlined" aria-hidden="true">event_repeat</span>
+          <span class="grow">{{ 'performance.noActiveCycle' | translate }}</span>
+          <button type="button" class="btn btn-quiet btn-small" (click)="setTab('cycles')">{{ 'performance.tabs.cycles' | translate }}</button>
+        </div>
+      }
+      <section class="tallies">
+        <button type="button" class="tally" [class.is-picked]="reviewStatus() === 'SelfReview' && !overdue()" (click)="showReviews('SelfReview')">
+          <span class="t-label">{{ 'performance.status.SelfReview' | translate }}</span>
+          <span class="t-figure num">{{ s.selfPending }}</span>
+          <span class="t-sub">{{ 'performance.sum.ofTotal' | translate: { n: s.reviews } }}</span>
+        </button>
+        <button type="button" class="tally" [class.is-picked]="reviewStatus() === 'ManagerReview' && !overdue()" (click)="showReviews('ManagerReview')">
+          <span class="t-label">{{ 'performance.status.ManagerReview' | translate }}</span>
+          <span class="t-figure num">{{ s.managerPending }}</span>
+          <span class="t-sub"></span>
+        </button>
+        <button type="button" class="tally" [class.is-picked]="(reviewStatus() === 'Shared' || reviewStatus() === 'Acknowledged') && !overdue()" (click)="showReviews('Shared')">
+          <span class="t-label">{{ 'performance.sum.shared' | translate }}</span>
+          <span class="t-figure num">{{ s.shared + s.acknowledged }}</span>
+          <span class="t-sub">{{ 'performance.sum.acknowledged' | translate: { n: s.acknowledged } }}</span>
+        </button>
+        <button type="button" class="tally" [class.is-alert]="s.overdueReviews > 0" [class.is-picked]="overdue()" (click)="showReviews('', true)">
+          <span class="t-label">{{ 'performance.sum.overdue' | translate }}</span>
+          <span class="t-figure num">{{ s.overdueReviews }}</span>
+          <span class="t-sub"></span>
+        </button>
+        <article class="tally static">
+          <span class="t-label">{{ 'performance.sum.average' | translate }}</span>
+          <span class="t-figure num">@if (s.averageRating !== null) { {{ s.averageRating | number: '1.1-1' : lang() }} } @else { — }</span>
+          <span class="t-sub">{{ 'performance.sum.averageSub' | translate }}</span>
+        </article>
+      </section>
+    } @else {
+      <section class="tallies">
+        <button type="button" class="tally" [class.is-picked]="goalStatus() === '' && !overdue()" (click)="showGoals('')">
+          <span class="t-label">{{ 'performance.sum.goalsOpen' | translate }}</span>
+          <span class="t-figure num">{{ s.goalsOpen }}</span>
+          <span class="t-sub"></span>
+        </button>
+        <button type="button" class="tally" [class.is-alert]="s.goalsAtRisk > 0" [class.is-picked]="goalStatus() === 'AtRisk'" (click)="showGoals('AtRisk')">
+          <span class="t-label">{{ 'performance.sum.atRisk' | translate }}</span>
+          <span class="t-figure num">{{ s.goalsAtRisk }}</span>
+          <span class="t-sub">{{ 'performance.sum.atRiskSub' | translate }}</span>
+        </button>
+        <button type="button" class="tally" [class.is-alert]="s.goalsOverdue > 0" [class.is-picked]="overdue()" (click)="showGoals('', true)">
+          <span class="t-label">{{ 'performance.sum.goalsOverdue' | translate }}</span>
+          <span class="t-figure num">{{ s.goalsOverdue }}</span>
+          <span class="t-sub"></span>
+        </button>
+        <button type="button" class="tally" [class.is-picked]="goalStatus() === 'Completed'" (click)="showGoals('Completed')">
+          <span class="t-label">{{ 'performance.goalStatus.Completed' | translate }}</span>
+          <span class="t-figure num">{{ s.goalsCompleted }}</span>
+          <span class="t-sub"></span>
+        </button>
+      </section>
+    }
+  }
+
+  <!-- ═══ Reviews ═══ -->
+  @if (tab() === 'reviews') {
+    <section class="panel panel-flush">
+      <div class="toolbar">
+        <label class="search">
+          <span class="material-icons-outlined" aria-hidden="true">search</span>
+          <input type="search" [ngModel]="search()" (ngModelChange)="onSearch($event)" [placeholder]="'performance.searchReviewsPh' | translate" [attr.aria-label]="'performance.searchReviewsPh' | translate" />
+        </label>
+        <select class="select-sm" [ngModel]="cycleId()" (ngModelChange)="setCycle($event)" [attr.aria-label]="'performance.cycle' | translate">
+          <option value="">{{ 'performance.allCycles' | translate }}</option>
+          @for (c of cycles() ?? []; track c.id) { @if (c.status !== 'Draft') { <option [value]="c.id">{{ c.name }}</option> } }
+        </select>
+        <select class="select-sm" [ngModel]="reviewStatus()" (ngModelChange)="setReviewStatus($event)" [attr.aria-label]="'performance.stage' | translate">
+          <option value="">{{ 'performance.anyStage' | translate }}</option>
+          @for (s of reviewStatuses; track s) { <option [value]="s">{{ 'performance.status.' + s | translate }}</option> }
+        </select>
+        <label class="check-inline">
+          <input type="checkbox" [checked]="overdue()" (change)="toggleOverdue()" />{{ 'performance.overdueOnly' | translate }}
+        </label>
+      </div>
+      <div class="table-wrap">
+        <table class="ledger-table">
+          <thead>
+            <tr>
+              <th>{{ 'people.employee' | translate }}</th>
+              <th>{{ 'performance.reviewer' | translate }}</th>
+              <th>{{ 'performance.self' | translate }}</th>
+              <th>{{ 'performance.manager' | translate }}</th>
+              <th>{{ 'performance.stage' | translate }}</th>
+              <th>{{ 'performance.due' | translate }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            @if (reviews() === null) {
+              <tr><td colspan="6"><p class="loading-line">{{ 'common.loading' | translate }}</p></td></tr>
+            }
+            @for (r of reviews(); track r.id) {
+              <tr class="is-link" tabindex="0" (click)="openReview(r.id)" (keydown.enter)="openReview(r.id)">
+                <td>
+                  <span class="cell-main">{{ r.employeeName }}</span>
+                  <span class="cell-sub">{{ r.employeeCode }}@if (r.designationTitle) { · {{ r.designationTitle }} }@if (!cycleId()) { · {{ r.cycleName }} }</span>
+                </td>
+                <td>@if (r.reviewerName) { {{ r.reviewerName }} } @else { <span class="amber">{{ 'performance.noReviewer' | translate }}</span> }</td>
+                <td>@if (r.selfRating) { <span class="rating sm" [attr.data-r]="r.selfRating"><b class="num">{{ r.selfRating }}</b></span> } @else { <span class="dim">—</span> }</td>
+                <td>@if (r.managerRating) { <span class="rating sm" [attr.data-r]="r.managerRating" [class.is-draft]="r.status === 'SelfReview' || r.status === 'ManagerReview'"><b class="num">{{ r.managerRating }}</b>{{ ratingLabel(r.managerRating) }}</span> } @else { <span class="dim">—</span> }</td>
+                <td><span [class]="reviewChip[r.status]">{{ 'performance.status.' + r.status | translate }}</span></td>
+                <td class="num">
+                  @if (r.dueOn) { <span [class.warn]="r.isOverdue">{{ r.dueOn | date: 'd MMM' : undefined : lang() }}</span> }
+                  @else if (r.acknowledgedAt) { <span class="dim">{{ r.acknowledgedAt | date: 'd MMM' : undefined : lang() }}</span> }
+                  @else { <span class="dim">—</span> }
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="6">
+                  <div class="empty-state">
+                    <span class="material-icons-outlined" aria-hidden="true">rate_review</span>
+                    <h3>{{ (search() || reviewStatus() || overdue() ? 'performance.noMatch' : 'performance.noReviews') | translate }}</h3>
+                    <p>{{ (search() || reviewStatus() || overdue() ? 'performance.noMatchBody' : (canManage ? 'performance.noReviewsHr' : 'performance.noReviewsBody')) | translate }}</p>
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+  }
+
+  <!-- ═══ Goals ═══ -->
+  @if (tab() === 'goals') {
+    <section class="panel panel-flush">
+      <div class="toolbar">
+        <label class="search">
+          <span class="material-icons-outlined" aria-hidden="true">search</span>
+          <input type="search" [ngModel]="search()" (ngModelChange)="onSearch($event)" [placeholder]="'performance.searchGoalsPh' | translate" [attr.aria-label]="'performance.searchGoalsPh' | translate" />
+        </label>
+        <select class="select-sm" [ngModel]="cycleId()" (ngModelChange)="setCycle($event)" [attr.aria-label]="'performance.cycle' | translate">
+          <option value="">{{ 'performance.allCycles' | translate }}</option>
+          @for (c of cycles() ?? []; track c.id) { <option [value]="c.id">{{ c.name }}</option> }
+        </select>
+        <select class="select-sm" [ngModel]="goalStatus()" (ngModelChange)="setGoalStatus($event)" [attr.aria-label]="'performance.statusCol' | translate">
+          <option value="">{{ 'performance.anyStatus' | translate }}</option>
+          @for (s of goalStatuses; track s) { <option [value]="s">{{ 'performance.goalStatus.' + s | translate }}</option> }
+        </select>
+        <label class="check-inline">
+          <input type="checkbox" [checked]="overdue()" (change)="toggleOverdue()" />{{ 'performance.overdueOnly' | translate }}
+        </label>
+      </div>
+      <div class="table-wrap">
+        <table class="ledger-table">
+          <thead>
+            <tr>
+              <th>{{ 'performance.goal' | translate }}</th>
+              <th>{{ 'people.employee' | translate }}</th>
+              <th>{{ 'performance.progress' | translate }}</th>
+              <th>{{ 'performance.statusCol' | translate }}</th>
+              <th>{{ 'performance.due' | translate }}</th>
+              <th>{{ 'performance.lastUpdate' | translate }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            @if (goals() === null) {
+              <tr><td colspan="6"><p class="loading-line">{{ 'common.loading' | translate }}</p></td></tr>
+            }
+            @for (g of goals(); track g.id) {
+              <tr class="is-link" tabindex="0" (click)="openGoal(g.id)" (keydown.enter)="openGoal(g.id)">
+                <td class="goal-cell">
+                  <span class="cell-main wrap">{{ g.title }}</span>
+                  <span class="cell-sub">@if (g.cycleName) { {{ g.cycleName }} } @else { {{ 'performance.noCycle' | translate }} }@if (g.weight !== null) { · {{ 'performance.weightN' | translate: { n: g.weight } }} }</span>
+                </td>
+                <td><span class="cell-main">{{ g.employeeName }}</span><span class="cell-sub">{{ g.employeeCode }}@if (g.departmentName) { · {{ g.departmentName }} }</span></td>
+                <td>
+                  <span class="progress-cell">
+                    <span class="progress" [attr.data-s]="g.status"><span class="bar" [style.width.%]="g.progress"></span></span>
+                    <span class="num pct">{{ g.progress }}%</span>
+                  </span>
+                </td>
+                <td><span [class]="goalChip[g.status]">{{ 'performance.goalStatus.' + g.status | translate }}</span></td>
+                <td class="num"><span [class.warn]="g.isOverdue">{{ g.dueDate | date: 'd MMM y' : undefined : lang() }}</span></td>
+                <td class="num">@if (g.lastCheckInAt) { {{ g.lastCheckInAt | date: 'd MMM' : undefined : lang() }} } @else { <span class="dim">—</span> }</td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="6">
+                  <div class="empty-state">
+                    <span class="material-icons-outlined" aria-hidden="true">flag</span>
+                    <h3>{{ (search() || goalStatus() || overdue() || cycleId() ? 'performance.noMatch' : 'performance.noGoals') | translate }}</h3>
+                    <p>{{ (search() || goalStatus() || overdue() || cycleId() ? 'performance.noMatchBody' : 'performance.noGoalsBody') | translate }}</p>
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+  }
+
+  <!-- ═══ Cycles ═══ -->
+  @if (tab() === 'cycles') {
+    @if (cycles() === null) {
+      <p class="loading-line">{{ 'common.loading' | translate }}</p>
+    } @else if (!cycles()!.length) {
+      <section class="panel">
+        <div class="empty-state">
+          <span class="material-icons-outlined" aria-hidden="true">event_repeat</span>
+          <h3>{{ 'performance.noCycles' | translate }}</h3>
+          <p>{{ 'performance.noCyclesBody' | translate }}</p>
+          @if (canManage) { <button type="button" class="btn btn-quiet btn-small" (click)="newCycle()">{{ 'performance.newCycle' | translate }}</button> }
+        </div>
+      </section>
+    } @else {
+      <div class="cycle-list">
+        @for (c of cycles(); track c.id) {
+          <article class="cycle-card" [attr.data-s]="c.status">
+            <header class="cycle-head">
+              <div class="stack">
+                <h3 class="cycle-name">{{ c.name }}</h3>
+                <span class="cell-sub num">{{ c.periodStart | date: 'd MMM y' : undefined : lang() }} – {{ c.periodEnd | date: 'd MMM y' : undefined : lang() }}</span>
+              </div>
+              <span [class]="cycleChip[c.status]">{{ 'performance.cycleStatus.' + c.status | translate }}</span>
+            </header>
+            @if (c.description) { <p class="cell-sub cycle-desc">{{ c.description }}</p> }
+
+            <dl class="facts">
+              <div>
+                <dt>{{ 'performance.selfDue' | translate }}</dt>
+                <dd class="num">@if (c.selfReviewDue) { {{ c.selfReviewDue | date: 'd MMM y' : undefined : lang() }} } @else { <span class="dim">{{ 'performance.noSelfReview' | translate }}</span> }</dd>
+              </div>
+              <div><dt>{{ 'performance.managerDue' | translate }}</dt><dd class="num">{{ c.managerReviewDue | date: 'd MMM y' : undefined : lang() }}</dd></div>
+              <div><dt>{{ 'performance.reviewsCount' | translate }}</dt><dd class="num">{{ c.reviews }}</dd></div>
+              <div><dt>{{ 'performance.sum.average' | translate }}</dt><dd class="num">@if (c.averageRating !== null) { {{ c.averageRating | number: '1.1-1' : lang() }} } @else { — }</dd></div>
+            </dl>
+
+            @if (c.reviews) {
+              <div class="stage-bar" role="img" [attr.aria-label]="'performance.progress' | translate">
+                <span class="seg ack" [style.width.%]="share(c, c.acknowledged)"></span>
+                <span class="seg shared" [style.width.%]="share(c, c.shared)"></span>
+                <span class="seg mgr" [style.width.%]="share(c, c.managerPending)"></span>
+                <span class="seg self" [style.width.%]="share(c, c.selfPending)"></span>
+              </div>
+              <ul class="legend">
+                <li><i class="dot ack"></i>{{ 'performance.status.Acknowledged' | translate }} <b class="num">{{ c.acknowledged }}</b></li>
+                <li><i class="dot shared"></i>{{ 'performance.status.Shared' | translate }} <b class="num">{{ c.shared }}</b></li>
+                <li><i class="dot mgr"></i>{{ 'performance.status.ManagerReview' | translate }} <b class="num">{{ c.managerPending }}</b></li>
+                @if (c.includeSelfReview) { <li><i class="dot self"></i>{{ 'performance.status.SelfReview' | translate }} <b class="num">{{ c.selfPending }}</b></li> }
+              </ul>
+              @if (c.acknowledged + c.shared > 0) {
+                <div class="dist">
+                  <span class="dist-title">{{ 'performance.distribution' | translate }}</span>
+                  @for (n of c.ratingCounts; track $index) {
+                    <div class="dist-row">
+                      <span class="dist-label"><b class="num">{{ $index + 1 }}</b> {{ ratingLabel($index + 1) }}</span>
+                      <span class="dist-track"><span class="dist-bar" [attr.data-r]="$index + 1" [style.width.%]="barWidth(c.ratingCounts, n)"></span></span>
+                      <span class="num dist-n">{{ n }}</span>
+                    </div>
+                  }
+                </div>
+              }
+            }
+
+            <footer class="cycle-actions">
+              @if (c.status !== 'Draft') {
+                <button type="button" class="btn btn-quiet btn-small" (click)="viewCycleReviews(c)">
+                  <span class="material-icons-outlined" aria-hidden="true">rate_review</span>{{ 'performance.viewReviews' | translate }}
+                </button>
+              }
+              @if (canManage) {
+                @if (c.status !== 'Closed') {
+                  <button type="button" class="btn btn-quiet btn-small" (click)="editCycle(c)">{{ 'common.edit' | translate }}</button>
+                }
+                @if (c.status === 'Draft') {
+                  @if (confirm === 'deleteCycle:' + c.id) {
+                    <button type="button" class="btn btn-quiet btn-small" (click)="confirm = null">{{ 'common.cancel' | translate }}</button>
+                    <button type="button" class="btn btn-danger btn-small" [disabled]="busy() === c.id" (click)="deleteCycle(c)">{{ 'performance.confirmDelete' | translate }}</button>
+                  } @else {
+                    <button type="button" class="btn-link danger-link" (click)="deleteCycle(c)">{{ 'common.delete' | translate }}</button>
+                  }
+                  <button type="button" class="btn btn-ink btn-small push" (click)="openLaunch(c, 'launch')">
+                    <span class="material-icons-outlined" aria-hidden="true">rocket_launch</span>{{ 'performance.launch' | translate }}
+                  </button>
+                }
+                @if (c.status === 'Active') {
+                  <button type="button" class="btn btn-quiet btn-small" (click)="openLaunch(c, 'add')">
+                    <span class="material-icons-outlined" aria-hidden="true">person_add</span>{{ 'performance.addPeople' | translate }}
+                  </button>
+                  @if (confirm === 'closeCycle:' + c.id) {
+                    <span class="confirm-line push">
+                      <span class="cell-sub">{{ 'performance.closeConfirm' | translate: { n: c.selfPending + c.managerPending } }}</span>
+                      <button type="button" class="btn btn-quiet btn-small" (click)="confirm = null">{{ 'common.cancel' | translate }}</button>
+                      <button type="button" class="btn btn-ink btn-small" [disabled]="busy() === c.id" (click)="closeCycle(c)">{{ 'performance.closeCycle' | translate }}</button>
+                    </span>
+                  } @else {
+                    <button type="button" class="btn btn-quiet btn-small push" (click)="closeCycle(c)">
+                      <span class="material-icons-outlined" aria-hidden="true">lock</span>{{ 'performance.closeCycle' | translate }}
+                    </button>
+                  }
+                }
+              }
+            </footer>
+          </article>
+        }
+      </div>
+    }
+  }
+</div>
+
+@if (drawer(); as d) {
+  <div class="overlay" (click)="closeDrawer()">
+    <aside class="drawer" [class.drawer-wide]="d === 'review' || d === 'goal'" role="dialog" aria-modal="true" (click)="$event.stopPropagation()">
+      <header class="drawer-head">
+        <h3>
+          @switch (d) {
+            @case ('review') { {{ review()?.employeeName ?? ('common.loading' | translate) }} }
+            @case ('goal') { {{ 'performance.goal' | translate }} }
+            @case ('goalEdit') { {{ (goalForm?.id ? 'performance.editGoal' : 'performance.addGoal') | translate }} }
+            @case ('cycleEdit') { {{ (cycleForm?.id ? 'performance.editCycle' : 'performance.newCycle') | translate }} }
+            @case ('cycle') { {{ (launchForm?.mode === 'launch' ? 'performance.launchTitle' : 'performance.addPeople') | translate }} }
+          }
+        </h3>
+        <button type="button" class="btn-link" (click)="closeDrawer()" [attr.aria-label]="'common.close' | translate">
+          <span class="material-icons-outlined" aria-hidden="true">close</span>
+        </button>
+      </header>
+
+      <div class="drawer-body">
+        @switch (d) {
+          <!-- Review -->
+          @case ('review') {
+            @if (review(); as r) {
+              <div class="case-head">
+                <div class="stack">
+                  <span class="cell-main">{{ r.cycleName }}</span>
+                  <span class="cell-sub">{{ r.employeeCode }}@if (r.designationTitle) { · {{ r.designationTitle }} }@if (r.departmentName) { · {{ r.departmentName }} }</span>
+                </div>
+                <span [class]="reviewChip[r.status]">{{ 'performance.status.' + r.status | translate }}</span>
+              </div>
+
+              <ol class="stepper">
+                @for (s of stages(r); track s) {
+                  <li [class.is-done]="stageIndex(r.status) > stageIndex(s) || r.status === 'Acknowledged'" [class.is-now]="r.status === s && s !== 'Acknowledged'">
+                    <span class="step-dot"></span>{{ 'performance.step.' + s | translate }}
+                  </li>
+                }
+              </ol>
+
+              <dl class="facts">
+                <div><dt>{{ 'performance.period' | translate }}</dt><dd class="num">{{ r.periodStart | date: 'd MMM' : undefined : lang() }} – {{ r.periodEnd | date: 'd MMM y' : undefined : lang() }}</dd></div>
+                <div>
+                  <dt>{{ 'performance.reviewer' | translate }}</dt>
+                  <dd>
+                    @if (reviewerForm === null) {
+                      @if (r.reviewerName) { {{ r.reviewerName }} } @else { <span class="amber">{{ 'performance.noReviewer' | translate }}</span> }
+                      @if (r.canManage && (r.status === 'SelfReview' || r.status === 'ManagerReview')) { <button type="button" class="btn-link" (click)="startReviewer()">{{ 'common.edit' | translate }}</button> }
+                    }
+                  </dd>
+                </div>
+                @if (r.dueOn) { <div><dt>{{ 'performance.due' | translate }}</dt><dd class="num" [class.warn]="r.isOverdue">{{ r.dueOn | date: 'd MMM y' : undefined : lang() }}</dd></div> }
+                @if (r.cycleStatus === 'Closed') { <div><dt>{{ 'performance.cycle' | translate }}</dt><dd>{{ 'performance.cycleStatus.Closed' | translate }}</dd></div> }
+              </dl>
+
+              @if (reviewerForm !== null) {
+                <div class="task-form">
+                  <label for="rv-pick" class="group-label">{{ 'performance.changeReviewer' | translate }}</label>
+                  <select id="rv-pick" [(ngModel)]="reviewerForm">
+                    <option value="">{{ 'performance.noReviewerHr' | translate }}</option>
+                    @for (p of reviewerOptions(r); track p.id) { <option [value]="p.id">{{ p.name }} · {{ p.employeeCode }}</option> }
+                  </select>
+                  <div class="inline-actions">
+                    <button type="button" class="btn btn-quiet btn-small" (click)="reviewerForm = null">{{ 'common.cancel' | translate }}</button>
+                    <button type="button" class="btn btn-ink btn-small" [disabled]="saving()" (click)="saveReviewer()">{{ 'common.save' | translate }}</button>
+                  </div>
+                </div>
+              }
+
+              <!-- Self review -->
+              @if (r.includeSelfReview) {
+                <section class="sub-panel">
+                  <header class="sub-head">
+                    <h4>{{ 'performance.selfReview' | translate }}</h4>
+                    @if (r.selfSubmittedAt) { <span class="cell-sub num">{{ 'performance.submittedOn' | translate }} {{ r.selfSubmittedAt | date: 'd MMM y' : undefined : lang() }}</span> }
+                  </header>
+                  @if (selfForm; as f) {
+                    <p class="field-hint">{{ 'performance.selfHint' | translate }}</p>
+                    <div class="rating-pick" role="radiogroup" [attr.aria-label]="'performance.rating.label' | translate">
+                      @for (n of ratings; track n) {
+                        <button type="button" role="radio" class="rate-btn" [attr.data-r]="n" [class.is-picked]="f.rating === n" [attr.aria-checked]="f.rating === n" (click)="f.rating = n">
+                          <b class="num">{{ n }}</b><span>{{ ratingLabel(n) }}</span>
+                        </button>
+                      }
+                    </div>
+                    <div class="field">
+                      <label for="s-sum">{{ 'performance.selfSummary' | translate }}</label>
+                      <textarea id="s-sum" rows="6" maxlength="4000" [(ngModel)]="f.summary" [placeholder]="'performance.selfSummaryPh' | translate"></textarea>
+                    </div>
+                    @if (confirm === 'submitSelf') {
+                      <p class="confirm-note">{{ 'performance.submitSelfConfirm' | translate }}</p>
+                    }
+                    <div class="inline-actions">
+                      <button type="button" class="btn btn-quiet btn-small" [disabled]="saving()" (click)="saveSelf(false)">{{ 'performance.saveDraft' | translate }}</button>
+                      <button type="button" class="btn btn-ink btn-small" [disabled]="!f.rating || !f.summary.trim() || saving()" (click)="saveSelf(true)">
+                        {{ (confirm === 'submitSelf' ? 'performance.confirmSubmit' : 'performance.submit') | translate }}
+                      </button>
+                    </div>
+                  } @else if (r.selfRating || r.selfSummary) {
+                    <div class="answer">
+                      @if (r.selfRating) { <span class="rating" [attr.data-r]="r.selfRating"><b class="num">{{ r.selfRating }}</b>{{ ratingLabel(r.selfRating) }}</span> }
+                      @if (r.selfSummary) { <p class="pre">{{ r.selfSummary }}</p> }
+                    </div>
+                  } @else {
+                    <p class="dim">{{ (r.isSelf ? 'performance.selfClosed' : 'performance.selfNotYet') | translate }}</p>
+                  }
+                </section>
+              }
+
+              <!-- Manager review -->
+              <section class="sub-panel">
+                <header class="sub-head">
+                  <h4>{{ 'performance.managerReview' | translate }}</h4>
+                  @if (r.managerSubmittedAt) {
+                    <span class="cell-sub num">{{ 'performance.sharedOn' | translate }} {{ r.managerSubmittedAt | date: 'd MMM y' : undefined : lang() }}@if (r.managerSubmittedByName) { · {{ r.managerSubmittedByName }} }</span>
+                  }
+                </header>
+                @if (managerForm; as f) {
+                  @if (r.status === 'SelfReview') { <p class="field-hint amber">{{ 'performance.waitSelf' | translate }}</p> }
+                  <div class="rating-pick" role="radiogroup" [attr.aria-label]="'performance.rating.label' | translate">
+                    @for (n of ratings; track n) {
+                      <button type="button" role="radio" class="rate-btn" [attr.data-r]="n" [class.is-picked]="f.rating === n" [attr.aria-checked]="f.rating === n" (click)="f.rating = n">
+                        <b class="num">{{ n }}</b><span>{{ ratingLabel(n) }}</span>
+                      </button>
+                    }
+                  </div>
+                  <div class="field">
+                    <label for="m-sum">{{ 'performance.managerSummary' | translate }}</label>
+                    <textarea id="m-sum" rows="5" maxlength="4000" [(ngModel)]="f.summary" [placeholder]="'performance.managerSummaryPh' | translate"></textarea>
+                  </div>
+                  <div class="two-col">
+                    <div class="field">
+                      <label for="m-str">{{ 'performance.strengths' | translate }}</label>
+                      <textarea id="m-str" rows="3" maxlength="2000" [(ngModel)]="f.strengths"></textarea>
+                    </div>
+                    <div class="field">
+                      <label for="m-imp">{{ 'performance.improvements' | translate }}</label>
+                      <textarea id="m-imp" rows="3" maxlength="2000" [(ngModel)]="f.improvements"></textarea>
+                    </div>
+                  </div>
+                  @if (confirm === 'share') {
+                    <p class="confirm-note">{{ 'performance.shareConfirm' | translate: { name: r.employeeName } }}</p>
+                  }
+                  <div class="inline-actions">
+                    <button type="button" class="btn btn-quiet btn-small" [disabled]="saving()" (click)="saveManager(false)">{{ 'performance.saveDraft' | translate }}</button>
+                    <button type="button" class="btn btn-ink btn-small" [disabled]="!f.rating || !f.summary.trim() || r.status === 'SelfReview' || saving()" (click)="saveManager(true)">
+                      {{ (confirm === 'share' ? 'performance.confirmShare' : 'performance.share') | translate }}
+                    </button>
+                  </div>
+                } @else if (r.managerRating || r.managerSummary) {
+                  <div class="answer">
+                    @if (r.managerRating) { <span class="rating lg" [attr.data-r]="r.managerRating"><b class="num">{{ r.managerRating }}</b>{{ ratingLabel(r.managerRating) }}</span> }
+                    @if (r.managerSummary) { <p class="pre">{{ r.managerSummary }}</p> }
+                    @if (r.strengths || r.improvements) {
+                      <div class="two-col">
+                        @if (r.strengths) { <div><span class="mini-label">{{ 'performance.strengths' | translate }}</span><p class="pre">{{ r.strengths }}</p></div> }
+                        @if (r.improvements) { <div><span class="mini-label">{{ 'performance.improvements' | translate }}</span><p class="pre">{{ r.improvements }}</p></div> }
+                      </div>
+                    }
+                  </div>
+                } @else {
+                  <p class="dim">{{ (r.isSelf ? 'performance.managerHidden' : 'performance.managerNotYet') | translate }}</p>
+                }
+              </section>
+
+              <!-- Acknowledgement -->
+              @if (r.canAcknowledge) {
+                <section class="sub-panel">
+                  <header class="sub-head"><h4>{{ 'performance.acknowledge' | translate }}</h4></header>
+                  <p class="field-hint">{{ 'performance.ackHint' | translate }}</p>
+                  <textarea rows="3" maxlength="2000" [(ngModel)]="ackComment" [placeholder]="'performance.ackCommentPh' | translate" [attr.aria-label]="'performance.ackCommentPh' | translate"></textarea>
+                  <div class="inline-actions">
+                    <button type="button" class="btn btn-ink btn-small" [disabled]="saving()" (click)="acknowledge()">
+                      <span class="material-icons-outlined" aria-hidden="true">how_to_reg</span>{{ 'performance.acknowledge' | translate }}
+                    </button>
+                  </div>
+                </section>
+              } @else if (r.acknowledgedAt) {
+                <section class="sub-panel">
+                  <header class="sub-head">
+                    <h4>{{ 'performance.status.Acknowledged' | translate }}</h4>
+                    <span class="cell-sub num">{{ r.acknowledgedAt | date: 'd MMM y' : undefined : lang() }}</span>
+                  </header>
+                  @if (r.employeeComment) { <p class="pre reason">“{{ r.employeeComment }}”</p> }
+                </section>
+              }
+
+              <!-- Goals in this cycle -->
+              <section class="sub-panel">
+                <header class="sub-head">
+                  <h4>{{ 'performance.cycleGoals' | translate }}</h4>
+                  <span class="cell-sub num">{{ r.goals.length }}</span>
+                </header>
+                <ul class="plain-list">
+                  @for (g of r.goals; track g.id) {
+                    <li>
+                      <button type="button" class="plain-row as-btn" (click)="openGoal(g.id)">
+                        <span class="grow cell-main wrap">{{ g.title }}</span>
+                        <span class="progress-cell">
+                          <span class="progress" [attr.data-s]="g.status"><span class="bar" [style.width.%]="g.progress"></span></span>
+                          <span class="num pct">{{ g.progress }}%</span>
+                        </span>
+                      </button>
+                    </li>
+                  } @empty {
+                    <li class="dim empty-line">{{ 'performance.noCycleGoals' | translate }}</li>
+                  }
+                </ul>
+              </section>
+
+              @if (r.canManage) {
+                <section class="sub-panel">
+                  <header class="sub-head"><h4>{{ 'performance.hrActions' | translate }}</h4></header>
+                  <div class="status-btns">
+                    @if (r.status === 'Shared' || r.status === 'Acknowledged') {
+                      <button type="button" class="btn btn-quiet btn-small" [disabled]="saving()" (click)="reopen(false)">
+                        {{ (confirm === 'reopen' ? 'performance.confirmReopen' : 'performance.reopen') | translate }}
+                      </button>
+                    }
+                    @if (r.status === 'ManagerReview' && r.selfSubmittedAt && r.includeSelfReview) {
+                      <button type="button" class="btn btn-quiet btn-small" [disabled]="saving()" (click)="reopen(true)">
+                        {{ (confirm === 'reopenSelf' ? 'performance.confirmReopen' : 'performance.reopenSelf') | translate }}
+                      </button>
+                    }
+                    @if (r.status === 'SelfReview' || r.status === 'ManagerReview') {
+                      <button type="button" class="btn-link danger-link" [disabled]="saving()" (click)="removeReview()">
+                        {{ (confirm === 'removeReview' ? 'performance.confirmRemove' : 'performance.removeFromCycle') | translate }}
+                      </button>
+                    }
+                  </div>
+                  @if (confirm === 'reopen') { <p class="field-hint">{{ 'performance.reopenHint' | translate }}</p> }
+                  @if (confirm === 'removeReview') { <p class="field-hint">{{ 'performance.removeHint' | translate }}</p> }
+                </section>
+              }
+            } @else {
+              <p class="loading-line">{{ 'common.loading' | translate }}</p>
+            }
+          }
+
+          <!-- Goal -->
+          @case ('goal') {
+            @if (goal(); as gd) {
+              @let g = gd.goal;
+              <div class="case-head">
+                <div class="stack">
+                  <span class="goal-title big">{{ g.title }}</span>
+                  <span class="cell-sub">{{ g.employeeName }} · {{ g.employeeCode }}@if (g.cycleName) { · {{ g.cycleName }} }</span>
+                </div>
+                <span [class]="goalChip[g.status]">{{ 'performance.goalStatus.' + g.status | translate }}</span>
+              </div>
+              @if (g.description) { <p class="pre">{{ g.description }}</p> }
+
+              <div class="big-progress">
+                <span class="progress lg" [attr.data-s]="g.status"><span class="bar" [style.width.%]="g.progress"></span></span>
+                <span class="num pct big">{{ g.progress }}%</span>
+              </div>
+
+              <dl class="facts">
+                <div><dt>{{ 'performance.due' | translate }}</dt><dd class="num" [class.warn]="g.isOverdue">{{ g.dueDate | date: 'd MMM y' : undefined : lang() }}</dd></div>
+                @if (g.startDate) { <div><dt>{{ 'performance.start' | translate }}</dt><dd class="num">{{ g.startDate | date: 'd MMM y' : undefined : lang() }}</dd></div> }
+                <div><dt>{{ 'performance.weight' | translate }}</dt><dd class="num">@if (g.weight !== null) { {{ g.weight }}% } @else { — }</dd></div>
+                @if (g.completedAt) { <div><dt>{{ 'performance.completedOn' | translate }}</dt><dd class="num">{{ g.completedAt | date: 'd MMM y' : undefined : lang() }}</dd></div> }
+              </dl>
+
+              @if (checkInForm; as f) {
+                <div class="task-form">
+                  <div class="field">
+                    <label for="ci-p">{{ 'performance.progress' | translate }} <b class="num">{{ f.progress }}%</b></label>
+                    <input id="ci-p" type="range" min="0" max="100" step="5" [ngModel]="f.progress" (ngModelChange)="onProgress($event)" />
+                  </div>
+                  <div class="status-btns" role="radiogroup" [attr.aria-label]="'performance.statusCol' | translate">
+                    @for (s of checkInStatuses; track s) {
+                      <button type="button" role="radio" class="seg-btn" [attr.data-s]="s" [class.is-picked]="f.status === s" [attr.aria-checked]="f.status === s"
+                        (click)="pickStatus(s)">{{ 'performance.goalStatus.' + s | translate }}</button>
+                    }
+                  </div>
+                  <div class="field">
+                    <label for="ci-n">{{ 'performance.note' | translate }}</label>
+                    <input id="ci-n" maxlength="1000" [(ngModel)]="f.note" [placeholder]="'performance.checkInPh' | translate" />
+                  </div>
+                  <div class="inline-actions">
+                    <button type="button" class="btn btn-quiet btn-small" (click)="checkInForm = null">{{ 'common.cancel' | translate }}</button>
+                    <button type="button" class="btn btn-ink btn-small" [disabled]="saving()" (click)="saveCheckIn()">{{ 'performance.saveCheckIn' | translate }}</button>
+                  </div>
+                </div>
+              } @else if (cancelNote !== null) {
+                <div class="task-form">
+                  <div class="field">
+                    <label for="cn-n">{{ 'performance.cancelWhy' | translate }}</label>
+                    <input id="cn-n" maxlength="1000" [(ngModel)]="cancelNote" />
+                  </div>
+                  <div class="inline-actions">
+                    <button type="button" class="btn btn-quiet btn-small" (click)="cancelNote = null">{{ 'common.cancel' | translate }}</button>
+                    <button type="button" class="btn btn-danger btn-small" [disabled]="saving()" (click)="cancelGoal()">{{ 'performance.cancelGoal' | translate }}</button>
+                  </div>
+                </div>
+              } @else if (g.canEdit) {
+                <div class="inline-actions start wrap">
+                  <button type="button" class="btn btn-ink btn-small" (click)="startCheckIn()">
+                    <span class="material-icons-outlined" aria-hidden="true">trending_up</span>{{ 'performance.updateProgress' | translate }}
+                  </button>
+                  <button type="button" class="btn btn-quiet btn-small" (click)="editGoal()">{{ 'common.edit' | translate }}</button>
+                  <button type="button" class="btn btn-quiet btn-small" (click)="cancelGoal()">{{ 'performance.cancelGoal' | translate }}</button>
+                  @if (!gd.checkIns.length) {
+                    <button type="button" class="btn-link danger-link push" (click)="deleteGoal()">{{ (confirm === 'deleteGoal' ? 'performance.confirmDelete' : 'common.delete') | translate }}</button>
+                  }
+                </div>
+              } @else if (isClosedGoal(g.status) && canWorkOn(g.employeeId)) {
+                <div class="inline-actions start">
+                  <button type="button" class="btn btn-quiet btn-small" [disabled]="saving()" (click)="reopenGoal()">
+                    <span class="material-icons-outlined" aria-hidden="true">undo</span>{{ 'performance.reopenGoal' | translate }}
+                  </button>
+                </div>
+              }
+
+              <section class="sub-panel">
+                <header class="sub-head"><h4>{{ 'performance.updates' | translate }}</h4></header>
+                <ol class="timeline compact">
+                  @for (c of gd.checkIns; track c.id) {
+                    <li class="tl-row">
+                      <span class="tl-icon" [attr.data-s]="c.status"><span class="num tl-pct">{{ c.progress }}</span></span>
+                      <div class="stack">
+                        <span class="tl-line"><strong>{{ 'performance.goalStatus.' + c.status | translate }}</strong> · {{ c.progress }}%</span>
+                        @if (c.note) { <span class="cell-sub reason">“{{ c.note }}”</span> }
+                      </div>
+                      <span class="cell-sub num tl-when">
+                        {{ c.at | date: 'd MMM y' : undefined : lang() }}
+                        @if (c.byName) { <span class="cell-sub">{{ c.byName }}</span> }
+                      </span>
+                    </li>
+                  } @empty {
+                    <li class="dim empty-line">{{ 'performance.noUpdates' | translate }}</li>
+                  }
+                </ol>
+              </section>
+            } @else {
+              <p class="loading-line">{{ 'common.loading' | translate }}</p>
+            }
+          }
+
+          <!-- Add / edit goal -->
+          @case ('goalEdit') {
+            @if (goalForm; as f) {
+              <div class="form-grid">
+                <div class="field span-all">
+                  <label for="g-emp">{{ 'people.employee' | translate }}</label>
+                  <select id="g-emp" [(ngModel)]="f.employeeId" [disabled]="!!f.id">
+                    <option value="" disabled>{{ 'performance.pickEmployee' | translate }}</option>
+                    @for (p of people(); track p.id) { <option [value]="p.id">{{ p.name }} · {{ p.employeeCode }}@if (p.isSelf) { ({{ 'performance.me' | translate }}) }</option> }
+                  </select>
+                </div>
+                <div class="field span-all">
+                  <label for="g-title">{{ 'performance.goalTitle' | translate }}</label>
+                  <input id="g-title" maxlength="200" [(ngModel)]="f.title" [placeholder]="'performance.goalTitlePh' | translate" />
+                </div>
+                <div class="field span-all">
+                  <label for="g-desc">{{ 'performance.goalDesc' | translate }}</label>
+                  <textarea id="g-desc" rows="3" maxlength="2000" [(ngModel)]="f.description" [placeholder]="'performance.goalDescPh' | translate"></textarea>
+                </div>
+                <div class="field span-2">
+                  <label for="g-cycle">{{ 'performance.cycle' | translate }}</label>
+                  <select id="g-cycle" [(ngModel)]="f.cycleId">
+                    <option value="">{{ 'performance.noCycle' | translate }}</option>
+                    @for (c of goalCycles(); track c.id) { <option [value]="c.id">{{ c.name }}</option> }
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="g-w">{{ 'performance.weightPct' | translate }}</label>
+                  <input id="g-w" type="number" min="0" max="100" [(ngModel)]="f.weight" />
+                </div>
+                <div class="field">
+                  <label for="g-s">{{ 'performance.start' | translate }}</label>
+                  <input id="g-s" type="date" [(ngModel)]="f.startDate" />
+                </div>
+                <div class="field">
+                  <label for="g-d">{{ 'performance.due' | translate }}</label>
+                  <input id="g-d" type="date" [min]="f.startDate" [(ngModel)]="f.dueDate" />
+                </div>
+              </div>
+              <p class="field-hint">{{ 'performance.goalHint' | translate }}</p>
+            }
+          }
+
+          <!-- Add / edit cycle -->
+          @case ('cycleEdit') {
+            @if (cycleForm; as f) {
+              <div class="form-grid">
+                <div class="field span-all">
+                  <label for="c-name">{{ 'performance.cycleName' | translate }}</label>
+                  <input id="c-name" maxlength="100" [(ngModel)]="f.name" />
+                </div>
+                <div class="field span-all">
+                  <label for="c-desc">{{ 'performance.goalDesc' | translate }}</label>
+                  <input id="c-desc" maxlength="500" [(ngModel)]="f.description" [placeholder]="'performance.cycleDescPh' | translate" />
+                </div>
+                <div class="field">
+                  <label for="c-ps">{{ 'performance.periodStart' | translate }}</label>
+                  <input id="c-ps" type="date" [disabled]="f.locked" [(ngModel)]="f.periodStart" />
+                </div>
+                <div class="field">
+                  <label for="c-pe">{{ 'performance.periodEnd' | translate }}</label>
+                  <input id="c-pe" type="date" [disabled]="f.locked" [min]="f.periodStart" [(ngModel)]="f.periodEnd" />
+                </div>
+                <div class="field span-all">
+                  <label class="check-inline">
+                    <input type="checkbox" [disabled]="f.locked" [(ngModel)]="f.includeSelfReview" />{{ 'performance.includeSelf' | translate }}
+                  </label>
+                </div>
+                @if (f.includeSelfReview) {
+                  <div class="field">
+                    <label for="c-sd">{{ 'performance.selfDue' | translate }}</label>
+                    <input id="c-sd" type="date" [max]="f.managerReviewDue" [(ngModel)]="f.selfReviewDue" />
+                  </div>
+                }
+                <div class="field">
+                  <label for="c-md">{{ 'performance.managerDue' | translate }}</label>
+                  <input id="c-md" type="date" [min]="f.selfReviewDue" [(ngModel)]="f.managerReviewDue" />
+                </div>
+              </div>
+              @if (f.locked) { <p class="field-hint">{{ 'performance.lockedHint' | translate }}</p> }
+              @if (f.includeSelfReview && f.selfReviewDue && f.managerReviewDue && f.selfReviewDue > f.managerReviewDue) {
+                <p class="err">{{ 'performance.errors.selfAfterManager' | translate }}</p>
+              }
+            }
+          }
+
+          <!-- Launch / add people -->
+          @case ('cycle') {
+            @if (launchForm; as f) {
+              @if (f.mode === 'launch') {
+                <p>{{ 'performance.launchIntro' | translate: { name: f.cycle.name } }}</p>
+                <span class="group-label">{{ 'performance.departments' | translate }}</span>
+                <ul class="pick-list">
+                  @for (dep of departments(); track dep.id) {
+                    <li>
+                      <label class="pick">
+                        <span class="cell-main">{{ dep.name }}</span>
+                        <input type="checkbox" [checked]="f.departmentIds.includes(dep.id)" (change)="toggleIn(f.departmentIds, dep.id)" />
+                      </label>
+                    </li>
+                  } @empty {
+                    <li class="dim empty-line pad">{{ 'common.loading' | translate }}</li>
+                  }
+                </ul>
+                <p class="field-hint">{{ (f.departmentIds.length ? 'performance.launchSome' : 'performance.launchAll') | translate: { n: f.departmentIds.length } }}</p>
+              } @else {
+                <p>{{ 'performance.addIntro' | translate: { name: f.cycle.name } }}</p>
+                <label class="search">
+                  <span class="material-icons-outlined" aria-hidden="true">search</span>
+                  <input type="search" [(ngModel)]="f.search" [placeholder]="'performance.findEmployee' | translate" [attr.aria-label]="'performance.findEmployee' | translate" />
+                </label>
+                <ul class="pick-list tall">
+                  @for (p of filteredPeople(); track p.id) {
+                    <li>
+                      <label class="pick">
+                        <span class="stack"><span class="cell-main">{{ p.name }}</span><span class="cell-sub">{{ p.employeeCode }}@if (p.departmentName) { · {{ p.departmentName }} }</span></span>
+                        <input type="checkbox" [checked]="f.employeeIds.includes(p.id)" (change)="toggleIn(f.employeeIds, p.id)" />
+                      </label>
+                    </li>
+                  }
+                </ul>
+                <p class="field-hint">{{ 'performance.addHint' | translate: { n: f.employeeIds.length } }}</p>
+              }
+            }
+          }
+        }
+      </div>
+
+      @if (d === 'goalEdit' || d === 'cycleEdit' || d === 'cycle') {
+        <footer class="drawer-foot">
+          <button type="button" class="btn btn-quiet" (click)="closeDrawer()">{{ 'common.cancel' | translate }}</button>
+          @switch (d) {
+            @case ('goalEdit') {
+              <button type="button" class="btn btn-ink" [disabled]="!canSaveGoal() || saving()" (click)="saveGoal()">{{ 'common.save' | translate }}</button>
+            }
+            @case ('cycleEdit') {
+              <button type="button" class="btn btn-ink" [disabled]="!canSaveCycle() || saving()" (click)="saveCycle()">{{ 'common.save' | translate }}</button>
+            }
+            @case ('cycle') {
+              <button type="button" class="btn btn-ink" [disabled]="saving() || (launchForm?.mode === 'add' && !launchForm?.employeeIds?.length)" (click)="runLaunch()">
+                {{ (launchForm?.mode === 'launch' ? 'performance.launch' : 'performance.addPeople') | translate }}
+              </button>
+            }
+          }
+        </footer>
+      }
+    </aside>
+  </div>
+}
