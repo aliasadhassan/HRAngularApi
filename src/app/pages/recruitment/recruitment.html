@@ -1,0 +1,1291 @@
+<div class="page">
+  <header class="page-intro">
+    <p>{{ 'recruitment.intro' | translate }}</p>
+    <div class="intro-actions">
+      @if ((tab() === 'jobs' || tab() === 'pipeline') && summary()?.canRequest) {
+        <button type="button" class="btn" [class.btn-ink]="tab() === 'jobs'" [class.btn-quiet]="tab() !== 'jobs'" (click)="newJob()">
+          <span class="material-icons-outlined" aria-hidden="true">add</span>{{ (canManage() ? 'recruitment.newJob' : 'recruitment.newRequisition') | translate }}
+        </button>
+      }
+      @if ((tab() === 'candidates' || (tab() === 'pipeline' && boardJob()?.status === 'Open')) && canManage()) {
+        <button type="button" class="btn btn-ink" (click)="newCandidate()">
+          <span class="material-icons-outlined" aria-hidden="true">person_add</span>{{ 'recruitment.addCandidate' | translate }}
+        </button>
+      }
+    </div>
+  </header>
+
+  @if (summary(); as s) {
+    <nav class="tabs">
+      @if (hasJobs()) {
+        <button type="button" class="tab" [class.is-active]="tab() === 'jobs'" (click)="setTab('jobs')">
+          {{ 'recruitment.tabs.jobs' | translate }}
+          @if (s.pendingApprovals && canManage()) { <span class="tab-count num alert-count">{{ s.pendingApprovals }}</span> }
+          @else if (s.openJobs) { <span class="tab-count num">{{ s.openJobs }}</span> }
+        </button>
+        <button type="button" class="tab" [class.is-active]="tab() === 'pipeline'" (click)="setTab('pipeline')">
+          {{ 'recruitment.tabs.pipeline' | translate }}
+          @if (s.activeApplications) { <span class="tab-count num">{{ s.activeApplications }}</span> }
+        </button>
+      }
+      @if (isHr()) {
+        <button type="button" class="tab" [class.is-active]="tab() === 'candidates'" (click)="setTab('candidates')">{{ 'recruitment.tabs.candidates' | translate }}</button>
+      }
+      <button type="button" class="tab" [class.is-active]="tab() === 'interviews'" (click)="setTab('interviews')">
+        {{ 'recruitment.tabs.interviews' | translate }}
+        @if (s.myFeedbackDue) { <span class="tab-count num alert-count">{{ s.myFeedbackDue }}</span> }
+        @else if (s.myUpcomingInterviews) { <span class="tab-count num">{{ s.myUpcomingInterviews }}</span> }
+      </button>
+      @if (isHr()) {
+        <button type="button" class="tab" [class.is-active]="tab() === 'headcount'" (click)="setTab('headcount')">{{ 'recruitment.tabs.headcount' | translate }}</button>
+      }
+    </nav>
+  } @else {
+    <p class="loading-line">{{ 'common.loading' | translate }}</p>
+  }
+
+  <!-- ═══ Jobs ═══ -->
+  @if (tab() === 'jobs' && summary(); as s) {
+    @if (canManage() && pendingApprovals().length) {
+      <div class="notice notice-info">
+        <span class="material-icons-outlined" aria-hidden="true">approval</span>
+        <span class="grow">{{ 'recruitment.pendingHint' | translate: { n: pendingApprovals().length } }}</span>
+        <button type="button" class="btn btn-ink btn-small" (click)="showJobs('Submitted')">{{ 'recruitment.review' | translate }}</button>
+      </div>
+    }
+    @for (j of sentBack(); track j.id) {
+      <div class="notice notice-info">
+        <span class="material-icons-outlined" aria-hidden="true">undo</span>
+        <span class="grow">{{ 'recruitment.sentBackHint' | translate: { title: j.title } }} <span class="reason">“{{ j.reviewNote }}”</span></span>
+        <button type="button" class="btn btn-quiet btn-small" (click)="openJob(j.id)">{{ 'common.open' | translate }}</button>
+      </div>
+    }
+
+    <section class="tallies">
+      <button type="button" class="tally" [class.is-picked]="jobStatus() === 'Open'" (click)="showJobs('Open')">
+        <span class="t-label">{{ 'recruitment.sum.openJobs' | translate }}</span>
+        <span class="t-figure num">{{ s.openJobs }}</span>
+        <span class="t-sub">{{ 'recruitment.sum.positions' | translate: { n: s.openPositions } }}</span>
+      </button>
+      <button type="button" class="tally" [class.is-alert]="s.pendingApprovals > 0 && canManage()" [class.is-picked]="jobStatus() === 'Submitted'" (click)="showJobs('Submitted')">
+        <span class="t-label">{{ 'recruitment.sum.pending' | translate }}</span>
+        <span class="t-figure num">{{ s.pendingApprovals }}</span>
+        <span class="t-sub">{{ 'recruitment.sum.drafts' | translate: { n: s.draftRequisitions } }}</span>
+      </button>
+      <button type="button" class="tally" (click)="setTab('pipeline')">
+        <span class="t-label">{{ 'recruitment.sum.inPipeline' | translate }}</span>
+        <span class="t-figure num">{{ s.activeApplications }}</span>
+        <span class="t-sub">{{ 'recruitment.sum.inInterview' | translate: { n: s.inInterview } }}</span>
+      </button>
+      <article class="tally static">
+        <span class="t-label">{{ 'recruitment.sum.offers' | translate }}</span>
+        <span class="t-figure num">{{ s.offersPending }}</span>
+        <span class="t-sub">{{ 'recruitment.sum.offersSub' | translate }}</span>
+      </article>
+      <article class="tally static">
+        <span class="t-label">{{ 'recruitment.sum.hired' | translate }}</span>
+        <span class="t-figure num">{{ s.hiredLast30Days }}</span>
+        <span class="t-sub">
+          @if (s.averageDaysToHire !== null) { {{ 'recruitment.sum.timeToHire' | translate: { n: (s.averageDaysToHire | number: '1.0-1' : lang()) } }} }
+          @else { {{ 'recruitment.sum.last30' | translate }} }
+        </span>
+      </article>
+    </section>
+
+    <section class="panel panel-flush">
+      <div class="toolbar">
+        <label class="search">
+          <span class="material-icons-outlined" aria-hidden="true">search</span>
+          <input type="search" [ngModel]="search()" (ngModelChange)="onSearch($event)" [placeholder]="'recruitment.searchJobsPh' | translate" [attr.aria-label]="'recruitment.searchJobsPh' | translate" />
+        </label>
+        <select class="select-sm" [ngModel]="jobStatus()" (ngModelChange)="setJobStatus($event)" [attr.aria-label]="'recruitment.statusCol' | translate">
+          <option value="">{{ 'recruitment.anyStatus' | translate }}</option>
+          @for (st of jobStatuses; track st) { <option [value]="st">{{ 'recruitment.jobStatus.' + st | translate }}</option> }
+        </select>
+        @if (isHr()) {
+          <select class="select-sm" [ngModel]="departmentId()" (ngModelChange)="setDepartment($event)" [attr.aria-label]="'recruitment.department' | translate">
+            <option value="">{{ 'recruitment.allDepartments' | translate }}</option>
+            @for (d of lookups().departments; track d.id) { <option [value]="d.id">{{ d.name }}</option> }
+          </select>
+        }
+      </div>
+      <div class="table-wrap">
+        <table class="ledger-table">
+          <thead>
+            <tr>
+              <th>{{ 'recruitment.job' | translate }}</th>
+              <th>{{ 'recruitment.hiringManager' | translate }}</th>
+              <th>{{ 'recruitment.filled' | translate }}</th>
+              <th>{{ 'recruitment.inPipeline' | translate }}</th>
+              <th>{{ 'recruitment.statusCol' | translate }}</th>
+              <th>{{ 'recruitment.target' | translate }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            @if (jobs() === null) {
+              <tr><td colspan="6"><p class="loading-line">{{ 'common.loading' | translate }}</p></td></tr>
+            }
+            @for (j of jobs(); track j.id) {
+              <tr class="is-link" tabindex="0" (click)="openJob(j.id)" (keydown.enter)="openJob(j.id)">
+                <td class="job-cell">
+                  <span class="cell-main wrap">{{ j.title }}</span>
+                  <span class="cell-sub"><span class="num">{{ j.code }}</span> · {{ j.departmentName }}@if (j.locationName) { · {{ j.locationName }} } · {{ 'people.type.' + j.employmentType | translate }}</span>
+                </td>
+                <td>@if (j.hiringManagerName) { {{ j.hiringManagerName }} } @else { <span class="dim">—</span> }</td>
+                <td>
+                  <span class="fill-cell">
+                    <span class="fill-track"><span class="fill-bar" [style.width.%]="(j.hired / j.openings) * 100"></span></span>
+                    <span class="num">{{ j.hired }}/{{ j.openings }}</span>
+                  </span>
+                </td>
+                <td class="num">@if (j.inPipeline) { {{ j.inPipeline }} } @else { <span class="dim">—</span> }</td>
+                <td><span [class]="jobChip[j.status]">{{ 'recruitment.jobStatus.' + j.status | translate }}</span></td>
+                <td class="num">@if (j.targetStartDate) { {{ j.targetStartDate | date: 'd MMM y' : undefined : lang() }} } @else { <span class="dim">—</span> }</td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="6">
+                  <div class="empty-state">
+                    <span class="material-icons-outlined" aria-hidden="true">work_outline</span>
+                    <h3>{{ (search() || jobStatus() || departmentId() ? 'recruitment.noMatch' : 'recruitment.noJobs') | translate }}</h3>
+                    <p>{{ (search() || jobStatus() || departmentId() ? 'recruitment.noMatchBody' : (canManage() ? 'recruitment.noJobsHr' : 'recruitment.noJobsBody')) | translate }}</p>
+                    @if (!search() && !jobStatus() && s.canRequest) {
+                      <button type="button" class="btn btn-quiet btn-small" (click)="newJob()">{{ (canManage() ? 'recruitment.newJob' : 'recruitment.newRequisition') | translate }}</button>
+                    }
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+  }
+
+  <!-- ═══ Pipeline ═══ -->
+  @if (tab() === 'pipeline') {
+    @if (!boardJobs().length) {
+      <section class="panel">
+        <div class="empty-state">
+          <span class="material-icons-outlined" aria-hidden="true">view_kanban</span>
+          <h3>{{ 'recruitment.noOpenJobs' | translate }}</h3>
+          <p>{{ 'recruitment.noOpenJobsBody' | translate }}</p>
+        </div>
+      </section>
+    } @else {
+      <div class="board-head">
+        <select class="job-pick" [ngModel]="boardJobId()" (ngModelChange)="setBoardJob($event)" [attr.aria-label]="'recruitment.job' | translate">
+          @for (j of boardJobs(); track j.id) { <option [value]="j.id">{{ j.title }} · {{ j.code }}</option> }
+        </select>
+        @if (boardJob(); as bj) {
+          <span class="cell-sub">
+            {{ bj.departmentName }} · {{ 'recruitment.filledOf' | translate: { hired: bj.hired, n: bj.openings } }}
+            @if (bj.status === 'OnHold') { · <span class="amber">{{ 'recruitment.jobStatus.OnHold' | translate }}</span> }
+          </span>
+          <button type="button" class="btn-link push" (click)="openJob(bj.id)">{{ 'recruitment.jobDetails' | translate }}</button>
+        }
+        <label class="search board-search">
+          <span class="material-icons-outlined" aria-hidden="true">search</span>
+          <input type="search" [ngModel]="search()" (ngModelChange)="onSearch($event)" [placeholder]="'recruitment.searchCandidatesPh' | translate" [attr.aria-label]="'recruitment.searchCandidatesPh' | translate" />
+        </label>
+      </div>
+
+      @if (board() === null) {
+        <p class="loading-line">{{ 'common.loading' | translate }}</p>
+      } @else {
+        <div class="board">
+          @for (st of boardStages; track st) {
+            <section class="lane" [attr.data-s]="st">
+              <header class="lane-head">
+                <span>{{ 'recruitment.stage.' + st | translate }}</span>
+                <span class="num lane-n">{{ column(st).length }}</span>
+              </header>
+              <div class="lane-body">
+                @for (a of column(st); track a.id) {
+                  <button type="button" class="card" (click)="openApp(a.id)">
+                    <span class="card-top">
+                      <span class="avatar sm">{{ a.candidateName.charAt(0) }}</span>
+                      <span class="stack grow">
+                        <span class="cell-main ellipsis">{{ a.candidateName }}</span>
+                        @if (a.currentTitle || a.currentCompany) {
+                          <span class="cell-sub ellipsis">{{ a.currentTitle }}@if (a.currentTitle && a.currentCompany) { · }{{ a.currentCompany }}</span>
+                        }
+                      </span>
+                    </span>
+                    <span class="card-foot">
+                      @if (a.rating) { <span class="stars" [attr.aria-label]="a.rating + '/5'">@for (n of ratings; track n) { <i [class.on]="n <= a.rating!">★</i> }</span> }
+                      @if (a.nextInterviewAt) {
+                        <span class="meta"><span class="material-icons-outlined" aria-hidden="true">event</span><span class="num">{{ utc(a.nextInterviewAt) | date: 'd MMM, HH:mm' : undefined : lang() }}</span></span>
+                      } @else if (a.interviewScore !== null) {
+                        <span class="meta"><span class="material-icons-outlined" aria-hidden="true">reviews</span><span class="num">{{ a.interviewScore | number: '1.1-1' : lang() }}</span></span>
+                      }
+                      @if (st === 'Offer' && a.offerStatus) { <span class="meta" [class.amber]="a.offerStatus === 'Pending'">{{ 'recruitment.offerStatus.' + a.offerStatus | translate }}</span> }
+                      <span class="meta push num" [title]="'recruitment.daysInStage' | translate">{{ 'recruitment.daysN' | translate: { n: daysSince(a.stageChangedAt) } }}</span>
+                    </span>
+                  </button>
+                } @empty {
+                  <p class="lane-empty">{{ 'recruitment.laneEmpty' | translate }}</p>
+                }
+              </div>
+            </section>
+          }
+        </div>
+
+        @if (closedApps().length) {
+          <section class="panel panel-flush">
+            <button type="button" class="list-head row-head as-toggle" (click)="showClosed.set(!showClosed())" [attr.aria-expanded]="showClosed()">
+              <h3 class="section-title">{{ 'recruitment.closedApps' | translate: { n: closedApps().length } }}</h3>
+              <span class="material-icons-outlined" aria-hidden="true">{{ showClosed() ? 'expand_less' : 'expand_more' }}</span>
+            </button>
+            @if (showClosed()) {
+              <ul class="plain-list">
+                @for (a of closedApps(); track a.id) {
+                  <li>
+                    <button type="button" class="plain-row as-btn" (click)="openApp(a.id)">
+                      <span class="grow stack"><span class="cell-main">{{ a.candidateName }}</span><span class="cell-sub">{{ a.candidateEmail }}</span></span>
+                      <span class="cell-sub num">{{ utc(a.stageChangedAt) | date: 'd MMM' : undefined : lang() }}</span>
+                      <span [class]="stageChip[a.stage]">{{ 'recruitment.stage.' + a.stage | translate }}</span>
+                    </button>
+                  </li>
+                }
+              </ul>
+            }
+          </section>
+        }
+      }
+    }
+  }
+
+  <!-- ═══ Candidates ═══ -->
+  @if (tab() === 'candidates') {
+    <section class="panel panel-flush">
+      <div class="toolbar">
+        <label class="search">
+          <span class="material-icons-outlined" aria-hidden="true">search</span>
+          <input type="search" [ngModel]="search()" (ngModelChange)="onSearch($event)" [placeholder]="'recruitment.searchPoolPh' | translate" [attr.aria-label]="'recruitment.searchPoolPh' | translate" />
+        </label>
+        <select class="select-sm" [ngModel]="source()" (ngModelChange)="setSource($event)" [attr.aria-label]="'recruitment.source' | translate">
+          <option value="">{{ 'recruitment.anySource' | translate }}</option>
+          @for (so of sources; track so) { <option [value]="so">{{ 'recruitment.sources.' + so | translate }}</option> }
+        </select>
+      </div>
+      <div class="table-wrap">
+        <table class="ledger-table">
+          <thead>
+            <tr>
+              <th>{{ 'recruitment.candidate' | translate }}</th>
+              <th>{{ 'recruitment.currently' | translate }}</th>
+              <th>{{ 'recruitment.source' | translate }}</th>
+              <th>{{ 'recruitment.latest' | translate }}</th>
+              <th>{{ 'recruitment.added' | translate }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            @if (candidates() === null) {
+              <tr><td colspan="5"><p class="loading-line">{{ 'common.loading' | translate }}</p></td></tr>
+            }
+            @for (c of candidates(); track c.id) {
+              <tr class="is-link" tabindex="0" (click)="openCandidate(c.id)" (keydown.enter)="openCandidate(c.id)">
+                <td><span class="cell-main">{{ c.firstName }} {{ c.lastName }}</span><span class="cell-sub">{{ c.email }}@if (c.city) { · {{ c.city }} }</span></td>
+                <td class="wrap-cell">
+                  @if (c.currentTitle || c.currentCompany) { <span class="cell-main wrap">{{ c.currentTitle }}</span><span class="cell-sub">{{ c.currentCompany }}</span> }
+                  @else { <span class="dim">—</span> }
+                  @if (c.experienceYears !== null) { <span class="cell-sub">{{ 'recruitment.yearsN' | translate: { n: (c.experienceYears | number: '1.0-1' : lang()) } }}</span> }
+                </td>
+                <td>{{ 'recruitment.sources.' + c.source | translate }}@if (c.referredByName) { <span class="cell-sub">{{ c.referredByName }}</span> }</td>
+                <td>
+                  @if (c.latestStage) {
+                    <span [class]="stageChip[c.latestStage]">{{ 'recruitment.stage.' + c.latestStage | translate }}</span>
+                    <span class="cell-sub">{{ c.latestJobTitle }}@if (c.applications > 1) { · +{{ c.applications - 1 }} }</span>
+                  } @else { <span class="dim">{{ 'recruitment.notApplied' | translate }}</span> }
+                </td>
+                <td class="num">{{ utc(c.createdAt) | date: 'd MMM y' : undefined : lang() }}</td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="5">
+                  <div class="empty-state">
+                    <span class="material-icons-outlined" aria-hidden="true">group_add</span>
+                    <h3>{{ (search() || source() ? 'recruitment.noMatch' : 'recruitment.noCandidates') | translate }}</h3>
+                    <p>{{ (search() || source() ? 'recruitment.noMatchBody' : 'recruitment.noCandidatesBody') | translate }}</p>
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+  }
+
+  <!-- ═══ Interviews ═══ -->
+  @if (tab() === 'interviews') {
+    @if (summary()?.myFeedbackDue && interviewScope() === 'mine') {
+      <div class="notice notice-info">
+        <span class="material-icons-outlined" aria-hidden="true">rate_review</span>
+        <span class="grow">{{ 'recruitment.feedbackDueHint' | translate: { n: summary()!.myFeedbackDue } }}</span>
+      </div>
+    }
+    @if (hasJobs()) {
+      <div class="seg-toggle" role="tablist">
+        <button type="button" role="tab" [class.is-picked]="interviewScope() === 'mine'" [attr.aria-selected]="interviewScope() === 'mine'" (click)="setScope('mine')">{{ 'recruitment.myInterviews' | translate }}</button>
+        <button type="button" role="tab" [class.is-picked]="interviewScope() === 'all'" [attr.aria-selected]="interviewScope() === 'all'" (click)="setScope('all')">{{ (isHr() ? 'recruitment.allInterviews' : 'recruitment.myJobsInterviews') | translate }}</button>
+      </div>
+    }
+    @if (interviews() === null) {
+      <p class="loading-line">{{ 'common.loading' | translate }}</p>
+    } @else if (!interviews()!.length) {
+      <section class="panel">
+        <div class="empty-state">
+          <span class="material-icons-outlined" aria-hidden="true">event_available</span>
+          <h3>{{ 'recruitment.noInterviews' | translate }}</h3>
+          <p>{{ (interviewScope() === 'mine' ? 'recruitment.noInterviewsMine' : 'recruitment.noInterviewsAll') | translate }}</p>
+        </div>
+      </section>
+    } @else {
+      <section class="panel panel-flush">
+        <header class="list-head"><h3 class="section-title">{{ 'recruitment.upcoming' | translate }}</h3></header>
+        <ul class="plain-list">
+          @for (i of upcoming(); track i.id) {
+            <li>
+              <button type="button" class="plain-row as-btn wrap-row" (click)="openInterview(i)">
+                <span class="when-box" [class.is-late]="isPast(i)">
+                  <span class="num when-day">{{ utc(i.scheduledAt) | date: 'd' : undefined : lang() }}</span>
+                  <span class="when-mon">{{ utc(i.scheduledAt) | date: 'MMM' : undefined : lang() }}</span>
+                </span>
+                <span class="grow stack">
+                  <span class="cell-main">{{ i.candidateName }} <span class="cell-sub">· {{ i.title }}</span></span>
+                  <span class="cell-sub">{{ i.jobTitle }}@if (interviewScope() === 'all') { · {{ i.interviewerName }} }</span>
+                </span>
+                <span class="meta"><span class="material-icons-outlined" aria-hidden="true">{{ modeIcon[i.mode] }}</span><span class="num">{{ utc(i.scheduledAt) | date: 'HH:mm' : undefined : lang() }}</span></span>
+                @if (isPast(i) && i.canFeedback) { <span class="chip chip-amber">{{ 'recruitment.feedbackDue' | translate }}</span> }
+                @else { <span [class]="interviewChip[i.status]">{{ 'recruitment.interviewStatus.' + i.status | translate }}</span> }
+              </button>
+            </li>
+          } @empty {
+            <li class="dim empty-line pad">{{ 'recruitment.noUpcoming' | translate }}</li>
+          }
+        </ul>
+      </section>
+      @if (pastInterviews().length) {
+        <section class="panel panel-flush">
+          <header class="list-head"><h3 class="section-title">{{ 'recruitment.past' | translate }}</h3></header>
+          <ul class="plain-list">
+            @for (i of pastInterviews(); track i.id) {
+              <li>
+                <button type="button" class="plain-row as-btn wrap-row" (click)="openInterview(i)">
+                  <span class="grow stack">
+                    <span class="cell-main">{{ i.candidateName }} <span class="cell-sub">· {{ i.title }}</span></span>
+                    <span class="cell-sub">{{ i.jobTitle }} · <span class="num">{{ utc(i.scheduledAt) | date: 'd MMM y' : undefined : lang() }}</span>@if (interviewScope() === 'all') { · {{ i.interviewerName }} }</span>
+                  </span>
+                  @if (i.recommendation) { <span class="rec" [attr.data-r]="i.recommendation">{{ 'recruitment.rec.' + i.recommendation | translate }}</span> }
+                  <span [class]="interviewChip[i.status]">{{ 'recruitment.interviewStatus.' + i.status | translate }}</span>
+                </button>
+              </li>
+            }
+          </ul>
+        </section>
+      }
+    }
+  }
+
+  <!-- ═══ Headcount ═══ -->
+  @if (tab() === 'headcount') {
+    <section class="panel panel-flush">
+      <header class="list-head">
+        <h3 class="section-title">{{ 'recruitment.headcountTitle' | translate }}</h3>
+        <p class="panel-sub">{{ 'recruitment.headcountSub' | translate }}</p>
+      </header>
+      <div class="table-wrap">
+        <table class="ledger-table">
+          <thead>
+            <tr>
+              <th>{{ 'recruitment.department' | translate }}</th>
+              <th class="hc-bar-col"><span class="legend-inline"><i class="dot staff"></i>{{ 'recruitment.hc.employees' | translate }} <i class="dot open"></i>{{ 'recruitment.hc.open' | translate }}</span></th>
+              <th class="num-col">{{ 'recruitment.hc.employees' | translate }}</th>
+              <th class="num-col">{{ 'recruitment.hc.onNotice' | translate }}</th>
+              <th class="num-col">{{ 'recruitment.hc.open' | translate }}</th>
+              <th class="num-col">{{ 'recruitment.hc.requested' | translate }}</th>
+              <th class="num-col">{{ 'recruitment.hc.pipeline' | translate }}</th>
+              <th class="num-col">{{ 'recruitment.hc.hired90' | translate }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            @if (headcount() === null) {
+              <tr><td colspan="8"><p class="loading-line">{{ 'common.loading' | translate }}</p></td></tr>
+            }
+            @for (h of headcount(); track h.departmentId) {
+              <tr>
+                <td class="cell-main">{{ h.departmentName }}</td>
+                <td class="hc-bar-col">
+                  <span class="hc-bar">
+                    <span class="hc-seg staff" [style.width.%]="share(h.employees)"></span>
+                    <span class="hc-seg open" [style.width.%]="share(h.openPositions)"></span>
+                  </span>
+                </td>
+                <td class="num">{{ h.employees }}</td>
+                <td class="num">@if (h.onNotice) { <span class="amber">{{ h.onNotice }}</span> } @else { <span class="dim">—</span> }</td>
+                <td class="num">@if (h.openPositions) { <b>{{ h.openPositions }}</b> } @else { <span class="dim">—</span> }</td>
+                <td class="num">@if (h.pendingRequisitions) { {{ h.pendingRequisitions }} } @else { <span class="dim">—</span> }</td>
+                <td class="num">@if (h.inPipeline) { {{ h.inPipeline }} } @else { <span class="dim">—</span> }</td>
+                <td class="num">@if (h.hiredLast90Days) { {{ h.hiredLast90Days }} } @else { <span class="dim">—</span> }</td>
+              </tr>
+            } @empty {
+              <tr><td colspan="8"><p class="dim empty-line pad">{{ 'recruitment.noDepartments' | translate }}</p></td></tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+  }
+</div>
+
+@if (drawer(); as d) {
+  <div class="overlay" (click)="closeDrawer()">
+    <aside class="drawer" [class.drawer-wide]="d === 'job' || d === 'application' || d === 'candidate' || d === 'jobEdit'" role="dialog" aria-modal="true" (click)="$event.stopPropagation()">
+      <header class="drawer-head">
+        <h3>
+          @switch (d) {
+            @case ('job') { {{ job()?.job?.title ?? ('common.loading' | translate) }} }
+            @case ('jobEdit') { {{ (jobForm?.id ? 'recruitment.editJob' : (canManage() ? 'recruitment.newJob' : 'recruitment.newRequisition')) | translate }} }
+            @case ('candidate') { @if (candidate(); as c) { {{ c.firstName }} {{ c.lastName }} } @else { {{ 'common.loading' | translate }} } }
+            @case ('candidateEdit') { {{ (candidateForm?.id ? 'recruitment.editCandidate' : 'recruitment.addCandidate') | translate }} }
+            @case ('application') { {{ app()?.application?.candidateName ?? ('common.loading' | translate) }} }
+            @case ('interview') { {{ interview()?.title }} }
+            @case ('interviewEdit') { {{ (interviewForm?.id ? 'recruitment.editInterview' : 'recruitment.scheduleInterview') | translate }} }
+          }
+        </h3>
+        <button type="button" class="btn-link" (click)="closeDrawer()" [attr.aria-label]="'common.close' | translate">
+          <span class="material-icons-outlined" aria-hidden="true">close</span>
+        </button>
+      </header>
+
+      <div class="drawer-body">
+        @switch (d) {
+          <!-- Job -->
+          @case ('job') {
+            @if (job(); as jd) {
+              @let j = jd.job;
+              <div class="case-head">
+                <div class="stack">
+                  <span class="cell-sub"><span class="num">{{ j.code }}</span> · {{ j.departmentName }}@if (j.designationTitle) { · {{ j.designationTitle }} }</span>
+                </div>
+                <span [class]="jobChip[j.status]">{{ 'recruitment.jobStatus.' + j.status | translate }}</span>
+              </div>
+
+              @if (j.reviewNote && j.status === 'Draft') {
+                <p class="confirm-note"><b>{{ 'recruitment.sentBackBy' | translate }}</b> {{ j.reviewNote }}</p>
+              }
+
+              <dl class="facts">
+                <div><dt>{{ 'recruitment.openings' | translate }}</dt><dd class="num">{{ 'recruitment.filledOf' | translate: { hired: j.hired, n: j.openings } }}</dd></div>
+                <div><dt>{{ 'recruitment.type' | translate }}</dt><dd>{{ 'people.type.' + j.employmentType | translate }}</dd></div>
+                <div><dt>{{ 'recruitment.location' | translate }}</dt><dd>{{ j.locationName || '—' }}</dd></div>
+                <div><dt>{{ 'recruitment.hiringManager' | translate }}</dt><dd>{{ j.hiringManagerName || '—' }}</dd></div>
+                <div><dt>{{ 'recruitment.reason' | translate }}</dt><dd>{{ 'recruitment.reasons.' + j.reason | translate }}@if (jd.replacesName) { <span class="cell-sub">{{ jd.replacesName }}</span> }</dd></div>
+                <div><dt>{{ 'recruitment.target' | translate }}</dt><dd class="num">@if (j.targetStartDate) { {{ j.targetStartDate | date: 'd MMM y' : undefined : lang() }} } @else { — }</dd></div>
+                @if (j.salaryMin !== null || j.salaryMax !== null) { <div><dt>{{ 'recruitment.salaryBand' | translate }}</dt><dd class="num">{{ salary(j.salaryMin, j.salaryMax) }}</dd></div> }
+                @if (jd.requestedByName) { <div><dt>{{ 'recruitment.requestedBy' | translate }}</dt><dd>{{ jd.requestedByName }}</dd></div> }
+                @if (j.openedAt) { <div><dt>{{ 'recruitment.openedOn' | translate }}</dt><dd class="num">{{ utc(j.openedAt) | date: 'd MMM y' : undefined : lang() }}</dd></div> }
+                @if (j.closedAt) { <div><dt>{{ 'recruitment.closedOn' | translate }}</dt><dd class="num">{{ utc(j.closedAt) | date: 'd MMM y' : undefined : lang() }}</dd></div> }
+              </dl>
+              @if (jd.closeNote) { <p class="pre reason">“{{ jd.closeNote }}”</p> }
+
+              @if (j.status === 'Open' || j.status === 'OnHold' || j.status === 'Filled') {
+                <section class="sub-panel">
+                  <header class="sub-head">
+                    <h4>{{ 'recruitment.tabs.pipeline' | translate }}</h4>
+                    @if (jd.canWorkPipeline) { <button type="button" class="btn-link" (click)="openBoard(j.id)">{{ 'recruitment.openBoard' | translate }}</button> }
+                  </header>
+                  <div class="funnel">
+                    @for (st of boardStages; track st; let i = $index) {
+                      <div class="funnel-row">
+                        <span class="funnel-label">{{ 'recruitment.stage.' + st | translate }}</span>
+                        <span class="funnel-track"><span class="funnel-bar" [attr.data-s]="st" [style.width.%]="funnelWidth(jd.stageCounts, jd.stageCounts[i])"></span></span>
+                        <span class="num">{{ jd.stageCounts[i] }}</span>
+                      </div>
+                    }
+                    <p class="cell-sub">{{ 'recruitment.closedCounts' | translate: { r: jd.stageCounts[5], w: jd.stageCounts[6] } }}</p>
+                  </div>
+                </section>
+              }
+
+              @if (jd.description) {
+                <section class="sub-panel">
+                  <header class="sub-head"><h4>{{ 'recruitment.description' | translate }}</h4></header>
+                  <p class="pre">{{ jd.description }}</p>
+                </section>
+              }
+              @if (jd.requirements) {
+                <section class="sub-panel">
+                  <header class="sub-head"><h4>{{ 'recruitment.requirements' | translate }}</h4></header>
+                  <p class="pre">{{ jd.requirements }}</p>
+                </section>
+              }
+
+              @if (sendBackNote !== null) {
+                <div class="task-form">
+                  <div class="field">
+                    <label for="sb-n">{{ 'recruitment.sendBackWhy' | translate }}</label>
+                    <input id="sb-n" maxlength="500" [(ngModel)]="sendBackNote" />
+                  </div>
+                  <div class="inline-actions">
+                    <button type="button" class="btn btn-quiet btn-small" (click)="sendBackNote = null">{{ 'common.cancel' | translate }}</button>
+                    <button type="button" class="btn btn-ink btn-small" [disabled]="!sendBackNote.trim() || saving()" (click)="sendBack()">{{ 'recruitment.sendBack' | translate }}</button>
+                  </div>
+                </div>
+              } @else if (closeForm; as cf) {
+                <div class="task-form">
+                  <p>{{ (cf.filled ? 'recruitment.fillHint' : 'recruitment.cancelHint') | translate: { n: j.inPipeline } }}</p>
+                  <div class="field">
+                    <label for="cl-n">{{ 'recruitment.note' | translate }}</label>
+                    <input id="cl-n" maxlength="500" [(ngModel)]="cf.note" />
+                  </div>
+                  <div class="inline-actions">
+                    <button type="button" class="btn btn-quiet btn-small" (click)="closeForm = null">{{ 'common.cancel' | translate }}</button>
+                    <button type="button" class="btn btn-small" [class.btn-ink]="cf.filled" [class.btn-danger]="!cf.filled" [disabled]="saving()" (click)="closeJob()">
+                      {{ (cf.filled ? 'recruitment.markFilled' : 'recruitment.cancelJob') | translate }}
+                    </button>
+                  </div>
+                </div>
+              } @else {
+                <div class="inline-actions start wrap">
+                  @if (jd.canApprove) {
+                    <button type="button" class="btn btn-ink btn-small" [disabled]="saving()" (click)="jobAction('approve')">
+                      <span class="material-icons-outlined" aria-hidden="true">check</span>{{ (j.status === 'Submitted' ? 'recruitment.approve' : 'recruitment.openNow') | translate }}
+                    </button>
+                    @if (j.status === 'Submitted') { <button type="button" class="btn btn-quiet btn-small" (click)="sendBack()">{{ 'recruitment.sendBack' | translate }}</button> }
+                  }
+                  @if (jd.canSubmit) {
+                    <button type="button" class="btn btn-ink btn-small" [disabled]="saving()" (click)="jobAction('submit')">
+                      <span class="material-icons-outlined" aria-hidden="true">send</span>{{ 'recruitment.submit' | translate }}
+                    </button>
+                  }
+                  @if (jd.canAddCandidates) {
+                    <button type="button" class="btn btn-ink btn-small" (click)="newCandidate(j.id)">
+                      <span class="material-icons-outlined" aria-hidden="true">person_add</span>{{ 'recruitment.addCandidate' | translate }}
+                    </button>
+                  }
+                  @if (jd.canEdit) { <button type="button" class="btn btn-quiet btn-small" (click)="editJob()">{{ 'common.edit' | translate }}</button> }
+                  @if (jd.canManage) {
+                    @if (j.status === 'Open') { <button type="button" class="btn btn-quiet btn-small" [disabled]="saving()" (click)="jobAction('hold')">{{ 'recruitment.hold' | translate }}</button> }
+                    @if (j.status === 'OnHold') { <button type="button" class="btn btn-quiet btn-small" [disabled]="saving()" (click)="jobAction('resume')">{{ 'recruitment.resume' | translate }}</button> }
+                    @if ((j.status === 'Open' || j.status === 'OnHold') && j.hired > 0) { <button type="button" class="btn btn-quiet btn-small" (click)="startClose(true)">{{ 'recruitment.markFilled' | translate }}</button> }
+                    @if (j.status === 'Filled' || j.status === 'Cancelled') { <button type="button" class="btn btn-quiet btn-small" [disabled]="saving()" (click)="jobAction('reopen')">{{ 'recruitment.reopen' | translate }}</button> }
+                    @if (j.status !== 'Filled' && j.status !== 'Cancelled' && !jd.canDelete) { <button type="button" class="btn-link danger-link push" (click)="startClose(false)">{{ 'recruitment.cancelJob' | translate }}</button> }
+                  }
+                  @if (jd.canDelete) {
+                    <button type="button" class="btn-link danger-link push" [disabled]="saving()" (click)="deleteJob()">{{ (confirm === 'deleteJob' ? 'recruitment.confirmDelete' : 'common.delete') | translate }}</button>
+                  }
+                </div>
+              }
+            } @else {
+              <p class="loading-line">{{ 'common.loading' | translate }}</p>
+            }
+          }
+
+          <!-- Job form -->
+          @case ('jobEdit') {
+            @if (jobForm; as f) {
+              <div class="form-grid">
+                <div class="field span-all">
+                  <label for="j-title">{{ 'recruitment.jobTitle' | translate }}</label>
+                  <input id="j-title" maxlength="150" [(ngModel)]="f.title" [placeholder]="'recruitment.jobTitlePh' | translate" />
+                </div>
+                <div class="field">
+                  <label for="j-dep">{{ 'recruitment.department' | translate }}</label>
+                  <select id="j-dep" [(ngModel)]="f.departmentId">
+                    <option value="" disabled>{{ 'recruitment.pick' | translate }}</option>
+                    @for (o of lookups().departments; track o.id) { <option [value]="o.id">{{ o.name }}</option> }
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="j-des">{{ 'recruitment.designation' | translate }}</label>
+                  <select id="j-des" [(ngModel)]="f.designationId">
+                    <option value="">—</option>
+                    @for (o of lookups().designations; track o.id) { <option [value]="o.id">{{ o.name }}</option> }
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="j-loc">{{ 'recruitment.location' | translate }}</label>
+                  <select id="j-loc" [(ngModel)]="f.locationId">
+                    <option value="">—</option>
+                    @for (o of lookups().locations; track o.id) { <option [value]="o.id">{{ o.name }}</option> }
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="j-type">{{ 'recruitment.type' | translate }}</label>
+                  <select id="j-type" [(ngModel)]="f.employmentType">
+                    @for (t of employmentTypes; track t) { <option [value]="t">{{ 'people.type.' + t | translate }}</option> }
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="j-open">{{ 'recruitment.openings' | translate }}</label>
+                  <input id="j-open" type="number" min="1" max="500" [(ngModel)]="f.openings" />
+                </div>
+                <div class="field">
+                  <label for="j-start">{{ 'recruitment.target' | translate }}</label>
+                  <input id="j-start" type="date" [(ngModel)]="f.targetStartDate" />
+                </div>
+                @if (canManage()) {
+                  <div class="field span-2">
+                    <label for="j-hm">{{ 'recruitment.hiringManager' | translate }}</label>
+                    <select id="j-hm" [(ngModel)]="f.hiringManagerEmployeeId">
+                      <option value="">—</option>
+                      @for (o of lookups().people; track o.id) { <option [value]="o.id">{{ o.name }}@if (o.extra) { · {{ o.extra }} }</option> }
+                    </select>
+                  </div>
+                }
+                <div class="field">
+                  <label for="j-reason">{{ 'recruitment.reason' | translate }}</label>
+                  <select id="j-reason" [(ngModel)]="f.reason">
+                    <option value="NewPosition">{{ 'recruitment.reasons.NewPosition' | translate }}</option>
+                    <option value="Replacement">{{ 'recruitment.reasons.Replacement' | translate }}</option>
+                  </select>
+                </div>
+                @if (f.reason === 'Replacement') {
+                  <div class="field span-2">
+                    <label for="j-rep">{{ 'recruitment.replaces' | translate }}</label>
+                    <select id="j-rep" [(ngModel)]="f.replacesEmployeeId">
+                      <option value="">—</option>
+                      @for (o of lookups().people; track o.id) { <option [value]="o.id">{{ o.name }}@if (o.extra) { · {{ o.extra }} }</option> }
+                    </select>
+                  </div>
+                }
+                <div class="field">
+                  <label for="j-smin">{{ 'recruitment.salaryMin' | translate }}</label>
+                  <input id="j-smin" type="number" min="0" [(ngModel)]="f.salaryMin" />
+                </div>
+                <div class="field">
+                  <label for="j-smax">{{ 'recruitment.salaryMax' | translate }}</label>
+                  <input id="j-smax" type="number" min="0" [(ngModel)]="f.salaryMax" />
+                </div>
+                <div class="field span-all">
+                  <label for="j-desc">{{ 'recruitment.description' | translate }}</label>
+                  <textarea id="j-desc" rows="4" maxlength="4000" [(ngModel)]="f.description" [placeholder]="'recruitment.descriptionPh' | translate"></textarea>
+                </div>
+                <div class="field span-all">
+                  <label for="j-req">{{ 'recruitment.requirements' | translate }}</label>
+                  <textarea id="j-req" rows="4" maxlength="4000" [(ngModel)]="f.requirements" [placeholder]="'recruitment.requirementsPh' | translate"></textarea>
+                </div>
+              </div>
+              @if (f.salaryMin !== null && f.salaryMax !== null && f.salaryMax < f.salaryMin) { <p class="err">{{ 'recruitment.errors.salary' | translate }}</p> }
+              <p class="field-hint">{{ (f.id ? 'recruitment.jobEditHint' : (canManage() ? 'recruitment.jobNewHintHr' : 'recruitment.jobNewHint')) | translate }}</p>
+            }
+          }
+
+          <!-- Candidate -->
+          @case ('candidate') {
+            @if (candidate(); as c) {
+              <div class="case-head">
+                <div class="stack">
+                  <span class="cell-main">{{ c.currentTitle || '—' }}@if (c.currentCompany) { · {{ c.currentCompany }} }</span>
+                  <span class="cell-sub">{{ 'recruitment.sources.' + c.source | translate }}@if (c.referredByName) { · {{ 'recruitment.referredBy' | translate: { name: c.referredByName } }} }</span>
+                </div>
+              </div>
+              <dl class="facts">
+                <div><dt>{{ 'recruitment.email' | translate }}</dt><dd class="break"><a [href]="'mailto:' + c.email">{{ c.email }}</a></dd></div>
+                <div><dt>{{ 'recruitment.phone' | translate }}</dt><dd class="num">{{ c.phone || '—' }}</dd></div>
+                <div><dt>{{ 'recruitment.city' | translate }}</dt><dd>{{ c.city || '—' }}</dd></div>
+                <div><dt>{{ 'recruitment.experience' | translate }}</dt><dd class="num">@if (c.experienceYears !== null) { {{ 'recruitment.yearsN' | translate: { n: (c.experienceYears | number: '1.0-1' : lang()) } }} } @else { — }</dd></div>
+              </dl>
+              @if (c.resumeUrl || c.linkedInUrl) {
+                <div class="link-row">
+                  @if (c.resumeUrl) { <a class="btn btn-quiet btn-small" [href]="c.resumeUrl" target="_blank" rel="noopener noreferrer"><span class="material-icons-outlined" aria-hidden="true">description</span>{{ 'recruitment.resume' | translate }}</a> }
+                  @if (c.linkedInUrl) { <a class="btn btn-quiet btn-small" [href]="c.linkedInUrl" target="_blank" rel="noopener noreferrer"><span class="material-icons-outlined" aria-hidden="true">open_in_new</span>LinkedIn</a> }
+                </div>
+              }
+              @if (c.notes) { <p class="pre">{{ c.notes }}</p> }
+
+              <section class="sub-panel">
+                <header class="sub-head"><h4>{{ 'recruitment.applications' | translate }}</h4><span class="cell-sub num">{{ c.applications.length }}</span></header>
+                <ul class="plain-list">
+                  @for (a of c.applications; track a.id) {
+                    <li>
+                      <button type="button" class="plain-row as-btn" (click)="openApp(a.id)">
+                        <span class="grow stack"><span class="cell-main">{{ a.jobTitle }}</span><span class="cell-sub"><span class="num">{{ a.jobCode }}</span> · {{ utc(a.appliedAt) | date: 'd MMM y' : undefined : lang() }}</span></span>
+                        <span [class]="stageChip[a.stage]">{{ 'recruitment.stage.' + a.stage | translate }}</span>
+                      </button>
+                    </li>
+                  } @empty {
+                    <li class="dim empty-line">{{ 'recruitment.notApplied' | translate }}</li>
+                  }
+                </ul>
+                @if (c.canEdit && applyJobs().length) {
+                  <div class="apply-row">
+                    <select [(ngModel)]="applyJobId" [attr.aria-label]="'recruitment.addToJob' | translate">
+                      <option value="">{{ 'recruitment.addToJob' | translate }}</option>
+                      @for (j of applyJobs(); track j.id) { <option [value]="j.id">{{ j.title }} · {{ j.code }}</option> }
+                    </select>
+                    <button type="button" class="btn btn-ink btn-small" [disabled]="!applyJobId || saving()" (click)="applyToJob()">{{ 'common.add' | translate }}</button>
+                  </div>
+                }
+              </section>
+
+              @if (c.canEdit) {
+                <div class="inline-actions start">
+                  <button type="button" class="btn btn-quiet btn-small" (click)="editCandidate()">{{ 'common.edit' | translate }}</button>
+                  @if (!c.applications.length) {
+                    <button type="button" class="btn-link danger-link push" [disabled]="saving()" (click)="deleteCandidate()">{{ (confirm === 'deleteCandidate' ? 'recruitment.confirmDelete' : 'common.delete') | translate }}</button>
+                  }
+                </div>
+              }
+            } @else {
+              <p class="loading-line">{{ 'common.loading' | translate }}</p>
+            }
+          }
+
+          <!-- Candidate form -->
+          @case ('candidateEdit') {
+            @if (candidateForm; as f) {
+              <div class="form-grid">
+                <div class="field">
+                  <label for="c-fn">{{ 'recruitment.firstName' | translate }}</label>
+                  <input id="c-fn" maxlength="100" [(ngModel)]="f.firstName" />
+                </div>
+                <div class="field span-2">
+                  <label for="c-ln">{{ 'recruitment.lastName' | translate }}</label>
+                  <input id="c-ln" maxlength="100" [(ngModel)]="f.lastName" />
+                </div>
+                <div class="field span-2">
+                  <label for="c-em">{{ 'recruitment.email' | translate }}</label>
+                  <input id="c-em" type="email" maxlength="256" [(ngModel)]="f.email" />
+                </div>
+                <div class="field">
+                  <label for="c-ph">{{ 'recruitment.phone' | translate }}</label>
+                  <input id="c-ph" maxlength="30" [(ngModel)]="f.phone" />
+                </div>
+                <div class="field">
+                  <label for="c-title">{{ 'recruitment.currentTitle' | translate }}</label>
+                  <input id="c-title" maxlength="150" [(ngModel)]="f.currentTitle" />
+                </div>
+                <div class="field">
+                  <label for="c-co">{{ 'recruitment.currentCompany' | translate }}</label>
+                  <input id="c-co" maxlength="150" [(ngModel)]="f.currentCompany" />
+                </div>
+                <div class="field">
+                  <label for="c-exp">{{ 'recruitment.experienceYears' | translate }}</label>
+                  <input id="c-exp" type="number" min="0" max="60" step="0.5" [(ngModel)]="f.experienceYears" />
+                </div>
+                <div class="field">
+                  <label for="c-city">{{ 'recruitment.city' | translate }}</label>
+                  <input id="c-city" maxlength="100" [(ngModel)]="f.city" />
+                </div>
+                <div class="field">
+                  <label for="c-src">{{ 'recruitment.source' | translate }}</label>
+                  <select id="c-src" [(ngModel)]="f.source">
+                    @for (so of sources; track so) { <option [value]="so">{{ 'recruitment.sources.' + so | translate }}</option> }
+                  </select>
+                </div>
+                @if (f.source === 'Referral') {
+                  <div class="field">
+                    <label for="c-ref">{{ 'recruitment.referrer' | translate }}</label>
+                    <select id="c-ref" [(ngModel)]="f.referredByEmployeeId">
+                      <option value="">—</option>
+                      @for (o of lookups().people; track o.id) { <option [value]="o.id">{{ o.name }}</option> }
+                    </select>
+                  </div>
+                }
+                <div class="field span-all">
+                  <label for="c-cv">{{ 'recruitment.resumeLink' | translate }}</label>
+                  <input id="c-cv" type="url" maxlength="1000" [(ngModel)]="f.resumeUrl" placeholder="https://" />
+                  @if (!linkOk(f.resumeUrl)) { <span class="err">{{ 'recruitment.errors.link' | translate }}</span> }
+                </div>
+                <div class="field span-all">
+                  <label for="c-li">{{ 'recruitment.linkedIn' | translate }}</label>
+                  <input id="c-li" type="url" maxlength="500" [(ngModel)]="f.linkedInUrl" placeholder="https://linkedin.com/in/…" />
+                  @if (!linkOk(f.linkedInUrl)) { <span class="err">{{ 'recruitment.errors.link' | translate }}</span> }
+                </div>
+                <div class="field span-all">
+                  <label for="c-notes">{{ 'recruitment.notes' | translate }}</label>
+                  <textarea id="c-notes" rows="3" maxlength="2000" [(ngModel)]="f.notes"></textarea>
+                </div>
+                @if (!f.id) {
+                  <div class="field span-all">
+                    <label for="c-job">{{ 'recruitment.applyTo' | translate }}</label>
+                    <select id="c-job" [(ngModel)]="f.jobId">
+                      <option value="">{{ 'recruitment.poolOnly' | translate }}</option>
+                      @for (j of allJobs(); track j.id) { @if (j.status === 'Open') { <option [value]="j.id">{{ j.title }} · {{ j.code }}</option> } }
+                    </select>
+                  </div>
+                }
+              </div>
+              <p class="field-hint">{{ 'recruitment.resumeHint' | translate }}</p>
+            }
+          }
+
+          <!-- Application -->
+          @case ('application') {
+            @if (app(); as ad) {
+              @let a = ad.application;
+              <div class="case-head">
+                <div class="stack">
+                  <span class="cell-main">{{ a.jobTitle }}</span>
+                  <span class="cell-sub"><span class="num">{{ a.jobCode }}</span> · {{ ad.departmentName }}@if (ad.hiringManagerName) { · {{ ad.hiringManagerName }} }</span>
+                </div>
+                <span [class]="stageChip[a.stage]">{{ 'recruitment.stage.' + a.stage | translate }}</span>
+              </div>
+
+              @if (isActiveStage(a.stage) || a.stage === 'Hired') {
+                <ol class="stepper">
+                  @for (st of boardStages; track st) {
+                    <li [class.is-done]="stageIndex(a.stage) > stageIndex(st) || a.stage === 'Hired'" [class.is-now]="a.stage === st && st !== 'Hired'">
+                      <span class="step-dot"></span>{{ 'recruitment.stage.' + st | translate }}
+                    </li>
+                  }
+                </ol>
+              } @else if (ad.rejectReason) {
+                <p class="confirm-note"><b>{{ 'recruitment.stage.Rejected' | translate }}:</b> {{ ad.rejectReason }}</p>
+              }
+
+              <dl class="facts">
+                <div><dt>{{ 'recruitment.email' | translate }}</dt><dd class="break"><a [href]="'mailto:' + a.candidateEmail">{{ a.candidateEmail }}</a></dd></div>
+                <div><dt>{{ 'recruitment.phone' | translate }}</dt><dd class="num">{{ ad.phone || '—' }}</dd></div>
+                <div><dt>{{ 'recruitment.currently' | translate }}</dt><dd>{{ a.currentTitle || '—' }}@if (a.currentCompany) { <span class="cell-sub">{{ a.currentCompany }}</span> }</dd></div>
+                <div><dt>{{ 'recruitment.experience' | translate }}</dt><dd class="num">@if (ad.experienceYears !== null) { {{ 'recruitment.yearsN' | translate: { n: (ad.experienceYears | number: '1.0-1' : lang()) } }} } @else { — }</dd></div>
+                <div><dt>{{ 'recruitment.source' | translate }}</dt><dd>{{ 'recruitment.sources.' + a.source | translate }}</dd></div>
+                <div><dt>{{ 'recruitment.appliedOn' | translate }}</dt><dd class="num">{{ utc(a.appliedAt) | date: 'd MMM y' : undefined : lang() }}</dd></div>
+                <div>
+                  <dt>{{ 'recruitment.rating' | translate }}</dt>
+                  <dd>
+                    <span class="stars big" [class.is-edit]="ad.canWork" role="group" [attr.aria-label]="'recruitment.rating' | translate">
+                      @for (n of ratings; track n) {
+                        <button type="button" [class.on]="a.rating !== null && n <= a.rating" [disabled]="!ad.canWork || saving()" (click)="rate(n)" [attr.aria-label]="n + '/5'">★</button>
+                      }
+                    </span>
+                  </dd>
+                </div>
+                @if (a.interviewScore !== null) { <div><dt>{{ 'recruitment.interviewScore' | translate }}</dt><dd class="num">{{ a.interviewScore | number: '1.1-1' : lang() }} / 5</dd></div> }
+              </dl>
+              @if (ad.resumeUrl || ad.linkedInUrl) {
+                <div class="link-row">
+                  @if (ad.resumeUrl) { <a class="btn btn-quiet btn-small" [href]="ad.resumeUrl" target="_blank" rel="noopener noreferrer"><span class="material-icons-outlined" aria-hidden="true">description</span>{{ 'recruitment.resume' | translate }}</a> }
+                  @if (ad.linkedInUrl) { <a class="btn btn-quiet btn-small" [href]="ad.linkedInUrl" target="_blank" rel="noopener noreferrer"><span class="material-icons-outlined" aria-hidden="true">open_in_new</span>LinkedIn</a> }
+                  @if (isHr()) { <button type="button" class="btn-link" (click)="openCandidate(a.candidateId)">{{ 'recruitment.candidateProfile' | translate }}</button> }
+                </div>
+              }
+
+              <!-- Offer -->
+              @if (ad.offeredAt) {
+                <section class="sub-panel offer-box" [attr.data-s]="a.offerStatus">
+                  <header class="sub-head">
+                    <h4>{{ 'recruitment.offer' | translate }}</h4>
+                    @if (a.offerStatus) { <span class="cell-sub">{{ 'recruitment.offerStatus.' + a.offerStatus | translate }}</span> }
+                  </header>
+                  <dl class="facts">
+                    <div><dt>{{ 'recruitment.offerSalary' | translate }}</dt><dd class="num">@if (ad.offerSalary !== null) { {{ ad.offerSalary | number: '1.0-0' : lang() }} } @else { — }</dd></div>
+                    <div><dt>{{ 'recruitment.startDate' | translate }}</dt><dd class="num">@if (ad.offerStartDate) { {{ ad.offerStartDate | date: 'd MMM y' : undefined : lang() }} } @else { — }</dd></div>
+                    <div><dt>{{ 'recruitment.expires' | translate }}</dt><dd class="num" [class.warn]="a.offerStatus === 'Pending' && ad.offerExpiresOn !== null && ad.offerExpiresOn < today">@if (ad.offerExpiresOn) { {{ ad.offerExpiresOn | date: 'd MMM y' : undefined : lang() }} } @else { — }</dd></div>
+                    <div><dt>{{ 'recruitment.offeredOn' | translate }}</dt><dd class="num">{{ utc(ad.offeredAt) | date: 'd MMM y' : undefined : lang() }}</dd></div>
+                  </dl>
+                </section>
+              }
+
+              @if (a.stage === 'Hired') {
+                <div class="notice notice-success">
+                  <span class="material-icons-outlined" aria-hidden="true">celebration</span>
+                  <span class="grow">{{ 'recruitment.hiredOn' | translate: { date: (utc(ad.hiredAt) | date: 'd MMM y' : undefined : lang()) } }}</span>
+                  @if (a.hiredEmployeeId && isHr()) { <a class="btn btn-quiet btn-small" [routerLink]="['/app/employees', a.hiredEmployeeId]">{{ ad.hiredEmployeeCode }}</a> }
+                </div>
+              }
+
+              <!-- Action forms -->
+              @switch (appForm) {
+                @case ('offer') {
+                  @if (offerForm; as f) {
+                    <div class="task-form">
+                      <div class="form-grid">
+                        <div class="field">
+                          <label for="o-sal">{{ 'recruitment.offerSalary' | translate }}</label>
+                          <input id="o-sal" type="number" min="0" [(ngModel)]="f.salary" />
+                        </div>
+                        <div class="field">
+                          <label for="o-start">{{ 'recruitment.startDate' | translate }}</label>
+                          <input id="o-start" type="date" [(ngModel)]="f.startDate" />
+                        </div>
+                        <div class="field">
+                          <label for="o-exp">{{ 'recruitment.expires' | translate }}</label>
+                          <input id="o-exp" type="date" [min]="today" [(ngModel)]="f.expiresOn" />
+                        </div>
+                        <div class="field span-all">
+                          <label for="o-note">{{ 'recruitment.note' | translate }}</label>
+                          <input id="o-note" maxlength="1000" [(ngModel)]="f.note" />
+                        </div>
+                      </div>
+                      <p class="field-hint">{{ 'recruitment.offerHint' | translate }}</p>
+                      <div class="inline-actions">
+                        <button type="button" class="btn btn-quiet btn-small" (click)="appForm = null">{{ 'common.cancel' | translate }}</button>
+                        <button type="button" class="btn btn-ink btn-small" [disabled]="saving() || (!!f.expiresOn && f.expiresOn < today)" (click)="saveOffer()">{{ 'recruitment.saveOffer' | translate }}</button>
+                      </div>
+                    </div>
+                  }
+                }
+                @case ('response') {
+                  <div class="task-form">
+                    <div class="field">
+                      <label for="r-note">{{ 'recruitment.note' | translate }}</label>
+                      <input id="r-note" maxlength="1000" [(ngModel)]="note" [placeholder]="'recruitment.responsePh' | translate" />
+                    </div>
+                    <div class="inline-actions">
+                      <button type="button" class="btn btn-quiet btn-small" (click)="appForm = null">{{ 'common.cancel' | translate }}</button>
+                      <button type="button" class="btn btn-danger btn-small" [disabled]="saving()" (click)="offerResponse(false)">{{ 'recruitment.declined' | translate }}</button>
+                      <button type="button" class="btn btn-ink btn-small" [disabled]="saving()" (click)="offerResponse(true)">{{ 'recruitment.accepted' | translate }}</button>
+                    </div>
+                  </div>
+                }
+                @case ('hire') {
+                  @if (hireForm; as f) {
+                    <div class="task-form">
+                      <div class="seg-toggle small" role="tablist">
+                        <button type="button" role="tab" [class.is-picked]="!f.useExisting" (click)="f.useExisting = false">{{ 'recruitment.newEmployee' | translate }}</button>
+                        <button type="button" role="tab" [class.is-picked]="f.useExisting" (click)="f.useExisting = true">{{ 'recruitment.existingEmployee' | translate }}</button>
+                      </div>
+                      <div class="form-grid">
+                        @if (f.useExisting) {
+                          <div class="field span-all">
+                            <label for="h-ex">{{ 'recruitment.employee' | translate }}</label>
+                            <select id="h-ex" [(ngModel)]="f.existingEmployeeId">
+                              <option value="" disabled>{{ 'recruitment.pick' | translate }}</option>
+                              @for (o of lookups().people; track o.id) { <option [value]="o.id">{{ o.name }}@if (o.extra) { · {{ o.extra }} }</option> }
+                            </select>
+                          </div>
+                        } @else {
+                          <div class="field span-2">
+                            <label for="h-email">{{ 'recruitment.workEmail' | translate }}</label>
+                            <input id="h-email" type="email" maxlength="256" [(ngModel)]="f.workEmail" />
+                          </div>
+                          <div class="field">
+                            <label for="h-code">{{ 'recruitment.employeeCode' | translate }}</label>
+                            <input id="h-code" maxlength="20" [(ngModel)]="f.employeeCode" [placeholder]="'recruitment.autoCode' | translate" />
+                          </div>
+                          <div class="field">
+                            <label for="h-dep">{{ 'recruitment.department' | translate }}</label>
+                            <select id="h-dep" [(ngModel)]="f.departmentId">
+                              @for (o of lookups().departments; track o.id) { <option [value]="o.id">{{ o.name }}</option> }
+                            </select>
+                          </div>
+                          <div class="field">
+                            <label for="h-des">{{ 'recruitment.designation' | translate }}</label>
+                            <select id="h-des" [(ngModel)]="f.designationId">
+                              <option value="" disabled>{{ 'recruitment.pick' | translate }}</option>
+                              @for (o of lookups().designations; track o.id) { <option [value]="o.id">{{ o.name }}</option> }
+                            </select>
+                          </div>
+                          <div class="field">
+                            <label for="h-loc">{{ 'recruitment.location' | translate }}</label>
+                            <select id="h-loc" [(ngModel)]="f.locationId">
+                              <option value="" disabled>{{ 'recruitment.pick' | translate }}</option>
+                              @for (o of lookups().locations; track o.id) { <option [value]="o.id">{{ o.name }}</option> }
+                            </select>
+                          </div>
+                          <div class="field span-2">
+                            <label for="h-mgr">{{ 'recruitment.reportsTo' | translate }}</label>
+                            <select id="h-mgr" [(ngModel)]="f.managerId">
+                              <option value="">—</option>
+                              @for (o of lookups().people; track o.id) { <option [value]="o.id">{{ o.name }}@if (o.extra) { · {{ o.extra }} }</option> }
+                            </select>
+                          </div>
+                          <div class="field">
+                            <label for="h-type">{{ 'recruitment.type' | translate }}</label>
+                            <select id="h-type" [(ngModel)]="f.employmentType">
+                              @for (t of employmentTypes; track t) { <option [value]="t">{{ 'people.type.' + t | translate }}</option> }
+                            </select>
+                          </div>
+                        }
+                        <div class="field">
+                          <label for="h-join">{{ 'recruitment.joiningDate' | translate }}</label>
+                          <input id="h-join" type="date" [(ngModel)]="f.joiningDate" />
+                        </div>
+                        @if (!f.useExisting) {
+                          <div class="field">
+                            <label for="h-prob">{{ 'recruitment.probationEnd' | translate }}</label>
+                            <input id="h-prob" type="date" [min]="f.joiningDate" [(ngModel)]="f.probationEndDate" />
+                          </div>
+                        }
+                        <div class="field span-all">
+                          <label class="check-inline"><input type="checkbox" [(ngModel)]="f.startOnboarding" />{{ 'recruitment.startOnboarding' | translate }}</label>
+                        </div>
+                      </div>
+                      @if (confirm === 'hire') {
+                        <p class="confirm-note">{{ (f.useExisting ? 'recruitment.hireConfirmExisting' : 'recruitment.hireConfirm') | translate: { name: a.candidateName } }}</p>
+                      }
+                      <div class="inline-actions">
+                        <button type="button" class="btn btn-quiet btn-small" (click)="appForm = null; confirm = null">{{ 'common.cancel' | translate }}</button>
+                        <button type="button" class="btn btn-ink btn-small" [disabled]="!canHire() || saving()" (click)="hire()">
+                          <span class="material-icons-outlined" aria-hidden="true">how_to_reg</span>{{ (confirm === 'hire' ? 'recruitment.confirmHire' : 'recruitment.hire') | translate }}
+                        </button>
+                      </div>
+                    </div>
+                  }
+                }
+                @case ('reject') {
+                  <div class="task-form">
+                    <div class="field">
+                      <label for="rj-n">{{ 'recruitment.rejectWhy' | translate }}</label>
+                      <input id="rj-n" maxlength="1000" [(ngModel)]="note" [placeholder]="'recruitment.rejectPh' | translate" />
+                    </div>
+                    <div class="inline-actions">
+                      <button type="button" class="btn btn-quiet btn-small" (click)="appForm = null">{{ 'common.cancel' | translate }}</button>
+                      <button type="button" class="btn btn-danger btn-small" [disabled]="!note.trim() || saving()" (click)="saveExit('Rejected')">{{ 'recruitment.reject' | translate }}</button>
+                    </div>
+                  </div>
+                }
+                @case ('withdraw') {
+                  <div class="task-form">
+                    <div class="field">
+                      <label for="wd-n">{{ 'recruitment.note' | translate }}</label>
+                      <input id="wd-n" maxlength="1000" [(ngModel)]="note" [placeholder]="'recruitment.withdrawPh' | translate" />
+                    </div>
+                    <div class="inline-actions">
+                      <button type="button" class="btn btn-quiet btn-small" (click)="appForm = null">{{ 'common.cancel' | translate }}</button>
+                      <button type="button" class="btn btn-ink btn-small" [disabled]="saving()" (click)="saveExit('Withdrawn')">{{ 'recruitment.withdraw' | translate }}</button>
+                    </div>
+                  </div>
+                }
+                @case ('note') {
+                  <div class="task-form">
+                    <textarea rows="3" maxlength="1000" [(ngModel)]="note" [placeholder]="'recruitment.notePh' | translate" [attr.aria-label]="'recruitment.addNote' | translate"></textarea>
+                    <div class="inline-actions">
+                      <button type="button" class="btn btn-quiet btn-small" (click)="appForm = null">{{ 'common.cancel' | translate }}</button>
+                      <button type="button" class="btn btn-ink btn-small" [disabled]="!note.trim() || saving()" (click)="saveNote()">{{ 'recruitment.addNote' | translate }}</button>
+                    </div>
+                  </div>
+                }
+                @default {
+                  @if (ad.canWork || ad.canOffer || ad.canHire) {
+                    <div class="action-bar">
+                      @if (ad.canHire) {
+                        <button type="button" class="btn btn-ink btn-small" (click)="startAppForm('hire')"><span class="material-icons-outlined" aria-hidden="true">how_to_reg</span>{{ 'recruitment.hire' | translate }}</button>
+                      }
+                      @if (ad.canOffer && a.stage === 'Offer' && a.offerStatus === 'Pending') {
+                        <button type="button" class="btn btn-quiet btn-small" (click)="startAppForm('response')">{{ 'recruitment.recordResponse' | translate }}</button>
+                      }
+                      @if (ad.canOffer && isActiveStage(a.stage)) {
+                        <button type="button" class="btn btn-small" [class.btn-ink]="a.stage === 'Interview' && !ad.canHire" [class.btn-quiet]="a.stage !== 'Interview' || ad.canHire" (click)="startAppForm('offer')">
+                          <span class="material-icons-outlined" aria-hidden="true">request_quote</span>{{ (a.stage === 'Offer' ? 'recruitment.editOffer' : 'recruitment.makeOffer') | translate }}
+                        </button>
+                      }
+                      @if (ad.canWork && isActiveStage(a.stage)) {
+                        <button type="button" class="btn btn-quiet btn-small" (click)="newInterview()"><span class="material-icons-outlined" aria-hidden="true">event</span>{{ 'recruitment.scheduleInterview' | translate }}</button>
+                      }
+                    </div>
+                    @if (ad.canWork) {
+                      <div class="move-row">
+                        <span class="cell-sub">{{ 'recruitment.moveTo' | translate }}</span>
+                        @for (st of moveStages; track st) {
+                          @if (st !== a.stage) { <button type="button" class="seg-btn" [disabled]="saving()" (click)="moveTo(st)">{{ 'recruitment.stage.' + st | translate }}</button> }
+                        }
+                        @if (isActiveStage(a.stage)) {
+                          <button type="button" class="btn-link" (click)="startAppForm('withdraw')">{{ 'recruitment.withdraw' | translate }}</button>
+                          <button type="button" class="btn-link danger-link" (click)="startAppForm('reject')">{{ 'recruitment.reject' | translate }}</button>
+                        }
+                        <button type="button" class="btn-link push" (click)="startAppForm('note')"><span class="material-icons-outlined inline-icon" aria-hidden="true">sticky_note_2</span>{{ 'recruitment.addNote' | translate }}</button>
+                      </div>
+                    }
+                  }
+                }
+              }
+
+              <!-- Interviews -->
+              <section class="sub-panel">
+                <header class="sub-head"><h4>{{ 'recruitment.tabs.interviews' | translate }}</h4><span class="cell-sub num">{{ ad.interviews.length }}</span></header>
+                <ul class="plain-list">
+                  @for (i of ad.interviews; track i.id) {
+                    <li class="iv-row">
+                      <div class="iv-top">
+                        <span class="material-icons-outlined iv-icon" aria-hidden="true">{{ modeIcon[i.mode] }}</span>
+                        <span class="grow stack">
+                          <span class="cell-main">{{ i.title }} <span class="cell-sub">· {{ i.interviewerName }}</span></span>
+                          <span class="cell-sub num">{{ utc(i.scheduledAt) | date: 'EEE d MMM, HH:mm' : undefined : lang() }} · {{ 'recruitment.minutesN' | translate: { n: i.durationMinutes } }}</span>
+                        </span>
+                        @if (i.recommendation) { <span class="rec" [attr.data-r]="i.recommendation">{{ 'recruitment.rec.' + i.recommendation | translate }}</span> }
+                        <span [class]="interviewChip[i.status]">{{ 'recruitment.interviewStatus.' + i.status | translate }}</span>
+                      </div>
+                      @if (i.feedback || i.rating) {
+                        <p class="iv-feedback">@if (i.rating) { <b class="num">{{ i.rating }}/5</b> } {{ i.feedback }}</p>
+                      }
+                      @if (i.canEdit || i.canFeedback) {
+                        <div class="iv-actions">
+                          @if (i.canFeedback) { <button type="button" class="btn-link" (click)="openInterview(i)">{{ (i.status === 'Completed' ? 'recruitment.editFeedback' : 'recruitment.giveFeedback') | translate }}</button> }
+                          @if (i.canEdit) {
+                            <button type="button" class="btn-link" (click)="editInterview(i)">{{ 'common.edit' | translate }}</button>
+                            <button type="button" class="btn-link" [disabled]="saving()" (click)="interviewAction(i, 'no-show')">{{ (confirm === 'no-show:' + i.id ? 'recruitment.confirmNoShow' : 'recruitment.noShow') | translate }}</button>
+                            <button type="button" class="btn-link danger-link" [disabled]="saving()" (click)="interviewAction(i, 'cancel')">{{ (confirm === 'cancel:' + i.id ? 'recruitment.confirmCancel' : 'common.cancel') | translate }}</button>
+                          }
+                        </div>
+                      }
+                    </li>
+                  } @empty {
+                    <li class="dim empty-line">{{ 'recruitment.noAppInterviews' | translate }}</li>
+                  }
+                </ul>
+              </section>
+
+              <!-- Activity -->
+              <section class="sub-panel">
+                <header class="sub-head"><h4>{{ 'recruitment.activity' | translate }}</h4></header>
+                <ol class="timeline compact">
+                  @for (e of ad.events; track e.id) {
+                    <li class="tl-row">
+                      <span class="tl-icon" [attr.data-k]="e.kind" [attr.data-s]="e.toStage">
+                        <span class="material-icons-outlined" aria-hidden="true">
+                          @switch (e.kind) { @case ('Applied') { login } @case ('Note') { sticky_note_2 } @case ('Offer') { request_quote } @case ('OfferResponse') { reply } @case ('Hired') { how_to_reg } @default { arrow_forward } }
+                        </span>
+                      </span>
+                      <div class="stack">
+                        <span class="tl-line">
+                          @switch (e.kind) {
+                            @case ('Applied') { {{ 'recruitment.ev.applied' | translate }} }
+                            @case ('Note') { {{ 'recruitment.ev.note' | translate }} }
+                            @case ('Offer') { {{ 'recruitment.ev.offer' | translate }} }
+                            @case ('OfferResponse') { {{ (e.toStage === 'Withdrawn' ? 'recruitment.ev.declined' : 'recruitment.ev.accepted') | translate }} }
+                            @case ('Hired') { {{ 'recruitment.ev.hired' | translate }} }
+                            @default { {{ 'recruitment.ev.moved' | translate: { stage: ('recruitment.stage.' + e.toStage | translate) } }} }
+                          }
+                        </span>
+                        @if (e.note) { <span class="cell-sub reason">“{{ e.note }}”</span> }
+                      </div>
+                      <span class="cell-sub num tl-when">
+                        {{ utc(e.at) | date: 'd MMM, HH:mm' : undefined : lang() }}
+                        @if (e.byName) { <span class="cell-sub">{{ e.byName }}</span> }
+                      </span>
+                    </li>
+                  }
+                </ol>
+              </section>
+            } @else {
+              <p class="loading-line">{{ 'common.loading' | translate }}</p>
+            }
+          }
+
+          <!-- Interview (interviewer view) -->
+          @case ('interview') {
+            @if (interview(); as i) {
+              <div class="case-head">
+                <div class="stack">
+                  <span class="cell-main">{{ i.candidateName }}</span>
+                  <span class="cell-sub">{{ i.candidateTitle || '' }}@if (i.candidateTitle) { · }{{ i.jobTitle }}</span>
+                </div>
+                <span [class]="interviewChip[i.status]">{{ 'recruitment.interviewStatus.' + i.status | translate }}</span>
+              </div>
+              <dl class="facts">
+                <div><dt>{{ 'recruitment.when' | translate }}</dt><dd class="num">{{ utc(i.scheduledAt) | date: 'EEE d MMM y, HH:mm' : undefined : lang() }}</dd></div>
+                <div><dt>{{ 'recruitment.duration' | translate }}</dt><dd class="num">{{ 'recruitment.minutesN' | translate: { n: i.durationMinutes } }}</dd></div>
+                <div><dt>{{ 'recruitment.mode' | translate }}</dt><dd><span class="material-icons-outlined inline-icon" aria-hidden="true">{{ modeIcon[i.mode] }}</span>{{ 'recruitment.modes.' + i.mode | translate }}</dd></div>
+                <div><dt>{{ 'recruitment.interviewer' | translate }}</dt><dd>{{ i.interviewerName }}</dd></div>
+                @if (i.locationOrLink) { <div class="span-all"><dt>{{ 'recruitment.whereLink' | translate }}</dt><dd class="break">{{ i.locationOrLink }}</dd></div> }
+              </dl>
+              <div class="link-row">
+                @if (i.resumeUrl) { <a class="btn btn-quiet btn-small" [href]="i.resumeUrl" target="_blank" rel="noopener noreferrer"><span class="material-icons-outlined" aria-hidden="true">description</span>{{ 'recruitment.resume' | translate }}</a> }
+                @if (canOpenApp(i)) { <button type="button" class="btn-link" (click)="openApp(i.applicationId)">{{ 'recruitment.openApplication' | translate }}</button> }
+              </div>
+
+              @if (feedbackForm; as f) {
+                <section class="sub-panel">
+                  <header class="sub-head"><h4>{{ 'recruitment.yourFeedback' | translate }}</h4></header>
+                  <p class="field-hint">{{ 'recruitment.feedbackHint' | translate }}</p>
+                  <div class="rating-pick" role="radiogroup" [attr.aria-label]="'recruitment.rating' | translate">
+                    @for (n of ratings; track n) {
+                      <button type="button" role="radio" class="rate-btn" [class.is-picked]="f.rating === n" [attr.aria-checked]="f.rating === n" (click)="f.rating = n">
+                        <b class="num">{{ n }}</b><span>{{ 'recruitment.score.' + n | translate }}</span>
+                      </button>
+                    }
+                  </div>
+                  <div class="status-btns" role="radiogroup" [attr.aria-label]="'recruitment.recommendation' | translate">
+                    @for (r of recommendations; track r) {
+                      <button type="button" role="radio" class="seg-btn rec-btn" [attr.data-r]="r" [class.is-picked]="f.recommendation === r" [attr.aria-checked]="f.recommendation === r" (click)="f.recommendation = r">{{ 'recruitment.rec.' + r | translate }}</button>
+                    }
+                  </div>
+                  <div class="field">
+                    <label for="fb-t">{{ 'recruitment.feedbackNotes' | translate }}</label>
+                    <textarea id="fb-t" rows="6" maxlength="4000" [(ngModel)]="f.feedback" [placeholder]="'recruitment.feedbackPh' | translate"></textarea>
+                  </div>
+                  <div class="inline-actions">
+                    <button type="button" class="btn btn-ink btn-small" [disabled]="!f.rating || !f.recommendation || saving()" (click)="saveFeedback()">{{ 'recruitment.submitFeedback' | translate }}</button>
+                  </div>
+                </section>
+              } @else if (i.feedback || i.rating) {
+                <section class="sub-panel">
+                  <header class="sub-head"><h4>{{ 'recruitment.feedback' | translate }}</h4>@if (i.feedbackAt) { <span class="cell-sub num">{{ utc(i.feedbackAt) | date: 'd MMM y' : undefined : lang() }}</span> }</header>
+                  <div class="answer">
+                    @if (i.rating) { <span><b class="num">{{ i.rating }}/5</b> · {{ 'recruitment.score.' + i.rating | translate }}</span> }
+                    @if (i.recommendation) { <span class="rec" [attr.data-r]="i.recommendation">{{ 'recruitment.rec.' + i.recommendation | translate }}</span> }
+                    @if (i.feedback) { <p class="pre">{{ i.feedback }}</p> }
+                  </div>
+                </section>
+              }
+
+              @if (i.canEdit) {
+                <div class="inline-actions start wrap">
+                  <button type="button" class="btn btn-quiet btn-small" (click)="editInterview(i)">{{ 'common.edit' | translate }}</button>
+                  <button type="button" class="btn btn-quiet btn-small" [disabled]="saving()" (click)="interviewAction(i, 'no-show')">{{ (confirm === 'no-show:' + i.id ? 'recruitment.confirmNoShow' : 'recruitment.noShow') | translate }}</button>
+                  <button type="button" class="btn-link danger-link push" [disabled]="saving()" (click)="interviewAction(i, 'cancel')">{{ (confirm === 'cancel:' + i.id ? 'recruitment.confirmCancel' : 'recruitment.cancelInterview') | translate }}</button>
+                </div>
+              }
+            }
+          }
+
+          <!-- Interview form -->
+          @case ('interviewEdit') {
+            @if (interviewForm; as f) {
+              <p class="cell-sub">{{ f.candidateName }}</p>
+              <div class="form-grid">
+                <div class="field span-all">
+                  <label for="iv-t">{{ 'recruitment.round' | translate }}</label>
+                  <input id="iv-t" maxlength="100" [(ngModel)]="f.title" />
+                </div>
+                <div class="field span-2">
+                  <label for="iv-at">{{ 'recruitment.when' | translate }}</label>
+                  <input id="iv-at" type="datetime-local" [(ngModel)]="f.scheduledAt" />
+                </div>
+                <div class="field">
+                  <label for="iv-d">{{ 'recruitment.durationMin' | translate }}</label>
+                  <input id="iv-d" type="number" min="5" max="480" step="5" [(ngModel)]="f.durationMinutes" />
+                </div>
+                <div class="field span-all">
+                  <span class="group-label">{{ 'recruitment.mode' | translate }}</span>
+                  <div class="status-btns" role="radiogroup" [attr.aria-label]="'recruitment.mode' | translate">
+                    @for (m of modes; track m) {
+                      <button type="button" role="radio" class="seg-btn" [class.is-picked]="f.mode === m" [attr.aria-checked]="f.mode === m" (click)="f.mode = m">
+                        <span class="material-icons-outlined inline-icon" aria-hidden="true">{{ modeIcon[m] }}</span>{{ 'recruitment.modes.' + m | translate }}
+                      </button>
+                    }
+                  </div>
+                </div>
+                <div class="field span-all">
+                  <label for="iv-l">{{ (f.mode === 'Video' ? 'recruitment.meetingLink' : f.mode === 'InPerson' ? 'recruitment.room' : 'recruitment.phoneNote') | translate }}</label>
+                  <input id="iv-l" maxlength="500" [(ngModel)]="f.locationOrLink" />
+                </div>
+                <div class="field span-all">
+                  <label for="iv-who">{{ 'recruitment.interviewer' | translate }}</label>
+                  <select id="iv-who" [(ngModel)]="f.interviewerEmployeeId">
+                    <option value="" disabled>{{ 'recruitment.pick' | translate }}</option>
+                    @for (o of lookups().people; track o.id) { <option [value]="o.id">{{ o.name }}@if (o.extra) { · {{ o.extra }} }</option> }
+                  </select>
+                </div>
+              </div>
+              <p class="field-hint">{{ 'recruitment.interviewHint' | translate }}</p>
+            }
+          }
+        }
+      </div>
+
+      @if (d === 'jobEdit' || d === 'candidateEdit' || d === 'interviewEdit') {
+        <footer class="drawer-foot">
+          <button type="button" class="btn btn-quiet" (click)="closeDrawer()">{{ 'common.cancel' | translate }}</button>
+          @switch (d) {
+            @case ('jobEdit') {
+              <button type="button" class="btn btn-ink" [disabled]="!canSaveJob() || saving()" (click)="saveJob()">{{ 'common.save' | translate }}</button>
+            }
+            @case ('candidateEdit') {
+              <button type="button" class="btn btn-ink" [disabled]="!canSaveCandidate() || saving()" (click)="saveCandidate()">{{ 'common.save' | translate }}</button>
+            }
+            @case ('interviewEdit') {
+              <button type="button" class="btn btn-ink" [disabled]="!canSaveInterview() || saving()" (click)="saveInterview()">{{ (interviewForm?.id ? 'common.save' : 'recruitment.schedule') | translate }}</button>
+            }
+          }
+        </footer>
+      }
+    </aside>
+  </div>
+}
