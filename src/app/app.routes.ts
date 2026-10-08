@@ -49,9 +49,6 @@ const soon = (
  * Consolidation: ek kaam ke chhote pages ek page ke tabs hain (56 → 19 planned pages).
  */
 const PLANNED: Route[] = [
-  // Payroll (components / allowances / deductions = Payroll setup ka Components tab)
-  soon('payroll/benefits', 'nav.benefitsRewards', P.payrollViewAll, ['benefitPlans', 'enrolments', 'increments', 'bonuses']),
-
   // Talent
   soon('talent/learning', 'nav.learningGrowth', undefined, ['courses', 'skills', 'career']),
 
@@ -93,6 +90,7 @@ export const routes: Routes = [
       { path: 'leaves', component: LeavesComponent, data: { titleKey: 'nav.leaves' } },
       { path: 'leave-setup', component: LeaveSetupComponent, canActivate: [permissionGuard], data: { titleKey: 'nav.leaveSetup', permission: P.settingsManage } },
       { path: 'payroll/loans', loadComponent: () => import('./pages/payroll/loans/loans').then(m => m.LoansComponent), canActivate: [permissionGuard], data: { titleKey: 'nav.loansAdvances', permission: [P.payrollViewOwn, P.payrollViewAll, P.payrollApprove] } },
+      { path: 'payroll/benefits', loadComponent: () => import('./pages/rewards/rewards').then(m => m.RewardsComponent), canActivate: [permissionGuard], data: { titleKey: 'nav.benefitsRewards', permission: [P.payrollViewOwn, P.payrollViewAll, P.payrollRun, P.payrollApprove, P.settingsManage] } },
       { path: 'expenses', loadComponent: () => import('./pages/expenses/expenses').then(m => m.ExpensesComponent), data: { titleKey: 'nav.expensesTravel' } },
       { path: 'assets', loadComponent: () => import('./pages/assets/assets').then(m => m.AssetsComponent), data: { titleKey: 'nav.assets' } },
       { path: 'talent/performance', loadComponent: () => import('./pages/performance/performance').then(m => m.PerformanceComponent), data: { titleKey: 'nav.performance' } },
