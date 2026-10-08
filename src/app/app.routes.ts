@@ -53,7 +53,6 @@ const PLANNED: Route[] = [
   soon('payroll/benefits', 'nav.benefitsRewards', P.payrollViewAll, ['benefitPlans', 'enrolments', 'increments', 'bonuses']),
 
   // Talent
-  soon('talent/recruitment', 'nav.recruitment', undefined, ['requisitions', 'jobs', 'candidates', 'headcount']),
   soon('talent/learning', 'nav.learningGrowth', undefined, ['courses', 'skills', 'career']),
 
   // Employee experience
@@ -98,6 +97,7 @@ export const routes: Routes = [
       { path: 'expenses', loadComponent: () => import('./pages/expenses/expenses').then(m => m.ExpensesComponent), data: { titleKey: 'nav.expensesTravel' } },
       { path: 'assets', loadComponent: () => import('./pages/assets/assets').then(m => m.AssetsComponent), data: { titleKey: 'nav.assets' } },
       { path: 'talent/performance', loadComponent: () => import('./pages/performance/performance').then(m => m.PerformanceComponent), data: { titleKey: 'nav.performance' } },
+      { path: 'talent/recruitment', loadComponent: () => import('./pages/recruitment/recruitment').then(m => m.RecruitmentComponent), data: { titleKey: 'nav.recruitment' } },
       { path: 'talent/lifecycle', loadComponent: () => import('./pages/lifecycle/lifecycle').then(m => m.LifecycleComponent), data: { titleKey: 'nav.onboardingExit' } },
       { path: 'reports', loadComponent: () => import('./pages/reports/reports').then(m => m.ReportsComponent), canActivate: [permissionGuard], data: { titleKey: 'nav.reports', permission: [P.employeesView, P.payrollViewAll, P.payrollApprove] } },
       { path: 'me/payslips', component: MyPayslipsComponent, data: { titleKey: 'nav.myPayslips' } },
