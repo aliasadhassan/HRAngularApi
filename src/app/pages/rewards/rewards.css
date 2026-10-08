@@ -485,6 +485,8 @@ tr.is-off td {
 }
 .plan-card .desc {
   margin: 4px 0 0;
+  padding: 0;
+  background: none;
 }
 .plan-costs {
   display: flex;
