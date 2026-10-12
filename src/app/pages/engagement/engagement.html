@@ -1,0 +1,845 @@
+<div class="page">
+  <header class="page-intro">
+    <p>{{ 'engagement.intro' | translate }}</p>
+    <div class="intro-actions">
+      @if (tab() === 'surveys' && canManage()) {
+        <button type="button" class="btn btn-quiet" (click)="openTemplates()">
+          <span class="material-icons-outlined" aria-hidden="true">auto_awesome</span>{{ 'engagement.useTemplate' | translate }}
+        </button>
+        <button type="button" class="btn btn-ink" (click)="newSurvey()">
+          <span class="material-icons-outlined" aria-hidden="true">add</span>{{ 'engagement.newSurvey' | translate }}
+        </button>
+      } @else if (tab() === 'recognition' && linked()) {
+        <button type="button" class="btn btn-ink" (click)="give()">
+          <span class="material-icons-outlined" aria-hidden="true">celebration</span>{{ 'engagement.recognise' | translate }}
+        </button>
+      }
+    </div>
+  </header>
+
+  @if (summary(); as s) {
+    <nav class="tabs">
+      <button type="button" class="tab" [class.is-active]="tab() === 'surveys'" (click)="setTab('surveys')">
+        {{ 'engagement.tabs.surveys' | translate }}
+        @if (s.myPendingSurveys) { <span class="tab-count num alert-count">{{ s.myPendingSurveys }}</span> }
+      </button>
+      <button type="button" class="tab" [class.is-active]="tab() === 'recognition'" (click)="setTab('recognition')">
+        {{ 'engagement.tabs.recognition' | translate }}
+        @if (s.recognitionsThisMonth) { <span class="tab-count num">{{ s.recognitionsThisMonth }}</span> }
+      </button>
+    </nav>
+  } @else {
+    <p class="loading-line">{{ 'common.loading' | translate }}</p>
+  }
+
+  <!-- ═══ Surveys ═══ -->
+  @if (tab() === 'surveys' && summary(); as s) {
+    @if (s.myPendingSurveys) {
+      <div class="notice notice-warn">
+        <span class="material-icons-outlined" aria-hidden="true">rate_review</span>
+        <span class="grow">{{ 'engagement.pendingNotice' | translate: { n: s.myPendingSurveys } }}</span>
+      </div>
+    }
+
+    @if (s.canSeeResults) {
+      <section class="tallies">
+        <article class="tally static" [class.is-warn]="s.myPendingSurveys > 0">
+          <span class="t-label">{{ 'engagement.sum.pending' | translate }}</span>
+          <span class="t-figure num">{{ s.myPendingSurveys }}</span>
+          <span class="t-sub">{{ 'engagement.sum.pendingSub' | translate }}</span>
+        </article>
+        <article class="tally static">
+          <span class="t-label">{{ 'engagement.sum.open' | translate }}</span>
+          <span class="t-figure num">{{ s.openSurveys }}</span>
+          <span class="t-sub">{{ 'engagement.sum.openSub' | translate }}</span>
+        </article>
+        <article class="tally static">
+          <span class="t-label">{{ 'engagement.sum.rate' | translate }}</span>
+          <span class="t-figure num">{{ rateText(s.averageResponseRate) }}</span>
+          <span class="t-sub">{{ 'engagement.sum.rateSub' | translate }}</span>
+        </article>
+        <article class="tally static">
+          <span class="t-label">{{ 'engagement.sum.drafts' | translate }}</span>
+          <span class="t-figure num">{{ s.draftSurveys }}</span>
+          <span class="t-sub">{{ 'engagement.sum.draftsSub' | translate }}</span>
+        </article>
+      </section>
+    }
+
+    @if (linked()) {
+      <section class="panel panel-flush">
+        <header class="list-head">
+          <h3 class="section-title">{{ 'engagement.forYou' | translate }}</h3>
+          <p class="panel-sub">{{ 'engagement.forYouSub' | translate }}</p>
+        </header>
+        @if (mine() === null) {
+          <p class="loading-line pad">{{ 'common.loading' | translate }}</p>
+        } @else if (!toAnswer().length && !answered().length) {
+          <div class="empty-state">
+            <span class="material-icons-outlined" aria-hidden="true">forum</span>
+            <p>{{ 'engagement.noneForYou' | translate }}</p>
+          </div>
+        } @else {
+          <ul class="my-list">
+            @for (v of toAnswer(); track v.id) {
+              <li>
+                <button type="button" class="my-row" (click)="answerSurvey(v.id)">
+                  <span class="material-icons-outlined cat-icon sm" aria-hidden="true">{{ v.isAnonymous ? 'shield' : 'forum' }}</span>
+                  <span class="stack grow">
+                    <span class="cell-main wrap">{{ v.title }}</span>
+                    <span class="cell-sub">
+                      {{ 'engagement.questionsN' | translate: { n: v.questionCount } }}
+                      · {{ (v.isAnonymous ? 'engagement.anonymous' : 'engagement.named') | translate }}
+                    </span>
+                  </span>
+                  <span class="my-due">
+                    @if (closesKey(v); as k) { <span class="cell-sub" [class.warn]="v.daysLeft! <= 1">{{ k.key | translate: { n: k.n } }}</span> }
+                    <span class="btn btn-ink btn-small">{{ 'engagement.answer' | translate }}</span>
+                  </span>
+                </button>
+              </li>
+            }
+            @for (v of answered(); track v.id) {
+              <li>
+                <button type="button" class="my-row is-quiet" (click)="openSurvey(v.id)">
+                  <span class="material-icons-outlined cat-icon sm" aria-hidden="true">{{ v.iHaveResponded ? 'task_alt' : 'event_busy' }}</span>
+                  <span class="stack grow">
+                    <span class="cell-main wrap">{{ v.title }}</span>
+                    <span class="cell-sub">{{ (v.isAnonymous ? 'engagement.anonymous' : 'engagement.named') | translate }}</span>
+                  </span>
+                  @if (v.iHaveResponded) {
+                    <span class="chip chip-moss"><span class="material-icons-outlined chip-icon" aria-hidden="true">check</span>{{ 'engagement.answered' | translate }}</span>
+                  } @else {
+                    <span [class]="statusChip[v.status]">{{ 'engagement.status.' + v.status | translate }}</span>
+                  }
+                </button>
+              </li>
+            }
+          </ul>
+        }
+      </section>
+    }
+
+    @if (s.canSeeResults) {
+      <section class="panel panel-flush">
+        <header class="list-head">
+          <h3 class="section-title">{{ 'engagement.allSurveys' | translate }}</h3>
+          <p class="panel-sub">{{ 'engagement.allSurveysSub' | translate }}</p>
+        </header>
+        <div class="toolbar">
+          <label class="search">
+            <span class="material-icons-outlined" aria-hidden="true">search</span>
+            <input type="search" [ngModel]="allSearch()" (ngModelChange)="onAllSearch($event)" [placeholder]="'engagement.searchPh' | translate" [attr.aria-label]="'engagement.searchPh' | translate" />
+          </label>
+          <select class="select-sm" [ngModel]="allStatus()" (ngModelChange)="setAllStatus($event)" [attr.aria-label]="'engagement.statusCol' | translate">
+            <option value="">{{ 'engagement.anyStatus' | translate }}</option>
+            @for (st of statuses; track st) {
+              @if (st !== 'Draft' || s.canManage) { <option [value]="st">{{ 'engagement.status.' + st | translate }}</option> }
+            }
+          </select>
+        </div>
+        @if (all() === null) {
+          <p class="loading-line pad">{{ 'common.loading' | translate }}</p>
+        } @else if (!all()!.length) {
+          <div class="empty-state">
+            <span class="material-icons-outlined" aria-hidden="true">ballot</span>
+            @if (!s.hasSurveys && s.canManage) {
+              <p>{{ 'engagement.emptyHr' | translate }}</p>
+              <div class="inline-actions center">
+                <button type="button" class="btn btn-quiet" (click)="openTemplates()">{{ 'engagement.useTemplate' | translate }}</button>
+                <button type="button" class="btn btn-ink" (click)="newSurvey()">{{ 'engagement.newSurvey' | translate }}</button>
+              </div>
+            } @else {
+              <p>{{ (s.hasSurveys ? 'engagement.noMatch' : 'engagement.empty') | translate }}</p>
+            }
+          </div>
+        } @else {
+          <div class="table-wrap">
+            <table class="ledger-table">
+              <thead>
+                <tr>
+                  <th>{{ 'engagement.surveyCol' | translate }}</th>
+                  <th>{{ 'engagement.statusCol' | translate }}</th>
+                  <th>{{ 'engagement.responses' | translate }}</th>
+                  <th class="col-wide">{{ 'engagement.audience' | translate }}</th>
+                  <th class="col-wide">{{ 'engagement.closes' | translate }}</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (v of all(); track v.id) {
+                  <tr class="row-link" tabindex="0" (click)="openSurvey(v.id)" (keydown.enter)="openSurvey(v.id)">
+                    <td>
+                      <span class="stack">
+                        <span class="cell-main wrap">{{ v.title }}</span>
+                        <span class="cell-sub">
+                          @if (v.isAnonymous) { <span class="material-icons-outlined inline-icon" aria-hidden="true">shield</span> }
+                          {{ (v.isAnonymous ? 'engagement.anonymous' : 'engagement.named') | translate }} · {{ 'engagement.questionsN' | translate: { n: v.questionCount } }}
+                        </span>
+                      </span>
+                    </td>
+                    <td><span [class]="statusChip[v.status]">{{ 'engagement.status.' + v.status | translate }}</span></td>
+                    <td>
+                      @if (v.status === 'Draft') { <span class="dim">—</span> }
+                      @else {
+                        <span class="mini-progress">
+                          <span class="bar"><span [style.width.%]="v.responseRate ?? 0"></span></span>
+                          <span class="num">{{ v.responded }}/{{ v.eligible }}</span>
+                        </span>
+                      }
+                    </td>
+                    <td class="col-wide">{{ v.audience === 'Everyone' ? ('engagement.everyone' | translate) : v.departmentName }}</td>
+                    <td class="col-wide">
+                      @if (v.closesOn) {
+                        <span class="stack">
+                          <span class="num">{{ v.closesOn | date: 'd MMM y' : undefined : lang() }}</span>
+                          @if (closesKey(v); as k) { <span class="cell-sub">{{ k.key | translate: { n: k.n } }}</span> }
+                        </span>
+                      } @else { <span class="dim">{{ 'engagement.noCloseDate' | translate }}</span> }
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      </section>
+    }
+  }
+
+  <!-- ═══ Recognition ═══ -->
+  @if (tab() === 'recognition' && summary(); as s) {
+    <section class="tallies">
+      <article class="tally static">
+        <span class="t-label">{{ 'engagement.sum.thisMonth' | translate }}</span>
+        <span class="t-figure num">{{ s.recognitionsThisMonth }}</span>
+        <span class="t-sub">{{ 'engagement.sum.thisMonthSub' | translate }}</span>
+      </article>
+      <article class="tally static" [class.is-warn]="s.myReceivedThisMonth > 0">
+        <span class="t-label">{{ 'engagement.sum.received' | translate }}</span>
+        <span class="t-figure num">{{ s.myReceived }}</span>
+        <span class="t-sub">{{ 'engagement.sum.receivedSub' | translate: { n: s.myReceivedThisMonth } }}</span>
+      </article>
+      <article class="tally static">
+        <span class="t-label">{{ 'engagement.sum.given' | translate }}</span>
+        <span class="t-figure num">{{ s.myGiven }}</span>
+        <span class="t-sub">{{ 'engagement.sum.givenSub' | translate }}</span>
+      </article>
+    </section>
+
+    <div class="rec-layout">
+      <section class="panel panel-flush">
+        <div class="toolbar">
+          <div class="seg-row" role="group" [attr.aria-label]="'engagement.feedScope' | translate">
+            @for (sc of ['all', 'received', 'given']; track sc) {
+              @if (sc === 'all' || linked()) {
+                <button type="button" class="seg" [class.is-active]="feedScope() === sc" (click)="setScope($any(sc))">{{ 'engagement.scope.' + sc | translate }}</button>
+              }
+            }
+          </div>
+          <select class="select-sm" [ngModel]="feedValue()" (ngModelChange)="setFeedValue($event)" [attr.aria-label]="'engagement.value' | translate">
+            <option value="">{{ 'engagement.anyValue' | translate }}</option>
+            @for (v of values; track v) { <option [value]="v">{{ 'engagement.values.' + v | translate }}</option> }
+          </select>
+          <select class="select-sm" [ngModel]="feedDept()" (ngModelChange)="setFeedDept($event)" [attr.aria-label]="'engagement.department' | translate">
+            <option value="">{{ 'engagement.allDepartments' | translate }}</option>
+            @for (o of lookups().departments; track o.id) { <option [value]="o.id">{{ o.name }}</option> }
+          </select>
+        </div>
+
+        @if (feed() === null) {
+          <p class="loading-line pad">{{ 'common.loading' | translate }}</p>
+        } @else if (!feed()!.length) {
+          <div class="empty-state">
+            <span class="material-icons-outlined" aria-hidden="true">celebration</span>
+            <p>{{ 'engagement.noRecognition' | translate }}</p>
+            @if (linked()) { <button type="button" class="btn btn-ink" (click)="give()">{{ 'engagement.recognise' | translate }}</button> }
+          </div>
+        } @else {
+          <ul class="rec-feed">
+            @for (r of feed(); track r.id) {
+              <li class="rec-card">
+                <span class="avatar" aria-hidden="true">{{ initials(r.toName) }}</span>
+                <div class="stack grow">
+                  <p class="rec-line">
+                    <span class="cell-main">{{ r.toName }}</span>
+                    <span class="rec-chip"><span class="material-icons-outlined" aria-hidden="true">{{ valueIcon[r.value] }}</span>{{ 'engagement.values.' + r.value | translate }}</span>
+                  </p>
+                  <span class="cell-sub">{{ r.toDetail }}</span>
+                  <p class="rec-message">{{ r.message }}</p>
+                  <div class="rec-foot">
+                    <span class="cell-sub">{{ 'engagement.fromName' | translate: { name: r.fromName } }} · {{ utc(r.createdAt) | date: 'd MMM, HH:mm' : undefined : lang() }}</span>
+                    <span class="push"></span>
+                    @if (r.canDelete) {
+                      <button type="button" class="btn-link danger-link" (click)="removeRecognition(r)">
+                        {{ (confirm === 'rec:' + r.id ? 'engagement.sureRemove' : 'engagement.remove') | translate }}
+                      </button>
+                    }
+                    <button type="button" class="cheer" [class.on]="r.iCheered" [disabled]="!linked() || r.isMine" (click)="toggleCheer(r)"
+                      [attr.aria-pressed]="r.iCheered" [attr.aria-label]="'engagement.cheer' | translate">
+                      <span class="material-icons-outlined" aria-hidden="true">{{ r.iCheered ? 'favorite' : 'favorite_border' }}</span>
+                      <span class="num">{{ r.cheers }}</span>
+                    </button>
+                  </div>
+                </div>
+              </li>
+            }
+          </ul>
+          @if (feedMore()) {
+            <div class="more-row"><button type="button" class="btn btn-quiet btn-small" (click)="loadFeed(true)">{{ 'engagement.loadMore' | translate }}</button></div>
+          }
+        }
+      </section>
+
+      <aside class="panel side-panel">
+        <header class="head-row">
+          <h3 class="section-title">{{ 'engagement.leaders' | translate }}</h3>
+          <div class="seg-row small" role="group" [attr.aria-label]="'engagement.period' | translate">
+            @for (p of ['month', 'quarter', 'year']; track p) {
+              <button type="button" class="seg" [class.is-active]="period() === p" (click)="setPeriod($any(p))">{{ 'engagement.periods.' + p | translate }}</button>
+            }
+          </div>
+        </header>
+        @if (stats(); as st) {
+          <p class="panel-sub">
+            {{ 'engagement.statsLine' | translate: { n: st.total, people: st.people } }}
+            @if (st.previousTotal || st.total) {
+              <span class="trend num" [class.up]="st.total >= st.previousTotal">{{ signed(st.total - st.previousTotal) }}</span>
+            }
+          </p>
+          @if (st.topReceivers.length) {
+            <h4 class="sub-title">{{ 'engagement.topReceivers' | translate }}</h4>
+            <ol class="leader-list">
+              @for (l of st.topReceivers; track l.employeeId; let i = $index) {
+                <li>
+                  <span class="rank num">{{ i + 1 }}</span>
+                  <span class="avatar sm" aria-hidden="true">{{ initials(l.name) }}</span>
+                  <span class="stack grow"><span class="cell-main">{{ l.name }}</span><span class="cell-sub">{{ l.detail }}</span></span>
+                  <span class="num count">{{ l.count }}</span>
+                </li>
+              }
+            </ol>
+            <h4 class="sub-title">{{ 'engagement.byValue' | translate }}</h4>
+            <ul class="value-bars">
+              @for (v of st.byValue; track v.value) {
+                <li>
+                  <span class="material-icons-outlined" aria-hidden="true">{{ valueIcon[v.value] }}</span>
+                  <span class="v-name">{{ 'engagement.values.' + v.value | translate }}</span>
+                  <span class="bar"><span [style.width.%]="(100 * v.count) / statsMax()"></span></span>
+                  <span class="num">{{ v.count }}</span>
+                </li>
+              }
+            </ul>
+          } @else {
+            <p class="dim">{{ 'engagement.noStats' | translate }}</p>
+          }
+        } @else {
+          <p class="loading-line">{{ 'common.loading' | translate }}</p>
+        }
+      </aside>
+    </div>
+  }
+</div>
+
+@if (drawer(); as d) {
+  <div class="overlay" (click)="closeDrawer()">
+    <aside class="drawer" [class.drawer-wide]="d !== 'templates'" role="dialog" aria-modal="true" (click)="$event.stopPropagation()">
+      <header class="drawer-head">
+        <h3>
+          @switch (d) {
+            @case ('survey') { {{ survey()?.survey?.title ?? ('common.loading' | translate) }} }
+            @case ('answer') { {{ survey()?.survey?.title ?? ('common.loading' | translate) }} }
+            @case ('results') { {{ results()?.title ?? ('common.loading' | translate) }} }
+            @case ('surveyEdit') { {{ (surveyForm?.id ? 'engagement.editSurvey' : 'engagement.newSurvey') | translate }} }
+            @case ('templates') { {{ 'engagement.templatesTitle' | translate }} }
+            @case ('give') { {{ 'engagement.recognise' | translate }} }
+          }
+        </h3>
+        <button type="button" class="btn-link" (click)="closeDrawer()" [attr.aria-label]="'common.close' | translate">
+          <span class="material-icons-outlined" aria-hidden="true">close</span>
+        </button>
+      </header>
+
+      <div class="drawer-body">
+        @switch (d) {
+          <!-- Survey detail -->
+          @case ('survey') {
+            @if (survey(); as sd) {
+              @let v = sd.survey;
+              <div class="doc-head">
+                <span [class]="statusChip[v.status]">{{ 'engagement.status.' + v.status | translate }}</span>
+                @if (v.isAnonymous) {
+                  <span class="chip chip-plain"><span class="material-icons-outlined chip-icon" aria-hidden="true">shield</span>{{ 'engagement.anonymous' | translate }}</span>
+                }
+              </div>
+              @if (v.description) { <p class="doc-summary">{{ v.description }}</p> }
+              <dl class="facts">
+                <div><dt>{{ 'engagement.audience' | translate }}</dt><dd>{{ v.audience === 'Everyone' ? ('engagement.everyone' | translate) : v.departmentName }}</dd></div>
+                <div><dt>{{ 'engagement.closes' | translate }}</dt><dd class="num">@if (v.closesOn) { {{ v.closesOn | date: 'd MMM y' : undefined : lang() }} } @else { {{ 'engagement.noCloseDate' | translate }} }</dd></div>
+                @if (v.responded !== null && v.status !== 'Draft') {
+                  <div><dt>{{ 'engagement.responses' | translate }}</dt><dd class="num">{{ v.responded }}/{{ v.eligible }} · {{ rateText(v.responseRate) }}</dd></div>
+                }
+                @if (v.publishedAt) {
+                  <div><dt>{{ 'engagement.published' | translate }}</dt><dd class="num">{{ utc(v.publishedAt) | date: 'd MMM y' : undefined : lang() }}</dd></div>
+                }
+              </dl>
+
+              @if (v.canRespond) {
+                <div class="my-box">
+                  <span class="grow">{{ 'engagement.youCanAnswer' | translate }}</span>
+                  <button type="button" class="btn btn-ink btn-small" (click)="answerSurvey(v.id)">{{ 'engagement.answer' | translate }}</button>
+                </div>
+              } @else if (v.iHaveResponded) {
+                <div class="my-box done">
+                  <span class="material-icons-outlined" aria-hidden="true">task_alt</span>
+                  <span class="grow">{{ 'engagement.youAnswered' | translate }}</span>
+                </div>
+              }
+
+              @if (sd.canSeeResults) {
+                <button type="button" class="doc-link" (click)="openResults(v.id)">
+                  <span class="material-icons-outlined" aria-hidden="true">insights</span>
+                  <span class="grow">{{ 'engagement.seeResults' | translate }}</span>
+                  <span class="material-icons-outlined flip" aria-hidden="true">chevron_right</span>
+                </button>
+              }
+
+              <h4 class="sub-title">{{ 'engagement.questions' | translate }}</h4>
+              @if (!sd.questions.length) {
+                <p class="dim">{{ 'engagement.noQuestions' | translate }}</p>
+              } @else {
+                <ol class="q-preview">
+                  @for (q of sd.questions; track q.id) {
+                    <li>
+                      <span class="material-icons-outlined q-icon" aria-hidden="true">{{ questionIcon[q.type] }}</span>
+                      <span class="stack grow">
+                        <span class="cell-main wrap">{{ q.text }}@if (q.isRequired) { <span class="req" aria-hidden="true">*</span> }</span>
+                        <span class="cell-sub">
+                          {{ 'engagement.qtype.' + q.type | translate }}
+                          @if (q.options.length) { · {{ q.options.join(' / ') }} }
+                        </span>
+                      </span>
+                    </li>
+                  }
+                </ol>
+              }
+
+              @if (sd.canEdit) {
+                @if (reopening) {
+                  <div class="settings-box">
+                    <div class="field">
+                      <label for="ro-date">{{ 'engagement.newCloseDate' | translate }}</label>
+                      <input id="ro-date" type="date" [min]="today" [(ngModel)]="reopenDate" />
+                      <p class="field-hint">{{ 'engagement.reopenHint' | translate }}</p>
+                    </div>
+                    <div class="inline-actions">
+                      <span class="push"></span>
+                      <button type="button" class="btn btn-quiet btn-small" (click)="reopening = false">{{ 'common.cancel' | translate }}</button>
+                      <button type="button" class="btn btn-ink btn-small" [disabled]="saving() || (!!reopenDate && reopenDate < today)" (click)="reopen(sd)">{{ 'engagement.reopen' | translate }}</button>
+                    </div>
+                  </div>
+                } @else {
+                  <div class="inline-actions wrap">
+                    @if (sd.canPublish) {
+                      <button type="button" class="btn btn-ink btn-small" [disabled]="saving() || !sd.questions.length" (click)="publish(sd)">
+                        <span class="material-icons-outlined" aria-hidden="true">send</span>{{ (confirm === 'publish' ? 'engagement.surePublish' : 'engagement.publish') | translate }}
+                      </button>
+                    }
+                    <button type="button" class="btn btn-quiet btn-small" (click)="editSurvey(sd)">{{ 'common.edit' | translate }}</button>
+                    @if (sd.canClose) {
+                      <button type="button" class="btn btn-quiet btn-small" [disabled]="saving()" (click)="closeSurvey(sd)">
+                        {{ (confirm === 'close' ? 'engagement.sureClose' : 'engagement.close') | translate }}
+                      </button>
+                    }
+                    @if (sd.canReopen) {
+                      <button type="button" class="btn btn-quiet btn-small" (click)="startReopen()">{{ 'engagement.reopen' | translate }}</button>
+                    }
+                    <span class="push"></span>
+                    @if (sd.canDelete) {
+                      <button type="button" class="btn-link danger-link" [disabled]="saving()" (click)="deleteSurvey(sd)">
+                        {{ (confirm === 'delete' ? 'engagement.sureDelete' : 'common.delete') | translate }}
+                      </button>
+                    }
+                  </div>
+                  @if (confirm === 'publish') { <p class="confirm-note">{{ 'engagement.publishNote' | translate }}</p> }
+                }
+              }
+            } @else {
+              <p class="loading-line">{{ 'common.loading' | translate }}</p>
+            }
+          }
+
+          <!-- Answer -->
+          @case ('answer') {
+            @if (survey(); as sd) {
+              @if (answerForm; as f) {
+                @if (sd.survey.description) { <p class="doc-summary">{{ sd.survey.description }}</p> }
+                <div class="notice" [class.notice-info]="sd.survey.isAnonymous" [class.notice-warn]="!sd.survey.isAnonymous">
+                  <span class="material-icons-outlined" aria-hidden="true">{{ sd.survey.isAnonymous ? 'shield' : 'badge' }}</span>
+                  <span class="grow">{{ (sd.survey.isAnonymous ? 'engagement.anonNote' : 'engagement.namedNote') | translate }}</span>
+                </div>
+                <ol class="answer-list">
+                  @for (q of sd.questions; track q.id; let i = $index) {
+                    <li class="answer-q">
+                      <p class="q-text"><span class="q-no num">{{ i + 1 }}</span>{{ q.text }}@if (q.isRequired) { <span class="req" [attr.title]="'engagement.required' | translate">*</span> }</p>
+                      @switch (q.type) {
+                        @case ('Rating') {
+                          <div class="scale five" role="radiogroup" [attr.aria-label]="q.text">
+                            @for (n of ratings; track n) {
+                              <button type="button" class="scale-btn" role="radio" [class.on]="f.values[q.id] === n" [attr.aria-checked]="f.values[q.id] === n" (click)="pick(q.id, n)">
+                                <span class="num">{{ n }}</span><span class="scale-label">{{ ratingLabel(n) }}</span>
+                              </button>
+                            }
+                          </div>
+                        }
+                        @case ('Nps') {
+                          <div class="scale eleven" role="radiogroup" [attr.aria-label]="q.text">
+                            @for (n of npsScale; track n) {
+                              <button type="button" class="scale-btn" role="radio" [class.on]="f.values[q.id] === n" [attr.aria-checked]="f.values[q.id] === n" (click)="pick(q.id, n)">
+                                <span class="num">{{ n }}</span>
+                              </button>
+                            }
+                          </div>
+                          <div class="scale-ends"><span>{{ 'engagement.npsLow' | translate }}</span><span>{{ 'engagement.npsHigh' | translate }}</span></div>
+                        }
+                        @case ('YesNo') {
+                          <div class="scale two" role="radiogroup" [attr.aria-label]="q.text">
+                            <button type="button" class="scale-btn" role="radio" [class.on]="f.values[q.id] === 1" [attr.aria-checked]="f.values[q.id] === 1" (click)="pick(q.id, 1)">{{ 'common.yes' | translate }}</button>
+                            <button type="button" class="scale-btn" role="radio" [class.on]="f.values[q.id] === 0" [attr.aria-checked]="f.values[q.id] === 0" (click)="pick(q.id, 0)">{{ 'common.no' | translate }}</button>
+                          </div>
+                        }
+                        @case ('Choice') {
+                          <div class="choice-list" role="radiogroup" [attr.aria-label]="q.text">
+                            @for (o of q.options; track $index; let j = $index) {
+                              <button type="button" class="choice" role="radio" [class.on]="f.values[q.id] === j" [attr.aria-checked]="f.values[q.id] === j" (click)="pick(q.id, j)">
+                                <span class="material-icons-outlined" aria-hidden="true">{{ f.values[q.id] === j ? 'radio_button_checked' : 'radio_button_unchecked' }}</span>{{ o }}
+                              </button>
+                            }
+                          </div>
+                        }
+                        @case ('Text') {
+                          <textarea rows="3" maxlength="2000" [(ngModel)]="f.texts[q.id]" [attr.aria-label]="q.text" [placeholder]="'engagement.textPh' | translate"></textarea>
+                        }
+                      }
+                    </li>
+                  }
+                </ol>
+              }
+            } @else {
+              <p class="loading-line">{{ 'common.loading' | translate }}</p>
+            }
+          }
+
+          <!-- Results -->
+          @case ('results') {
+            @if (results(); as r) {
+              <section class="tallies three in-drawer">
+                <article class="tally static">
+                  <span class="t-label">{{ 'engagement.responses' | translate }}</span>
+                  <span class="t-figure num">{{ r.responded }}<span class="of">/{{ r.eligible }}</span></span>
+                  <span class="t-sub">{{ 'engagement.rateN' | translate: { rate: rateText(r.responseRate) } }}</span>
+                </article>
+                <article class="tally static">
+                  <span class="t-label">{{ 'engagement.avgRating' | translate }}</span>
+                  <span class="t-figure num" [class]="ratingTone(r.averageRating)">@if (r.averageRating !== null) { {{ r.averageRating | number: '1.1-1' : lang() }} } @else { — }</span>
+                  <span class="t-sub">{{ 'engagement.avgRatingSub' | translate }}</span>
+                </article>
+                <article class="tally static">
+                  <span class="t-label">{{ 'engagement.enps' | translate }}</span>
+                  <span class="t-figure num" [class]="npsTone(r.nps)">{{ signed(r.nps) }}</span>
+                  <span class="t-sub">{{ 'engagement.enpsSub' | translate }}</span>
+                </article>
+              </section>
+
+              @if (r.hidden) {
+                <div class="notice notice-info">
+                  <span class="material-icons-outlined" aria-hidden="true">shield</span>
+                  <span class="grow">{{ 'engagement.hiddenNote' | translate: { n: r.threshold } }}</span>
+                </div>
+              } @else {
+                @if (r.isAnonymous) { <p class="field-hint">{{ 'engagement.anonResults' | translate: { n: r.threshold } }}</p> }
+                @for (q of r.questions; track q.questionId; let i = $index) {
+                  <article class="res-card">
+                    <header class="res-head">
+                      <span class="q-no num">{{ i + 1 }}</span>
+                      <span class="stack grow">
+                        <span class="cell-main wrap">{{ q.text }}</span>
+                        <span class="cell-sub">{{ 'engagement.qtype.' + q.type | translate }} · {{ 'engagement.answeredN' | translate: { n: q.answered } }}</span>
+                      </span>
+                      @switch (q.type) {
+                        @case ('Rating') { <span class="big-num num" [class]="ratingTone(q.average)">@if (q.average !== null) { {{ q.average | number: '1.1-1' : lang() }} } @else { — }</span> }
+                        @case ('Nps') { <span class="big-num num" [class]="npsTone(q.score)">{{ signed(q.score) }}</span> }
+                        @case ('YesNo') { <span class="big-num num">@if (q.score !== null) { {{ q.score }}% } @else { — }</span> }
+                      }
+                    </header>
+                    @switch (q.type) {
+                      @case ('Rating') {
+                        <ul class="dist">
+                          @for (c of q.distribution; track $index; let n = $index) {
+                            <li><span class="d-label">{{ n + 1 }} · {{ ratingLabel(n + 1) }}</span><span class="bar"><span [style.width.%]="barWidth(c, q)"></span></span><span class="num d-val">{{ share(c, q) }}%</span></li>
+                          }
+                        </ul>
+                      }
+                      @case ('Nps') {
+                        <div class="nps-cols" role="img" [attr.aria-label]="'engagement.npsDist' | translate">
+                          @for (c of q.distribution; track $index; let n = $index) {
+                            <span class="nps-col"><span class="col-bar" [class]="npsBand(n)" [style.height.%]="barWidth(c, q)"></span><span class="num">{{ n }}</span></span>
+                          }
+                        </div>
+                        <p class="cell-sub">{{ 'engagement.npsExplain' | translate }}</p>
+                      }
+                      @case ('YesNo') {
+                        <ul class="dist">
+                          <li><span class="d-label">{{ 'common.yes' | translate }}</span><span class="bar"><span [style.width.%]="share(q.distribution[0]!, q)"></span></span><span class="num d-val">{{ q.distribution[0] }}</span></li>
+                          <li><span class="d-label">{{ 'common.no' | translate }}</span><span class="bar"><span [style.width.%]="share(q.distribution[1]!, q)"></span></span><span class="num d-val">{{ q.distribution[1] }}</span></li>
+                        </ul>
+                      }
+                      @case ('Choice') {
+                        <ul class="dist">
+                          @for (o of q.options; track $index; let j = $index) {
+                            <li><span class="d-label">{{ o }}</span><span class="bar"><span [style.width.%]="share(q.distribution[j]!, q)"></span></span><span class="num d-val">{{ share(q.distribution[j]!, q) }}%</span></li>
+                          }
+                        </ul>
+                      }
+                      @case ('Text') {
+                        @if (q.comments.length) {
+                          <ul class="comments">
+                            @for (c of q.comments; track $index) {
+                              <li><p>{{ c.text }}</p><span class="cell-sub">@if (c.name) { {{ c.name }} · }{{ c.submittedOn | date: 'd MMM' : undefined : lang() }}</span></li>
+                            }
+                          </ul>
+                        } @else { <p class="dim">{{ 'engagement.noComments' | translate }}</p> }
+                      }
+                    }
+                  </article>
+                }
+
+                @if (r.departments.length) {
+                  <h4 class="sub-title">{{ 'engagement.byDepartment' | translate }}</h4>
+                  <div class="table-wrap">
+                    <table class="ledger-table compact">
+                      <thead>
+                        <tr>
+                          <th>{{ 'engagement.department' | translate }}</th>
+                          <th>{{ 'engagement.responses' | translate }}</th>
+                          <th>{{ 'engagement.avgShort' | translate }}</th>
+                          <th>{{ 'engagement.enps' | translate }}</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        @for (dp of r.departments; track dp.departmentId) {
+                          <tr>
+                            <td><span class="cell-main">{{ dp.name }}</span></td>
+                            <td class="num">{{ dp.responded }}/{{ dp.eligible }}</td>
+                            @if (dp.hidden) {
+                              <td colspan="2"><span class="dim">{{ 'engagement.tooFew' | translate: { n: r.threshold } }}</span></td>
+                            } @else {
+                              <td class="num" [class]="ratingTone(dp.averageRating)">@if (dp.averageRating !== null) { {{ dp.averageRating | number: '1.1-1' : lang() }} } @else { — }</td>
+                              <td class="num" [class]="npsTone(dp.nps)">{{ signed(dp.nps) }}</td>
+                            }
+                          </tr>
+                        }
+                      </tbody>
+                    </table>
+                  </div>
+                }
+              }
+            } @else {
+              <p class="loading-line">{{ 'common.loading' | translate }}</p>
+            }
+          }
+
+          <!-- Survey form -->
+          @case ('surveyEdit') {
+            @if (surveyForm; as f) {
+              <div class="form-grid">
+                <div class="field span-all">
+                  <label for="s-title">{{ 'engagement.titleLabel' | translate }}</label>
+                  <input id="s-title" maxlength="150" [(ngModel)]="f.title" [placeholder]="'engagement.titlePh' | translate" />
+                </div>
+                <div class="field span-all">
+                  <label for="s-desc">{{ 'engagement.description' | translate }}</label>
+                  <textarea id="s-desc" rows="2" maxlength="1000" [(ngModel)]="f.description" [placeholder]="'engagement.descriptionPh' | translate"></textarea>
+                </div>
+                <div class="field">
+                  <label for="s-aud">{{ 'engagement.audience' | translate }}</label>
+                  <select id="s-aud" [(ngModel)]="f.audience" [disabled]="f.published">
+                    <option value="Everyone">{{ 'engagement.everyone' | translate }}</option>
+                    <option value="Department">{{ 'engagement.oneDepartment' | translate }}</option>
+                  </select>
+                </div>
+                @if (f.audience === 'Department') {
+                  <div class="field">
+                    <label for="s-dept">{{ 'engagement.department' | translate }}</label>
+                    <select id="s-dept" [(ngModel)]="f.departmentId" [disabled]="f.published">
+                      <option value="">{{ 'engagement.pickDepartment' | translate }}</option>
+                      @for (o of lookups().departments; track o.id) { <option [value]="o.id">{{ o.name }}</option> }
+                    </select>
+                  </div>
+                }
+                <div class="field">
+                  <label for="s-close">{{ 'engagement.closes' | translate }}</label>
+                  <input id="s-close" type="date" [min]="today" [(ngModel)]="f.closesOn" />
+                </div>
+              </div>
+              <div class="settings-box">
+                <label class="check-inline wrap-text"><input type="checkbox" [(ngModel)]="f.isAnonymous" [disabled]="f.published" />{{ 'engagement.anonLong' | translate }}</label>
+                <p class="field-hint">{{ 'engagement.anonHint' | translate }}</p>
+              </div>
+
+              <div class="head-row">
+                <h4 class="sub-title">{{ 'engagement.questions' | translate }} <span class="cell-sub num">{{ f.questions.length }}/{{ maxQuestions }}</span></h4>
+              </div>
+              @if (f.published) {
+                <div class="notice notice-info">
+                  <span class="material-icons-outlined" aria-hidden="true">lock</span>
+                  <span class="grow">{{ 'engagement.lockedNote' | translate }}</span>
+                </div>
+                <ol class="q-preview">
+                  @for (q of f.questions; track q.key) {
+                    <li><span class="material-icons-outlined q-icon" aria-hidden="true">{{ questionIcon[q.type] }}</span><span class="cell-main wrap grow">{{ q.text }}</span></li>
+                  }
+                </ol>
+              } @else {
+                <ol class="q-editor">
+                  @for (q of f.questions; track q.key; let i = $index, first = $first, last = $last) {
+                    <li class="q-card">
+                      <div class="q-row">
+                        <span class="q-no num">{{ i + 1 }}</span>
+                        <input class="grow" maxlength="300" [(ngModel)]="q.text" [placeholder]="'engagement.questionPh' | translate" [attr.aria-label]="'engagement.questionN' | translate: { n: i + 1 }" />
+                      </div>
+                      <div class="q-row">
+                        <select class="select-xs" [ngModel]="q.type" (ngModelChange)="setType(q, $event)" [attr.aria-label]="'engagement.type' | translate">
+                          @for (t of questionTypes; track t) { <option [value]="t">{{ 'engagement.qtype.' + t | translate }}</option> }
+                        </select>
+                        <label class="check-inline"><input type="checkbox" [(ngModel)]="q.isRequired" />{{ 'engagement.required' | translate }}</label>
+                        <span class="push"></span>
+                        <button type="button" class="icon-btn" [disabled]="first" (click)="moveQuestion(i, -1)" [attr.aria-label]="'engagement.moveUp' | translate"><span class="material-icons-outlined" aria-hidden="true">arrow_upward</span></button>
+                        <button type="button" class="icon-btn" [disabled]="last" (click)="moveQuestion(i, 1)" [attr.aria-label]="'engagement.moveDown' | translate"><span class="material-icons-outlined" aria-hidden="true">arrow_downward</span></button>
+                        <button type="button" class="icon-btn danger" (click)="removeQuestion(i)" [attr.aria-label]="'engagement.removeQuestion' | translate"><span class="material-icons-outlined" aria-hidden="true">delete</span></button>
+                      </div>
+                      @if (q.type === 'Choice') {
+                        <ul class="opt-list">
+                          @for (o of q.options; track trackIndex(j); let j = $index) {
+                            <li>
+                              <span class="material-icons-outlined dim" aria-hidden="true">radio_button_unchecked</span>
+                              <input class="grow" maxlength="100" [(ngModel)]="q.options[j]" [placeholder]="'engagement.optionN' | translate: { n: j + 1 }" [attr.aria-label]="'engagement.optionN' | translate: { n: j + 1 }" />
+                              <button type="button" class="icon-btn" [disabled]="q.options.length <= 2" (click)="removeOption(q, j)" [attr.aria-label]="'engagement.removeOption' | translate"><span class="material-icons-outlined" aria-hidden="true">close</span></button>
+                            </li>
+                          }
+                        </ul>
+                        @if (q.options.length < maxOptions) {
+                          <button type="button" class="btn-link" (click)="addOption(q)">+ {{ 'engagement.addOption' | translate }}</button>
+                        }
+                      } @else {
+                        <p class="cell-sub">{{ 'engagement.qhint.' + q.type | translate }}</p>
+                      }
+                      @if (q.text && questionProblem(q); as p) { <p class="err">{{ p | translate }}</p> }
+                    </li>
+                  }
+                </ol>
+                @if (f.questions.length < maxQuestions) {
+                  <div class="add-q">
+                    <span class="cell-sub">{{ 'engagement.addQuestion' | translate }}</span>
+                    @for (t of questionTypes; track t) {
+                      <button type="button" class="btn btn-quiet btn-small" (click)="addQuestion(t)">
+                        <span class="material-icons-outlined" aria-hidden="true">{{ questionIcon[t] }}</span>{{ 'engagement.qtype.' + t | translate }}
+                      </button>
+                    }
+                  </div>
+                }
+                <p class="field-hint">{{ 'engagement.draftHint' | translate }}</p>
+              }
+            }
+          }
+
+          <!-- Templates -->
+          @case ('templates') {
+            <p class="panel-sub">{{ 'engagement.templatesSub' | translate }}</p>
+            @if (templates() === null) {
+              <p class="loading-line">{{ 'common.loading' | translate }}</p>
+            } @else {
+              <ul class="tpl-list">
+                @for (t of templates(); track t.key) {
+                  <li>
+                    <button type="button" class="tpl" [disabled]="saving()" (click)="useTemplate(t)">
+                      <span class="stack grow">
+                        <span class="cell-main">{{ 'engagement.tpl.' + t.key + '.title' | translate }}</span>
+                        <span class="cell-sub wrap">{{ 'engagement.tpl.' + t.key + '.desc' | translate }}</span>
+                        <span class="cell-sub">
+                          {{ 'engagement.questionsN' | translate: { n: t.questionCount } }} · {{ (t.isAnonymous ? 'engagement.anonymous' : 'engagement.named') | translate }}
+                        </span>
+                      </span>
+                      <span class="material-icons-outlined flip" aria-hidden="true">chevron_right</span>
+                    </button>
+                  </li>
+                }
+              </ul>
+              <p class="field-hint">{{ 'engagement.templateHint' | translate }}</p>
+            }
+          }
+
+          <!-- Give recognition -->
+          @case ('give') {
+            @if (giveForm; as f) {
+              <h4 class="sub-title">{{ 'engagement.who' | translate }} <span class="cell-sub num">{{ f.picked.size }}/{{ maxRecipients }}</span></h4>
+              @if (pickedPeople().length) {
+                <div class="picked">
+                  @for (p of pickedPeople(); track p.id) {
+                    <button type="button" class="chip chip-plain chip-x" (click)="togglePerson(p.id)">{{ p.name }}<span class="material-icons-outlined" aria-hidden="true">close</span></button>
+                  }
+                </div>
+              }
+              <label class="search">
+                <span class="material-icons-outlined" aria-hidden="true">search</span>
+                <input type="search" [(ngModel)]="f.search" [placeholder]="'engagement.peopleSearchPh' | translate" [attr.aria-label]="'engagement.peopleSearchPh' | translate" />
+              </label>
+              <div class="pick-list">
+                @for (o of givePeople(); track o.id) {
+                  <label class="pick">
+                    <input type="checkbox" [checked]="f.picked.has(o.id)" [disabled]="!f.picked.has(o.id) && f.picked.size >= maxRecipients" (change)="togglePerson(o.id)" />
+                    <span class="stack"><span class="cell-main">{{ o.name }}</span>@if (o.extra) { <span class="cell-sub">{{ o.extra }}</span> }</span>
+                  </label>
+                } @empty {
+                  <p class="dim pad">{{ 'engagement.noPeople' | translate }}</p>
+                }
+              </div>
+
+              <h4 class="sub-title">{{ 'engagement.forWhat' | translate }}</h4>
+              <div class="value-grid" role="radiogroup" [attr.aria-label]="'engagement.value' | translate">
+                @for (v of values; track v) {
+                  <button type="button" class="value-pick" role="radio" [class.on]="f.value === v" [attr.aria-checked]="f.value === v" (click)="f.value = v">
+                    <span class="material-icons-outlined" aria-hidden="true">{{ valueIcon[v] }}</span>
+                    <span class="stack"><span class="cell-main">{{ 'engagement.values.' + v | translate }}</span><span class="cell-sub">{{ 'engagement.valueHint.' + v | translate }}</span></span>
+                  </button>
+                }
+              </div>
+
+              <div class="field">
+                <label for="g-msg">{{ 'engagement.message' | translate }}</label>
+                <textarea id="g-msg" rows="4" maxlength="500" [(ngModel)]="f.message" [placeholder]="'engagement.messagePh' | translate"></textarea>
+                <p class="field-hint num">{{ f.message.length }}/500 · {{ 'engagement.publicNote' | translate }}</p>
+              </div>
+            }
+          }
+        }
+      </div>
+
+      @if (d === 'surveyEdit' || d === 'answer' || d === 'give') {
+        <footer class="drawer-foot">
+          @if (d === 'answer') {
+            <span class="cell-sub num foot-note">{{ 'engagement.progressN' | translate: { n: answeredCount(), total: survey()?.questions?.length ?? 0 } }}</span>
+          }
+          <button type="button" class="btn btn-quiet" (click)="closeDrawer()">{{ 'common.cancel' | translate }}</button>
+          @switch (d) {
+            @case ('surveyEdit') { <button type="button" class="btn btn-ink" [disabled]="!canSaveSurvey() || saving()" (click)="saveSurvey()">{{ 'common.save' | translate }}</button> }
+            @case ('answer') {
+              <button type="button" class="btn btn-ink" [disabled]="!answerForm || missingRequired() > 0 || !answeredCount() || saving()" (click)="submit()"
+                [attr.title]="missingRequired() ? ('engagement.missingN' | translate: { n: missingRequired() }) : null">{{ 'engagement.submit' | translate }}</button>
+            }
+            @case ('give') { <button type="button" class="btn btn-ink" [disabled]="!canGive() || saving()" (click)="sendRecognition()">{{ 'engagement.send' | translate }}</button> }
+          }
+        </footer>
+      }
+    </aside>
+  </div>
+}
