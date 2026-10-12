@@ -1,0 +1,1209 @@
+<div class="page">
+  <header class="page-intro">
+    <p>{{ 'relations.intro' | translate }}</p>
+    <div class="intro-actions">
+      @if (linked()) {
+        <button type="button" class="btn btn-quiet" (click)="raise()">
+          <span class="material-icons-outlined" aria-hidden="true">campaign</span>{{ 'relations.raise' | translate }}
+        </button>
+      }
+      @if (canManage() && tab() === 'cases') {
+        <button type="button" class="btn btn-ink" [disabled]="!lookups().stages.length" (click)="newCase()">
+          <span class="material-icons-outlined" aria-hidden="true">add</span>{{ 'relations.newCase' | translate }}
+        </button>
+      } @else if (canManage() && tab() === 'stages') {
+        <button type="button" class="btn btn-ink" (click)="newStage()">
+          <span class="material-icons-outlined" aria-hidden="true">add</span>{{ 'relations.newStage' | translate }}
+        </button>
+      }
+    </div>
+  </header>
+
+  @if (summary(); as s) {
+    <nav class="tabs">
+      @if (s.seesCases) {
+        <button type="button" class="tab" [class.is-active]="tab() === 'cases'" (click)="setTab('cases')">
+          {{ 'relations.tabs.cases' | translate }}
+          @if (s.overdue) { <span class="tab-count num alert-count">{{ s.overdue }}</span> }
+          @else if (s.open) { <span class="tab-count num">{{ s.open }}</span> }
+        </button>
+      }
+      <button type="button" class="tab" [class.is-active]="tab() === 'concerns'" (click)="setTab('concerns')">
+        {{ 'relations.tabs.concerns' | translate }}
+        @if (s.myConcernsOpen) { <span class="tab-count num">{{ s.myConcernsOpen }}</span> }
+      </button>
+      @if (s.canManage) {
+        <button type="button" class="tab" [class.is-active]="tab() === 'stages'" (click)="setTab('stages')">{{ 'relations.tabs.stages' | translate }}</button>
+      }
+    </nav>
+  } @else {
+    <p class="loading-line">{{ 'common.loading' | translate }}</p>
+  }
+
+  <!-- ═══ Cases ═══ -->
+  @if (tab() === 'cases' && summary(); as s) {
+    @if (s.canManage && !s.hasStages) {
+      <div class="notice notice-warn">
+        <span class="material-icons-outlined" aria-hidden="true">account_tree</span>
+        <span class="grow">{{ 'relations.noStages' | translate }}</span>
+        <button type="button" class="btn btn-ink btn-small" [disabled]="saving()" (click)="addDefaults()">{{ 'relations.addDefaults' | translate }}</button>
+      </div>
+    }
+
+    <section class="tallies">
+      <button type="button" class="tally" (click)="showScope('all')">
+        <span class="t-label">{{ 'relations.sum.open' | translate }}</span>
+        <span class="t-figure num">{{ s.open }}</span>
+        <span class="t-sub">{{ 'relations.sum.openSub' | translate: { n: s.mine } }}</span>
+      </button>
+      <button type="button" class="tally" [class.is-warn]="s.unassigned > 0" (click)="showScope('unassigned')">
+        <span class="t-label">{{ 'relations.sum.unassigned' | translate }}</span>
+        <span class="t-figure num">{{ s.unassigned }}</span>
+        <span class="t-sub">{{ 'relations.sum.unassignedSub' | translate }}</span>
+      </button>
+      <button type="button" class="tally" [class.is-bad]="s.overdue > 0" (click)="showScope('overdue')">
+        <span class="t-label">{{ 'relations.sum.overdue' | translate }}</span>
+        <span class="t-figure num">{{ s.overdue }}</span>
+        <span class="t-sub">{{ 'relations.sum.dueSoon' | translate: { n: s.dueSoon } }}</span>
+      </button>
+      <button type="button" class="tally" [class.is-warn]="s.escalated > 0" (click)="showScope('escalated')">
+        <span class="t-label">{{ 'relations.sum.escalated' | translate }}</span>
+        <span class="t-figure num">{{ s.escalated }}</span>
+        <span class="t-sub">{{ 'relations.sum.escalatedSub' | translate }}</span>
+      </button>
+      <article class="tally static">
+        <span class="t-label">{{ 'relations.sum.closed' | translate }}</span>
+        <span class="t-figure num">{{ s.closedLast90 }}</span>
+        <span class="t-sub">
+          @if (s.averageDaysToClose !== null) { {{ 'relations.sum.avgDays' | translate: { n: s.averageDaysToClose } }} }
+          @else { {{ 'relations.sum.closedSub' | translate }} }
+        </span>
+      </article>
+    </section>
+
+    <div class="flow">
+      @for (p of phases; track p; let last = $last) {
+        <button type="button" class="flow-step" [class.is-on]="phase() === p" (click)="pickPhase(p)">
+          <span class="num flow-n">{{ phaseCount(p) }}</span>
+          <span class="flow-label">{{ 'relations.phase.' + p | translate }}</span>
+        </button>
+        @if (!last) { <span class="material-icons-outlined flow-arrow flip" aria-hidden="true">chevron_right</span> }
+      }
+    </div>
+
+    <div class="case-layout">
+      <section class="panel panel-flush">
+        <div class="toolbar">
+          <div class="seg-row">
+            @for (sc of scopes; track sc) {
+              <button type="button" class="seg" [class.is-active]="scope() === sc" (click)="setScope(sc)">{{ 'relations.scope.' + sc | translate }}</button>
+            }
+          </div>
+        </div>
+        <div class="toolbar">
+          <label class="search">
+            <span class="material-icons-outlined" aria-hidden="true">search</span>
+            <input type="search" [ngModel]="search()" (ngModelChange)="onSearch($event)" [placeholder]="'relations.searchPh' | translate" [attr.aria-label]="'relations.searchPh' | translate" />
+          </label>
+          <select class="select-sm" [ngModel]="type()" (ngModelChange)="setFilter('type', $event)" [attr.aria-label]="'relations.type' | translate">
+            <option value="">{{ 'relations.anyType' | translate }}</option>
+            @for (t of caseTypes; track t) { <option [value]="t">{{ 'relations.types.' + t | translate }}</option> }
+          </select>
+          <select class="select-sm" [ngModel]="severity()" (ngModelChange)="setFilter('severity', $event)" [attr.aria-label]="'relations.severity' | translate">
+            <option value="">{{ 'relations.anySeverity' | translate }}</option>
+            @for (v of severities; track v) { <option [value]="v">{{ 'relations.sev.' + v | translate }}</option> }
+          </select>
+          <label class="check-inline"><input type="checkbox" [ngModel]="includeClosed()" (ngModelChange)="setIncludeClosed($event)" />{{ 'relations.includeClosed' | translate }}</label>
+        </div>
+
+        @if (cases() === null) {
+          <p class="loading-line pad">{{ 'common.loading' | translate }}</p>
+        } @else if (!cases()!.length) {
+          <div class="empty-state">
+            <span class="material-icons-outlined" aria-hidden="true">gavel</span>
+            <p>{{ 'relations.noCases' | translate }}</p>
+          </div>
+        } @else {
+          <div class="table-wrap">
+            <table class="ledger-table">
+              <thead>
+                <tr>
+                  <th>{{ 'relations.caseCol' | translate }}</th>
+                  <th>{{ 'relations.stage' | translate }}</th>
+                  <th class="col-wide">{{ 'relations.owner' | translate }}</th>
+                  <th>{{ 'relations.deadline' | translate }}</th>
+                  <th class="col-wide">{{ 'relations.severity' | translate }}</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (c of cases(); track c.id) {
+                  <tr class="row-link" [class.is-masked]="c.masked" tabindex="0" (click)="openCase(c.id)" (keydown.enter)="openCase(c.id)">
+                    <td>
+                      <span class="case-cell">
+                        <span class="material-icons-outlined cat-icon sm" aria-hidden="true">{{ c.masked ? 'lock' : typeIcon[c.type] }}</span>
+                        <span class="stack">
+                          <span class="cell-main wrap">
+                            @if (c.masked) { {{ 'relations.restrictedCase' | translate }} } @else { {{ c.title }} }
+                          </span>
+                          <span class="cell-sub">
+                            <span class="num">{{ c.code }}</span> · {{ 'relations.types.' + c.type | translate }}
+                            @if (c.confidentiality === 'Restricted' && !c.masked) { · <span class="material-icons-outlined inline-icon" aria-hidden="true">lock</span>{{ 'relations.restricted' | translate }} }
+                            @if (c.myRole) { · {{ 'relations.role.' + c.myRole | translate }} }
+                          </span>
+                        </span>
+                      </span>
+                    </td>
+                    <td>
+                      <span class="stack">
+                        <span [class]="phaseChip[c.phase]">{{ c.stageName }}</span>
+                        @if (c.escalationLevel) {
+                          <span class="cell-sub warn"><span class="material-icons-outlined inline-icon" aria-hidden="true">trending_up</span>{{ 'relations.levelN' | translate: { n: c.escalationLevel } }}</span>
+                        }
+                      </span>
+                    </td>
+                    <td class="col-wide">
+                      @if (c.ownerName) { {{ c.ownerName }} } @else { <span class="chip chip-amber">{{ 'relations.unassigned' | translate }}</span> }
+                    </td>
+                    <td>
+                      @if (c.phase === 'Closed') {
+                        <span class="stack">
+                          <span class="cell-sub">{{ 'relations.closedOn' | translate }}</span>
+                          @if (c.closedAt) { <span class="num">{{ utc(c.closedAt) | date: 'd MMM y' : undefined : lang() }}</span> }
+                        </span>
+                      } @else if (c.dueOn) {
+                        <span class="stack">
+                          <span class="num" [class.warn]="c.isOverdue">{{ c.dueOn | date: 'd MMM' : undefined : lang() }}</span>
+                          @if (dueKey(c.daysLeft); as k) { <span class="cell-sub" [class.warn]="c.isOverdue">{{ k.key | translate: { n: k.n } }}</span> }
+                        </span>
+                      } @else { <span class="dim">—</span> }
+                    </td>
+                    <td class="col-wide"><span [class]="severityChip[c.severity]">{{ 'relations.sev.' + c.severity | translate }}</span></td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      </section>
+
+      <aside class="panel side-panel">
+        <h3 class="section-title">{{ 'relations.reminders' | translate }}</h3>
+        <p class="panel-sub">{{ 'relations.remindersSub' | translate }}</p>
+        @if (!s.reminders.length) {
+          <p class="dim small">{{ 'relations.noReminders' | translate }}</p>
+        } @else {
+          <ul class="reminders">
+            @for (r of s.reminders; track r.id) {
+              <li>
+                <button type="button" class="reminder" [class.is-late]="(r.daysLeft ?? 0) < 0" (click)="openCase(r.id)">
+                  <span class="material-icons-outlined" aria-hidden="true">{{ (r.daysLeft ?? 0) < 0 ? 'alarm' : 'schedule' }}</span>
+                  <span class="stack grow">
+                    <span class="cell-main wrap">{{ r.title }}</span>
+                    <span class="cell-sub"><span class="num">{{ r.code }}</span> · {{ r.stageName }} · {{ 'relations.role.' + r.role | translate }}</span>
+                  </span>
+                  @if (dueKey(r.daysLeft); as k) { <span class="due-tag">{{ k.key | translate: { n: k.n } }}</span> }
+                </button>
+              </li>
+            }
+          </ul>
+        }
+        <div class="conf-note">
+          <span class="material-icons-outlined" aria-hidden="true">shield</span>
+          <span>{{ 'relations.confNote' | translate }}</span>
+        </div>
+      </aside>
+    </div>
+  }
+
+  <!-- ═══ My concerns ═══ -->
+  @if (tab() === 'concerns' && summary(); as s) {
+    <div class="safe-panel">
+      <span class="material-icons-outlined" aria-hidden="true">verified_user</span>
+      <div class="stack grow">
+        <strong>{{ 'relations.safeTitle' | translate }}</strong>
+        <span class="cell-sub wrap">{{ 'relations.safeText' | translate }}</span>
+      </div>
+      @if (linked()) {
+        <button type="button" class="btn btn-ink" (click)="raise()">{{ 'relations.raise' | translate }}</button>
+      }
+    </div>
+
+    <section class="panel panel-flush">
+      <header class="list-head">
+        <h3 class="section-title">{{ 'relations.myConcerns' | translate }}</h3>
+        <p class="panel-sub">{{ 'relations.myConcernsSub' | translate }}</p>
+      </header>
+      @if (!linked()) {
+        <p class="dim pad">{{ 'relations.notLinked' | translate }}</p>
+      } @else if (concerns() === null) {
+        <p class="loading-line pad">{{ 'common.loading' | translate }}</p>
+      } @else if (!concerns()!.length) {
+        <div class="empty-state">
+          <span class="material-icons-outlined" aria-hidden="true">forum</span>
+          <p>{{ 'relations.noConcerns' | translate }}</p>
+        </div>
+      } @else {
+        <ul class="my-list">
+          @for (c of concerns(); track c.id) {
+            <li>
+              <button type="button" class="my-row" (click)="openConcern(c.id)">
+                <span class="material-icons-outlined cat-icon sm" aria-hidden="true">{{ typeIcon[c.type] }}</span>
+                <span class="stack grow">
+                  <span class="cell-main wrap">{{ c.title }}</span>
+                  <span class="cell-sub">
+                    <span class="num">{{ c.code }}</span> · {{ 'relations.types.' + c.type | translate }} · {{ c.reportedOn | date: 'd MMM y' : undefined : lang() }}
+                    @if (c.reporterHidden) { · <span class="material-icons-outlined inline-icon" aria-hidden="true">visibility_off</span>{{ 'relations.identityHidden' | translate }} }
+                  </span>
+                </span>
+                <span class="my-due">
+                  <span [class]="phaseChip[c.phase]">{{ c.stageName }}</span>
+                  <span class="cell-sub">{{ 'relations.updated' | translate }} {{ utc(c.lastActivityAt) | date: 'd MMM' : undefined : lang() }}</span>
+                </span>
+              </button>
+            </li>
+          }
+        </ul>
+      }
+    </section>
+  }
+
+  <!-- ═══ Stages ═══ -->
+  @if (tab() === 'stages' && summary(); as s) {
+    <section class="panel panel-flush">
+      <header class="list-head head-row">
+        <div class="stack">
+          <h3 class="section-title">{{ 'relations.stagesTitle' | translate }}</h3>
+          <p class="panel-sub">{{ 'relations.stagesSub' | translate }}</p>
+        </div>
+        <button type="button" class="btn btn-quiet btn-small" [disabled]="saving()" (click)="addDefaults()">{{ 'relations.addDefaults' | translate }}</button>
+      </header>
+      @if (!lookups().stages.length) {
+        <div class="empty-state">
+          <span class="material-icons-outlined" aria-hidden="true">account_tree</span>
+          <p>{{ 'relations.noStages' | translate }}</p>
+        </div>
+      } @else {
+        <div class="table-wrap">
+          <table class="ledger-table">
+            <thead>
+              <tr>
+                <th class="num">#</th>
+                <th>{{ 'relations.stage' | translate }}</th>
+                <th>{{ 'relations.phaseCol' | translate }}</th>
+                <th>{{ 'relations.target' | translate }}</th>
+                <th class="col-wide">{{ 'relations.casesCol' | translate }}</th>
+                <th class="col-wide">{{ 'relations.statusCol' | translate }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (st of lookups().stages; track st.id) {
+                <tr class="row-link" [class.dim]="!st.isActive" tabindex="0" (click)="editStage(st)" (keydown.enter)="editStage(st)">
+                  <td class="num">{{ st.sortOrder }}</td>
+                  <td>
+                    <span class="stack">
+                      <span class="cell-main">{{ st.name }}</span>
+                      @if (st.description) { <span class="cell-sub wrap">{{ st.description }}</span> }
+                    </span>
+                  </td>
+                  <td><span [class]="phaseChip[st.phase]">{{ 'relations.phase.' + st.phase | translate }}</span></td>
+                  <td class="num">@if (st.targetDays) { {{ 'relations.daysN' | translate: { n: st.targetDays } }} } @else { — }</td>
+                  <td class="col-wide num">{{ st.openCases }} / {{ st.totalCases }}</td>
+                  <td class="col-wide">{{ (st.isActive ? 'relations.active' : 'relations.inactive') | translate }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </section>
+  }
+</div>
+
+@if (drawer(); as d) {
+  <div class="overlay" (click)="closeDrawer()">
+    <aside class="drawer" [class.drawer-wide]="d !== 'stage'" role="dialog" aria-modal="true" (click)="$event.stopPropagation()">
+      <header class="drawer-head">
+        <h3>
+          @switch (d) {
+            @case ('case') {
+              @if (detail(); as cd) {
+                <span class="num code">{{ cd.case.code }}</span>
+                {{ cd.view === 'Masked' ? ('relations.restrictedCase' | translate) : cd.case.title }}
+              } @else { {{ 'common.loading' | translate }} }
+            }
+            @case ('caseForm') { {{ (caseForm?.id ? 'relations.editCase' : 'relations.newCase') | translate }} }
+            @case ('raise') { {{ 'relations.raise' | translate }} }
+            @case ('concern') { {{ concern()?.concern?.title ?? ('common.loading' | translate) }} }
+            @case ('stage') { {{ (stageForm?.id ? 'relations.editStage' : 'relations.newStage') | translate }} }
+          }
+        </h3>
+        <button type="button" class="btn-link" (click)="closeDrawer()" [attr.aria-label]="'common.close' | translate">
+          <span class="material-icons-outlined" aria-hidden="true">close</span>
+        </button>
+      </header>
+
+      <div class="drawer-body">
+        @switch (d) {
+          <!-- Case -->
+          @case ('case') {
+            @if (detail(); as cd) {
+              @let c = cd.case;
+              <div class="doc-head">
+                <div class="chips">
+                  <span [class]="phaseChip[c.phase]">{{ c.stageName }}</span>
+                  <span [class]="severityChip[c.severity]">{{ 'relations.sev.' + c.severity | translate }}</span>
+                  @if (c.confidentiality === 'Restricted') {
+                    <span class="chip chip-oxblood"><span class="material-icons-outlined chip-icon" aria-hidden="true">lock</span>{{ 'relations.restricted' | translate }}</span>
+                  }
+                  @if (c.escalationLevel) {
+                    <span class="chip chip-amber"><span class="material-icons-outlined chip-icon" aria-hidden="true">trending_up</span>{{ 'relations.levelN' | translate: { n: c.escalationLevel } }}</span>
+                  }
+                  @if (c.isOverdue) { <span class="chip chip-oxblood">{{ 'relations.overdue' | translate }}</span> }
+                </div>
+                @if (cd.view !== 'Masked') { <span class="chip chip-plain">{{ 'relations.view.' + cd.view | translate }}</span> }
+              </div>
+
+              @if (cd.view === 'Masked') {
+                <div class="lock-panel">
+                  <span class="material-icons-outlined" aria-hidden="true">lock</span>
+                  <strong>{{ 'relations.maskedTitle' | translate }}</strong>
+                  <p>{{ 'relations.maskedText' | translate }}</p>
+                  <dl class="facts">
+                    <div><dt>{{ 'relations.type' | translate }}</dt><dd>{{ 'relations.types.' + c.type | translate }}</dd></div>
+                    <div><dt>{{ 'relations.reportedOn' | translate }}</dt><dd class="num">{{ c.reportedOn | date: 'd MMM y' : undefined : lang() }}</dd></div>
+                    <div><dt>{{ 'relations.owner' | translate }}</dt><dd>{{ c.ownerName ?? ('relations.unassigned' | translate) }}</dd></div>
+                  </dl>
+                  @if (acting === 'breakGlass' && act; as f) {
+                    <div class="settings-box danger-box">
+                      <p class="small">{{ 'relations.breakGlassNote' | translate }}</p>
+                      <div class="field">
+                        <label for="bg-reason">{{ 'relations.reason' | translate }}</label>
+                        <textarea id="bg-reason" rows="3" maxlength="500" [(ngModel)]="f.reason" [placeholder]="'relations.breakGlassPh' | translate"></textarea>
+                      </div>
+                      <div class="inline-actions">
+                        <button type="button" class="btn btn-quiet btn-small" (click)="cancelAct()">{{ 'common.cancel' | translate }}</button>
+                        <button type="button" class="btn btn-danger btn-small" [disabled]="saving() || !canSubmitAct()" (click)="submitAct()">{{ 'relations.breakGlass' | translate }}</button>
+                      </div>
+                    </div>
+                  } @else {
+                    <div class="inline-actions center">
+                      @if (cd.canTake) {
+                        <button type="button" class="btn btn-ink btn-small" [disabled]="saving()" (click)="take(cd)">{{ 'relations.take' | translate }}</button>
+                      }
+                      @if (cd.canBreakGlass) {
+                        <button type="button" class="btn btn-quiet btn-small" (click)="startAct('breakGlass')">
+                          <span class="material-icons-outlined" aria-hidden="true">lock_open</span>{{ 'relations.breakGlass' | translate }}
+                        </button>
+                      }
+                    </div>
+                  }
+                </div>
+              } @else {
+                <div class="seg-row">
+                  @for (sec of sections; track sec) {
+                    @if (sec !== 'access' || cd.canSeeAccessLog) {
+                      <button type="button" class="seg" [class.is-active]="section() === sec" (click)="setSection(sec)">
+                        {{ 'relations.sec.' + sec | translate }}
+                        @switch (sec) {
+                          @case ('timeline') { <span class="seg-n num">{{ cd.entries.length }}</span> }
+                          @case ('people') { <span class="seg-n num">{{ cd.members.length + cd.parties.length }}</span> }
+                          @case ('evidence') { <span class="seg-n num">{{ cd.evidence.length + cd.hiddenEvidence }}</span> }
+                        }
+                      </button>
+                    }
+                  }
+                </div>
+
+                @switch (section()) {
+                  <!-- Overview -->
+                  @case ('overview') {
+                    <ol class="stepper">
+                      @for (p of phases; track p; let i = $index) {
+                        <li [class.done]="i < phaseIndex(c.phase)" [class.now]="p === c.phase">
+                          <span class="dot">@if (i < phaseIndex(c.phase)) { <span class="material-icons-outlined" aria-hidden="true">check</span> } @else { {{ i + 1 }} }</span>
+                          <span class="st-label">{{ 'relations.phase.' + p | translate }}</span>
+                          @if (p === c.phase && c.phase !== 'Closed' && c.stageName !== ('relations.phase.' + p | translate)) { <span class="st-sub">{{ c.stageName }}</span> }
+                        </li>
+                      }
+                    </ol>
+
+                    @if (c.phase !== 'Closed' && c.dueOn) {
+                      <div class="due-box" [class.is-late]="c.isOverdue">
+                        <span class="material-icons-outlined" aria-hidden="true">{{ c.isOverdue ? 'alarm' : 'event' }}</span>
+                        <span class="grow">
+                          {{ 'relations.deadline' | translate }}: <strong class="num">{{ c.dueOn | date: 'd MMM y' : undefined : lang() }}</strong>
+                          @if (dueKey(c.daysLeft); as k) { · {{ k.key | translate: { n: k.n } }} }
+                        </span>
+                      </div>
+                    }
+
+                    @if (cd.description) { <p class="desc pre">{{ cd.description }}</p> }
+
+                    <dl class="facts">
+                      <div><dt>{{ 'relations.type' | translate }}</dt><dd>{{ 'relations.types.' + c.type | translate }}</dd></div>
+                      <div><dt>{{ 'relations.source' | translate }}</dt><dd>{{ 'relations.src.' + c.source | translate }}</dd></div>
+                      <div><dt>{{ 'relations.reportedOn' | translate }}</dt><dd class="num">{{ c.reportedOn | date: 'd MMM y' : undefined : lang() }}</dd></div>
+                      @if (cd.incidentOn) { <div><dt>{{ 'relations.incidentOn' | translate }}</dt><dd class="num">{{ cd.incidentOn | date: 'd MMM y' : undefined : lang() }}</dd></div> }
+                      @if (cd.location) { <div><dt>{{ 'relations.location' | translate }}</dt><dd>{{ cd.location }}</dd></div> }
+                      <div><dt>{{ 'relations.owner' | translate }}</dt><dd>{{ c.ownerName ?? ('relations.unassigned' | translate) }}</dd></div>
+                      <div>
+                        <dt>{{ 'relations.reporterLabel' | translate }}</dt>
+                        <dd>
+                          @if (c.reporterHidden) { <span class="material-icons-outlined inline-icon" aria-hidden="true">visibility_off</span>{{ 'relations.identityHidden' | translate }} }
+                          @else { {{ c.reporterName ?? '—' }} }
+                        </dd>
+                      </div>
+                      @if (c.respondents.length) { <div><dt>{{ 'relations.respondents' | translate }}</dt><dd>{{ c.respondents.join(', ') }}</dd></div> }
+                      @if (cd.reopenCount) { <div><dt>{{ 'relations.reopened' | translate }}</dt><dd class="num">{{ cd.reopenCount }}×</dd></div> }
+                    </dl>
+
+                    @if (c.phase === 'Closed' && c.outcome) {
+                      <div class="outcome-box">
+                        <div class="head-row">
+                          <strong>{{ 'relations.outcome.' + c.outcome | translate }}</strong>
+                          @if (cd.actionTaken) { <span class="chip chip-plain">{{ 'relations.act.' + cd.actionTaken | translate }}</span> }
+                        </div>
+                        @if (cd.resolutionSummary) { <p class="pre">{{ cd.resolutionSummary }}</p> }
+                        @if (c.closedAt) { <span class="cell-sub">{{ 'relations.closedOn' | translate }} {{ utc(c.closedAt) | date: 'd MMM y' : undefined : lang() }}</span> }
+                      </div>
+                    }
+
+                    @if (acting && act; as f) {
+                      <div class="settings-box">
+                        <h4 class="sub-title">{{ 'relations.do.' + acting | translate }}</h4>
+                        @switch (acting) {
+                          @case ('move') {
+                            <div class="field">
+                              <label for="a-stage">{{ 'relations.toStage' | translate }}</label>
+                              <select id="a-stage" [(ngModel)]="f.stageId">
+                                @for (st of moveTargets(cd); track st.id) {
+                                  <option [value]="st.id">{{ st.name }} · {{ 'relations.phase.' + st.phase | translate }}@if (st.targetDays) { ({{ 'relations.daysN' | translate: { n: st.targetDays } }}) }</option>
+                                }
+                              </select>
+                              <p class="field-hint">{{ 'relations.moveHint' | translate }}</p>
+                            </div>
+                            <div class="field">
+                              <label for="a-note">{{ 'relations.noteOptional' | translate }}</label>
+                              <textarea id="a-note" rows="2" maxlength="500" [(ngModel)]="f.note"></textarea>
+                            </div>
+                          }
+                          @case ('close') {
+                            <div class="form-grid two">
+                              <div class="field">
+                                <label for="a-out">{{ 'relations.outcomeLabel' | translate }}</label>
+                                <select id="a-out" [(ngModel)]="f.outcome">
+                                  <option value="">{{ 'relations.pick' | translate }}</option>
+                                  @for (o of outcomes; track o) { <option [value]="o">{{ 'relations.outcome.' + o | translate }}</option> }
+                                </select>
+                              </div>
+                              <div class="field">
+                                <label for="a-act">{{ 'relations.actionLabel' | translate }}</label>
+                                <select id="a-act" [(ngModel)]="f.action">
+                                  <option value="">{{ 'relations.pick' | translate }}</option>
+                                  @for (o of actions; track o) { <option [value]="o">{{ 'relations.act.' + o | translate }}</option> }
+                                </select>
+                              </div>
+                              @if (closedStages().length > 1) {
+                                <div class="field span-all">
+                                  <label for="a-cst">{{ 'relations.closedStage' | translate }}</label>
+                                  <select id="a-cst" [(ngModel)]="f.stageId">
+                                    @for (st of closedStages(); track st.id) { <option [value]="st.id">{{ st.name }}</option> }
+                                  </select>
+                                </div>
+                              }
+                            </div>
+                            <div class="field">
+                              <label for="a-sum">{{ 'relations.summaryLabel' | translate }}</label>
+                              <textarea id="a-sum" rows="4" maxlength="4000" [(ngModel)]="f.summary" [placeholder]="'relations.summaryPh' | translate"></textarea>
+                              <p class="field-hint">{{ 'relations.closeHint' | translate }}</p>
+                            </div>
+                          }
+                          @case ('reopen') {
+                            <div class="field">
+                              <label for="a-rst">{{ 'relations.toStage' | translate }}</label>
+                              <select id="a-rst" [(ngModel)]="f.stageId">
+                                <option value="">{{ 'relations.firstReview' | translate }}</option>
+                                @for (st of workStages(); track st.id) { <option [value]="st.id">{{ st.name }}</option> }
+                              </select>
+                            </div>
+                            <div class="field">
+                              <label for="a-rr">{{ 'relations.reason' | translate }}</label>
+                              <textarea id="a-rr" rows="2" maxlength="500" [(ngModel)]="f.reason"></textarea>
+                            </div>
+                          }
+                          @case ('deadline') {
+                            <div class="form-grid two">
+                              <div class="field">
+                                <label for="a-due">{{ 'relations.deadline' | translate }}</label>
+                                <input id="a-due" type="date" [min]="today" [(ngModel)]="f.dueOn" />
+                                <p class="field-hint">{{ 'relations.deadlineHint' | translate }}</p>
+                              </div>
+                              <div class="field">
+                                <label for="a-dr">{{ 'relations.reasonOptional' | translate }}</label>
+                                <input id="a-dr" maxlength="500" [(ngModel)]="f.reason" />
+                              </div>
+                            </div>
+                          }
+                          @case ('escalate') {
+                            <p class="field-hint">{{ 'relations.escalateHint' | translate: { n: c.escalationLevel + 1, max: maxEscalation } }}</p>
+                            <div class="field">
+                              <label for="a-er">{{ 'relations.reason' | translate }}</label>
+                              <textarea id="a-er" rows="2" maxlength="500" [(ngModel)]="f.reason"></textarea>
+                            </div>
+                            <div class="field">
+                              <label for="a-eto">{{ 'relations.escalateTo' | translate }}</label>
+                              <select id="a-eto" [(ngModel)]="f.employeeId">
+                                <option value="">{{ 'relations.nobodyNew' | translate }}</option>
+                                @for (p of eligible(cd); track p.id) { <option [value]="p.id">{{ p.name }}@if (p.extra) { · {{ p.extra }} }</option> }
+                              </select>
+                              <p class="field-hint">{{ 'relations.escalateToHint' | translate }}</p>
+                            </div>
+                          }
+                        }
+                        <div class="inline-actions">
+                          <button type="button" class="btn btn-quiet btn-small" (click)="cancelAct()">{{ 'common.cancel' | translate }}</button>
+                          <button type="button" class="btn btn-ink btn-small" [disabled]="saving() || !canSubmitAct()" (click)="submitAct()">{{ 'relations.do.' + acting | translate }}</button>
+                        </div>
+                      </div>
+                    } @else {
+                      <div class="inline-actions wrap">
+                        @if (cd.canWork) {
+                          <button type="button" class="btn btn-ink btn-small" [disabled]="!moveTargets(cd).length" (click)="startAct('move')">
+                            <span class="material-icons-outlined" aria-hidden="true">double_arrow</span>{{ 'relations.do.move' | translate }}
+                          </button>
+                          <button type="button" class="btn btn-quiet btn-small" (click)="startAct('deadline')">{{ 'relations.do.deadline' | translate }}</button>
+                          <button type="button" class="btn btn-quiet btn-small" [disabled]="c.escalationLevel >= maxEscalation" (click)="startAct('escalate')">{{ 'relations.do.escalate' | translate }}</button>
+                        }
+                        @if (cd.canEdit) { <button type="button" class="btn btn-quiet btn-small" (click)="editCase(cd)">{{ 'common.edit' | translate }}</button> }
+                        <span class="push"></span>
+                        @if (cd.canClose) { <button type="button" class="btn btn-quiet btn-small" [disabled]="!closedStages().length" (click)="startAct('close')">{{ 'relations.do.close' | translate }}</button> }
+                        @if (cd.canReopen) { <button type="button" class="btn btn-quiet btn-small" (click)="startAct('reopen')">{{ 'relations.do.reopen' | translate }}</button> }
+                      </div>
+                      @if (cd.view === 'Viewer') { <p class="field-hint">{{ 'relations.viewerNote' | translate }}</p> }
+                    }
+                  }
+
+                  <!-- Timeline -->
+                  @case ('timeline') {
+                    @if (cd.canWork) {
+                      <div class="reply-box" [class.is-shared]="noteShared">
+                        <textarea rows="3" maxlength="4000" [(ngModel)]="noteText" [placeholder]="(noteShared ? 'relations.messagePh' : 'relations.notePh') | translate" [attr.aria-label]="'relations.notePh' | translate"></textarea>
+                        <div class="inline-actions">
+                          @if (cd.hasReporter) {
+                            <label class="check-inline push-end"><input type="checkbox" [(ngModel)]="noteShared" />{{ 'relations.shareWithReporter' | translate }}</label>
+                          }
+                          <button type="button" class="btn btn-ink btn-small" [disabled]="saving() || !noteText.trim()" (click)="addNote(cd)">
+                            {{ (noteShared ? 'relations.sendMessage' : 'relations.addNote') | translate }}
+                          </button>
+                        </div>
+                      </div>
+                    }
+                    <ul class="convo">
+                      @for (e of cd.entries; track e.id) {
+                        @if (isBubble(e)) {
+                          <li class="bubble" [class.is-me]="e.byMe" [class.is-shared]="e.shared" [class.is-reporter]="e.kind === 'ReporterMessage'">
+                            <span class="b-head">
+                              <strong>{{ byLabel(e) }}</strong>
+                              @if (e.kind === 'Note') { <span class="tag">{{ 'relations.internal' | translate }}</span> }
+                              @else if (e.kind === 'Message') { <span class="tag shared">{{ 'relations.toReporter' | translate }}</span> }
+                              @else { <span class="tag rep">{{ 'relations.fromReporter' | translate }}</span> }
+                              <span class="dim num">{{ utc(e.at) | date: 'd MMM, HH:mm' : undefined : lang() }}</span>
+                            </span>
+                            <span class="pre">{{ e.text }}</span>
+                          </li>
+                        } @else {
+                          <li class="event" [class.is-alert]="e.kind === 'BreakGlass' || e.kind === 'Escalated'">
+                            <span class="material-icons-outlined" aria-hidden="true">{{ entryIcon[e.kind] ?? 'info' }}</span>
+                            <span class="grow">
+                              <strong>{{ byLabel(e) }}</strong> {{ 'relations.entry.' + e.kind | translate }}
+                              @if (e.text) { <span class="reason">{{ e.text }}</span> }
+                            </span>
+                            <span class="num">{{ utc(e.at) | date: 'd MMM, HH:mm' : undefined : lang() }}</span>
+                          </li>
+                        }
+                      }
+                    </ul>
+                  }
+
+                  <!-- People -->
+                  @case ('people') {
+                    <div class="head-row">
+                      <h4 class="sub-title">{{ 'relations.caseTeam' | translate }}</h4>
+                      @if (cd.canManageTeam && !acting) {
+                        <span class="inline-actions">
+                          <button type="button" class="btn btn-quiet btn-small" (click)="startAct('member')">{{ 'relations.do.member' | translate }}</button>
+                          <button type="button" class="btn btn-quiet btn-small" (click)="startAct('owner')">{{ 'relations.do.owner' | translate }}</button>
+                        </span>
+                      }
+                    </div>
+                    <p class="field-hint">{{ 'relations.teamHint' | translate }}</p>
+                    @if ((acting === 'member' || acting === 'owner') && act; as f) {
+                      <div class="settings-box">
+                        <div class="form-grid two">
+                          <div class="field" [class.span-all]="acting === 'owner'">
+                            <label for="m-emp">{{ 'relations.person' | translate }}</label>
+                            <select id="m-emp" [(ngModel)]="f.employeeId">
+                              <option value="">{{ 'relations.pick' | translate }}</option>
+                              @if (acting === 'owner') {
+                                @for (m of cd.members; track m.employeeId) {
+                                  @if (m.role !== 'Owner') { <option [value]="m.employeeId">{{ m.name }} · {{ 'relations.role.' + m.role | translate }}</option> }
+                                }
+                              }
+                              @for (p of eligible(cd); track p.id) { <option [value]="p.id">{{ p.name }}@if (p.extra) { · {{ p.extra }} }</option> }
+                            </select>
+                          </div>
+                          @if (acting === 'member') {
+                            <div class="field">
+                              <label for="m-role">{{ 'relations.roleLabel' | translate }}</label>
+                              <select id="m-role" [(ngModel)]="f.role">
+                                @for (r of memberRoles; track r) { <option [value]="r">{{ 'relations.role.' + r | translate }}</option> }
+                              </select>
+                            </div>
+                          }
+                        </div>
+                        <p class="field-hint">{{ (acting === 'owner' ? 'relations.ownerHint' : 'relations.roleHint') | translate }}</p>
+                        <div class="inline-actions">
+                          <button type="button" class="btn btn-quiet btn-small" (click)="cancelAct()">{{ 'common.cancel' | translate }}</button>
+                          <button type="button" class="btn btn-ink btn-small" [disabled]="saving() || !canSubmitAct()" (click)="submitAct()">{{ 'relations.do.' + acting | translate }}</button>
+                        </div>
+                      </div>
+                    }
+                    <ul class="people">
+                      @for (m of cd.members; track m.employeeId) {
+                        <li>
+                          <span class="avatar sm" aria-hidden="true">{{ initials(m.name) }}</span>
+                          <span class="stack grow"><span class="cell-main">{{ m.name }}</span>@if (m.detail) { <span class="cell-sub">{{ m.detail }}</span> }</span>
+                          <span class="chip" [class.chip-ink]="m.role === 'Owner'" [class.chip-plain]="m.role !== 'Owner'">{{ 'relations.role.' + m.role | translate }}</span>
+                          @if (cd.canManageTeam && m.role !== 'Owner') {
+                            <button type="button" class="btn-link danger-link" [disabled]="saving()" (click)="removeMember(cd, m.employeeId)">
+                              {{ (confirm === 'm:' + m.employeeId ? 'relations.sureRemove' : 'relations.remove') | translate }}
+                            </button>
+                          }
+                        </li>
+                      } @empty {
+                        <li class="dim">{{ 'relations.noTeam' | translate }}</li>
+                      }
+                    </ul>
+
+                    <div class="head-row">
+                      <h4 class="sub-title">{{ 'relations.parties' | translate }}</h4>
+                      @if (cd.canWork && !acting) {
+                        <button type="button" class="btn btn-quiet btn-small" (click)="startAct('party')">{{ 'relations.do.party' | translate }}</button>
+                      }
+                    </div>
+                    @if (acting === 'party' && act; as f) {
+                      <div class="settings-box">
+                        <label class="check-inline"><input type="checkbox" [(ngModel)]="f.external" />{{ 'relations.externalPerson' | translate }}</label>
+                        <div class="form-grid two">
+                          @if (f.external) {
+                            <div class="field">
+                              <label for="p-name">{{ 'relations.name' | translate }}</label>
+                              <input id="p-name" maxlength="120" [(ngModel)]="f.name" />
+                            </div>
+                          } @else {
+                            <div class="field">
+                              <label for="p-emp">{{ 'relations.person' | translate }}</label>
+                              <select id="p-emp" [(ngModel)]="f.employeeId">
+                                <option value="">{{ 'relations.pick' | translate }}</option>
+                                @for (p of eligible(cd); track p.id) { <option [value]="p.id">{{ p.name }}@if (p.extra) { · {{ p.extra }} }</option> }
+                              </select>
+                            </div>
+                          }
+                          <div class="field">
+                            <label for="p-role">{{ 'relations.roleLabel' | translate }}</label>
+                            <select id="p-role" [(ngModel)]="f.partyRole">
+                              @for (r of partyRoles; track r) { <option [value]="r">{{ 'relations.party.' + r | translate }}</option> }
+                            </select>
+                          </div>
+                          <div class="field span-all">
+                            <label for="p-note">{{ 'relations.noteOptional' | translate }}</label>
+                            <input id="p-note" maxlength="300" [(ngModel)]="f.note" />
+                          </div>
+                        </div>
+                        <div class="inline-actions">
+                          <button type="button" class="btn btn-quiet btn-small" (click)="cancelAct()">{{ 'common.cancel' | translate }}</button>
+                          <button type="button" class="btn btn-ink btn-small" [disabled]="saving() || !canSubmitAct()" (click)="submitAct()">{{ 'relations.do.party' | translate }}</button>
+                        </div>
+                      </div>
+                    }
+                    <ul class="people">
+                      @for (p of cd.parties; track p.id) {
+                        <li>
+                          <span class="avatar sm" [class.ext]="!p.employeeId" aria-hidden="true">{{ initials(p.name) }}</span>
+                          <span class="stack grow">
+                            <span class="cell-main">{{ p.name }}</span>
+                            <span class="cell-sub wrap">@if (p.detail) { {{ p.detail }} } @else if (!p.employeeId) { {{ 'relations.external' | translate }} }@if (p.note) { · {{ p.note }} }</span>
+                          </span>
+                          <span class="chip" [class.chip-amber]="p.role === 'Respondent'" [class.chip-plain]="p.role !== 'Respondent'">{{ 'relations.party.' + p.role | translate }}</span>
+                          @if (cd.canWork) {
+                            <button type="button" class="btn-link danger-link" [disabled]="saving()" (click)="removeParty(cd, p.id)">
+                              {{ (confirm === 'p:' + p.id ? 'relations.sureRemove' : 'relations.remove') | translate }}
+                            </button>
+                          }
+                        </li>
+                      } @empty {
+                        <li class="dim">{{ 'relations.noParties' | translate }}</li>
+                      }
+                    </ul>
+                  }
+
+                  <!-- Evidence -->
+                  @case ('evidence') {
+                    <div class="head-row">
+                      <p class="field-hint">{{ 'relations.evidenceHint' | translate }}</p>
+                      @if (cd.canWork && !acting) {
+                        <button type="button" class="btn btn-quiet btn-small" (click)="startAct('evidence')">{{ 'relations.do.evidence' | translate }}</button>
+                      }
+                    </div>
+                    @if (acting === 'evidence' && act; as f) {
+                      <div class="settings-box">
+                        <div class="form-grid two">
+                          <div class="field">
+                            <label for="e-title">{{ 'relations.evTitle' | translate }}</label>
+                            <input id="e-title" maxlength="150" [(ngModel)]="f.title" />
+                          </div>
+                          <div class="field">
+                            <label for="e-url">{{ 'relations.evUrl' | translate }}</label>
+                            <input id="e-url" type="url" maxlength="1000" [(ngModel)]="f.url" placeholder="https://" />
+                          </div>
+                          <div class="field span-all">
+                            <label for="e-note">{{ 'relations.noteOptional' | translate }}</label>
+                            <input id="e-note" maxlength="500" [(ngModel)]="f.note" />
+                          </div>
+                        </div>
+                        <label class="check-inline wrap-text"><input type="checkbox" [(ngModel)]="f.restricted" />{{ 'relations.evRestricted' | translate }}</label>
+                        <div class="inline-actions">
+                          <button type="button" class="btn btn-quiet btn-small" (click)="cancelAct()">{{ 'common.cancel' | translate }}</button>
+                          <button type="button" class="btn btn-ink btn-small" [disabled]="saving() || !canSubmitAct()" (click)="submitAct()">{{ 'relations.do.evidence' | translate }}</button>
+                        </div>
+                      </div>
+                    }
+                    @if (cd.hiddenEvidence) {
+                      <div class="notice notice-info">
+                        <span class="material-icons-outlined" aria-hidden="true">lock</span>
+                        <span class="grow">{{ 'relations.hiddenEvidence' | translate: { n: cd.hiddenEvidence } }}</span>
+                      </div>
+                    }
+                    <ul class="evidence">
+                      @for (ev of cd.evidence; track ev.id) {
+                        <li>
+                          <span class="material-icons-outlined ev-icon" aria-hidden="true">{{ ev.isRestricted ? 'lock' : 'description' }}</span>
+                          <span class="stack grow">
+                            <a class="cell-main" [href]="ev.url" target="_blank" rel="noopener noreferrer">{{ ev.title }}</a>
+                            <span class="cell-sub wrap">
+                              {{ ev.addedByName ?? (ev.fromReporter ? ('relations.reporter' | translate) : '—') }} · {{ utc(ev.addedAt) | date: 'd MMM y' : undefined : lang() }}
+                              @if (ev.note) { · {{ ev.note }} }
+                            </span>
+                          </span>
+                          @if (ev.fromReporter) { <span class="chip chip-plain">{{ 'relations.fromReporter' | translate }}</span> }
+                          @if (ev.isRestricted) { <span class="chip chip-oxblood">{{ 'relations.restricted' | translate }}</span> }
+                          @if (cd.canRemoveEvidence) {
+                            <button type="button" class="btn-link danger-link" [disabled]="saving()" (click)="removeEvidence(cd, ev.id)">
+                              {{ (confirm === 'e:' + ev.id ? 'relations.sureRemove' : 'relations.remove') | translate }}
+                            </button>
+                          }
+                        </li>
+                      } @empty {
+                        <li class="dim">{{ 'relations.noEvidence' | translate }}</li>
+                      }
+                    </ul>
+                  }
+
+                  <!-- Access log -->
+                  @case ('access') {
+                    <p class="field-hint">{{ 'relations.accessHint' | translate }}</p>
+                    @if (accessLog() === null) {
+                      <p class="loading-line">{{ 'common.loading' | translate }}</p>
+                    } @else {
+                      <div class="table-wrap">
+                        <table class="ledger-table compact">
+                          <thead>
+                            <tr>
+                              <th>{{ 'relations.who' | translate }}</th>
+                              <th>{{ 'relations.what' | translate }}</th>
+                              <th>{{ 'relations.when' | translate }}</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            @for (a of accessLog(); track a.id) {
+                              <tr [class.is-alert]="a.action === 'BreakGlass'">
+                                <td><span class="cell-main">{{ a.name ?? '—' }}</span></td>
+                                <td>
+                                  <span class="stack">
+                                    <span>{{ 'relations.access.' + a.action | translate }}</span>
+                                    @if (a.note) { <span class="cell-sub wrap">{{ a.note }}</span> }
+                                  </span>
+                                </td>
+                                <td class="num">{{ utc(a.at) | date: 'd MMM y, HH:mm' : undefined : lang() }}</td>
+                              </tr>
+                            } @empty {
+                              <tr><td colspan="3" class="dim">{{ 'relations.noAccess' | translate }}</td></tr>
+                            }
+                          </tbody>
+                        </table>
+                      </div>
+                    }
+                  }
+                }
+              }
+            } @else {
+              <p class="loading-line">{{ 'common.loading' | translate }}</p>
+            }
+          }
+
+          <!-- Case form -->
+          @case ('caseForm') {
+            @if (caseForm; as f) {
+              <div class="form-grid">
+                <div class="field span-all">
+                  <label for="c-title">{{ 'relations.titleLabel' | translate }}</label>
+                  <input id="c-title" maxlength="150" [(ngModel)]="f.title" [placeholder]="'relations.titlePh' | translate" />
+                </div>
+                <div class="field span-all">
+                  <label for="c-desc">{{ 'relations.description' | translate }}</label>
+                  <textarea id="c-desc" rows="4" maxlength="4000" [(ngModel)]="f.description"></textarea>
+                </div>
+                <div class="field">
+                  <label for="c-type">{{ 'relations.type' | translate }}</label>
+                  <select id="c-type" [ngModel]="f.type" (ngModelChange)="setCaseType($event)">
+                    @for (t of caseTypes; track t) { <option [value]="t">{{ 'relations.types.' + t | translate }}</option> }
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="c-sev">{{ 'relations.severity' | translate }}</label>
+                  <select id="c-sev" [(ngModel)]="f.severity">
+                    @for (v of severities; track v) { <option [value]="v">{{ 'relations.sev.' + v | translate }}</option> }
+                  </select>
+                </div>
+                @if (!f.id) {
+                  <div class="field">
+                    <label for="c-src">{{ 'relations.source' | translate }}</label>
+                    <select id="c-src" [(ngModel)]="f.source">
+                      @for (v of sources; track v) { <option [value]="v">{{ 'relations.src.' + v | translate }}</option> }
+                    </select>
+                  </div>
+                  <div class="field">
+                    <label for="c-rep">{{ 'relations.reportedOn' | translate }}</label>
+                    <input id="c-rep" type="date" [max]="today" [(ngModel)]="f.reportedOn" />
+                  </div>
+                }
+                <div class="field">
+                  <label for="c-inc">{{ 'relations.incidentOn' | translate }}</label>
+                  <input id="c-inc" type="date" [max]="today" [(ngModel)]="f.incidentOn" />
+                </div>
+                <div class="field">
+                  <label for="c-loc">{{ 'relations.location' | translate }}</label>
+                  <input id="c-loc" maxlength="150" [(ngModel)]="f.location" />
+                </div>
+                @if (!f.id) {
+                  <div class="field">
+                    <label for="c-reporter">{{ 'relations.reporterLabel' | translate }}</label>
+                    <select id="c-reporter" [(ngModel)]="f.reporterEmployeeId">
+                      <option value="">{{ 'relations.noReporter' | translate }}</option>
+                      @for (p of lookups().people; track p.id) { <option [value]="p.id">{{ p.name }}</option> }
+                    </select>
+                  </div>
+                  <div class="field">
+                    <label for="c-owner">{{ 'relations.owner' | translate }}</label>
+                    <select id="c-owner" [(ngModel)]="f.ownerEmployeeId">
+                      <option value="">{{ 'relations.unassigned' | translate }}</option>
+                      @for (p of lookups().people; track p.id) { <option [value]="p.id">{{ p.name }}</option> }
+                    </select>
+                  </div>
+                  <div class="field">
+                    <label for="c-due">{{ 'relations.deadline' | translate }}</label>
+                    <input id="c-due" type="date" [min]="today" [(ngModel)]="f.dueOn" />
+                    <p class="field-hint">{{ 'relations.dueAuto' | translate }}</p>
+                  </div>
+                }
+              </div>
+
+              <div class="settings-box">
+                <span class="label">{{ 'relations.confidentiality' | translate }}</span>
+                <div class="conf-pick">
+                  <button type="button" class="value-pick" [class.on]="f.confidentiality === 'Standard'" [disabled]="forcedRestricted(f.type) || (!!f.id && !f.isOwner)" (click)="f.confidentiality = 'Standard'">
+                    <span class="material-icons-outlined" aria-hidden="true">groups</span>
+                    <span class="stack"><span class="cell-main">{{ 'relations.conf.Standard' | translate }}</span><span class="cell-sub">{{ 'relations.confHint.Standard' | translate }}</span></span>
+                  </button>
+                  <button type="button" class="value-pick" [class.on]="f.confidentiality === 'Restricted'" [disabled]="!!f.id && !f.isOwner" (click)="f.confidentiality = 'Restricted'">
+                    <span class="material-icons-outlined" aria-hidden="true">lock</span>
+                    <span class="stack"><span class="cell-main">{{ 'relations.conf.Restricted' | translate }}</span><span class="cell-sub">{{ 'relations.confHint.Restricted' | translate }}</span></span>
+                  </button>
+                </div>
+                @if (forcedRestricted(f.type)) { <p class="field-hint">{{ 'relations.alwaysRestricted' | translate }}</p> }
+                @else if (f.id && !f.isOwner) { <p class="field-hint">{{ 'relations.ownerOnlyConf' | translate }}</p> }
+              </div>
+
+              @if (!f.id) {
+                <div class="head-row">
+                  <h4 class="sub-title">{{ 'relations.parties' | translate }}</h4>
+                  <button type="button" class="btn btn-quiet btn-small" (click)="addPartyRow()">{{ 'relations.do.party' | translate }}</button>
+                </div>
+                @for (p of f.parties; track p.key; let i = $index) {
+                  <div class="party-row">
+                    <select class="select-sm grow" [(ngModel)]="p.employeeId" [attr.aria-label]="'relations.person' | translate">
+                      <option value="">{{ 'relations.externalPerson' | translate }}</option>
+                      @for (o of lookups().people; track o.id) { <option [value]="o.id">{{ o.name }}</option> }
+                    </select>
+                    @if (!p.employeeId) { <input class="grow" maxlength="120" [(ngModel)]="p.name" [placeholder]="'relations.name' | translate" /> }
+                    <select class="select-sm" [(ngModel)]="p.role" [attr.aria-label]="'relations.roleLabel' | translate">
+                      @for (r of partyRoles; track r) { <option [value]="r">{{ 'relations.party.' + r | translate }}</option> }
+                    </select>
+                    <button type="button" class="icon-btn danger" (click)="removePartyRow(i)" [attr.aria-label]="'relations.remove' | translate"><span class="material-icons-outlined" aria-hidden="true">delete</span></button>
+                  </div>
+                } @empty {
+                  <p class="field-hint">{{ 'relations.partiesHint' | translate }}</p>
+                }
+              }
+            }
+          }
+
+          <!-- Raise a concern -->
+          @case ('raise') {
+            @if (raiseForm; as f) {
+              <div class="safe-panel small">
+                <span class="material-icons-outlined" aria-hidden="true">verified_user</span>
+                <span class="cell-sub wrap grow">{{ 'relations.safeText' | translate }}</span>
+              </div>
+              <h4 class="sub-title">{{ 'relations.whatHappened' | translate }}</h4>
+              <div class="value-grid" role="radiogroup" [attr.aria-label]="'relations.type' | translate">
+                @for (t of concernTypes; track t) {
+                  <button type="button" class="value-pick" role="radio" [class.on]="f.type === t" [attr.aria-checked]="f.type === t" (click)="f.type = t">
+                    <span class="material-icons-outlined" aria-hidden="true">{{ typeIcon[t] }}</span>
+                    <span class="stack"><span class="cell-main">{{ 'relations.types.' + t | translate }}</span><span class="cell-sub">{{ 'relations.typeHint.' + t | translate }}</span></span>
+                  </button>
+                }
+              </div>
+              @if (f.type && forcedRestricted(f.type)) {
+                <div class="notice notice-info">
+                  <span class="material-icons-outlined" aria-hidden="true">lock</span>
+                  <span class="grow">{{ 'relations.restrictedNotice' | translate }}</span>
+                </div>
+              }
+              <div class="form-grid two">
+                <div class="field span-all">
+                  <label for="r-title">{{ 'relations.titleLabel' | translate }}</label>
+                  <input id="r-title" maxlength="150" [(ngModel)]="f.title" [placeholder]="'relations.concernTitlePh' | translate" />
+                </div>
+                <div class="field span-all">
+                  <label for="r-desc">{{ 'relations.description' | translate }}</label>
+                  <textarea id="r-desc" rows="5" maxlength="4000" [(ngModel)]="f.description" [placeholder]="'relations.concernDescPh' | translate"></textarea>
+                </div>
+                <div class="field">
+                  <label for="r-inc">{{ 'relations.incidentOn' | translate }}</label>
+                  <input id="r-inc" type="date" [max]="today" [(ngModel)]="f.incidentOn" />
+                </div>
+                <div class="field">
+                  <label for="r-loc">{{ 'relations.location' | translate }}</label>
+                  <input id="r-loc" maxlength="150" [(ngModel)]="f.location" />
+                </div>
+              </div>
+
+              <h4 class="sub-title">{{ 'relations.whoInvolved' | translate }} <span class="cell-sub num">{{ f.picked.size }}/{{ maxRespondents }}</span></h4>
+              @if (pickedPeople().length) {
+                <div class="picked">
+                  @for (p of pickedPeople(); track p.id) {
+                    <button type="button" class="chip chip-plain chip-x" (click)="togglePerson(p.id)">{{ p.name }}<span class="material-icons-outlined" aria-hidden="true">close</span></button>
+                  }
+                </div>
+              }
+              <label class="search">
+                <span class="material-icons-outlined" aria-hidden="true">search</span>
+                <input type="search" [(ngModel)]="f.search" [placeholder]="'relations.peopleSearchPh' | translate" [attr.aria-label]="'relations.peopleSearchPh' | translate" />
+              </label>
+              <div class="pick-list">
+                @for (o of raisePeople(); track o.id) {
+                  <label class="pick">
+                    <input type="checkbox" [checked]="f.picked.has(o.id)" [disabled]="!f.picked.has(o.id) && f.picked.size >= maxRespondents" (change)="togglePerson(o.id)" />
+                    <span class="stack"><span class="cell-main">{{ o.name }}</span>@if (o.extra) { <span class="cell-sub">{{ o.extra }}</span> }</span>
+                  </label>
+                } @empty {
+                  <p class="dim pad">{{ 'relations.noPeople' | translate }}</p>
+                }
+              </div>
+
+              <div class="form-grid two">
+                <div class="field">
+                  <label for="r-evt">{{ 'relations.evTitleOptional' | translate }}</label>
+                  <input id="r-evt" maxlength="150" [(ngModel)]="f.evidenceTitle" />
+                </div>
+                <div class="field">
+                  <label for="r-evu">{{ 'relations.evUrl' | translate }}</label>
+                  <input id="r-evu" type="url" maxlength="1000" [(ngModel)]="f.evidenceUrl" placeholder="https://" />
+                </div>
+              </div>
+
+              <div class="settings-box">
+                <label class="check-inline wrap-text"><input type="checkbox" [(ngModel)]="f.hideIdentity" />{{ 'relations.hideIdentity' | translate }}</label>
+                <p class="field-hint">{{ 'relations.hideIdentityHint' | translate }}</p>
+              </div>
+            }
+          }
+
+          <!-- My concern -->
+          @case ('concern') {
+            @if (concern(); as cn) {
+              @let c = cn.concern;
+              <div class="doc-head">
+                <div class="chips">
+                  <span class="chip chip-plain num">{{ c.code }}</span>
+                  <span class="chip chip-plain">{{ 'relations.types.' + c.type | translate }}</span>
+                  @if (c.reporterHidden) {
+                    <span class="chip chip-plain"><span class="material-icons-outlined chip-icon" aria-hidden="true">visibility_off</span>{{ 'relations.identityHidden' | translate }}</span>
+                  }
+                </div>
+              </div>
+              <ol class="stepper">
+                @for (p of phases; track p; let i = $index) {
+                  <li [class.done]="i < phaseIndex(c.phase)" [class.now]="p === c.phase">
+                    <span class="dot">@if (i < phaseIndex(c.phase)) { <span class="material-icons-outlined" aria-hidden="true">check</span> } @else { {{ i + 1 }} }</span>
+                    <span class="st-label">{{ 'relations.phase.' + p | translate }}</span>
+                  </li>
+                }
+              </ol>
+              @if (c.phase === 'Closed' && c.outcome) {
+                <div class="outcome-box">
+                  <strong>{{ 'relations.concernClosed' | translate }}</strong>
+                  <span>{{ 'relations.outcome.' + c.outcome | translate }}</span>
+                </div>
+              }
+              @if (cn.description) { <p class="desc pre">{{ cn.description }}</p> }
+              <dl class="facts">
+                <div><dt>{{ 'relations.reportedOn' | translate }}</dt><dd class="num">{{ c.reportedOn | date: 'd MMM y' : undefined : lang() }}</dd></div>
+                @if (cn.incidentOn) { <div><dt>{{ 'relations.incidentOn' | translate }}</dt><dd class="num">{{ cn.incidentOn | date: 'd MMM y' : undefined : lang() }}</dd></div> }
+                @if (cn.location) { <div><dt>{{ 'relations.location' | translate }}</dt><dd>{{ cn.location }}</dd></div> }
+                <div><dt>{{ 'relations.stage' | translate }}</dt><dd>{{ c.stageName }}</dd></div>
+              </dl>
+
+              <h4 class="sub-title">{{ 'relations.conversation' | translate }}</h4>
+              <ul class="convo">
+                @for (e of cn.entries; track e.id) {
+                  @if (isBubble(e)) {
+                    <li class="bubble is-shared" [class.is-me]="e.byMe">
+                      <span class="b-head">
+                        <strong>{{ e.byMe ? ('relations.you' | translate) : ('relations.team' | translate) }}</strong>
+                        <span class="dim num">{{ utc(e.at) | date: 'd MMM, HH:mm' : undefined : lang() }}</span>
+                      </span>
+                      <span class="pre">{{ e.text }}</span>
+                    </li>
+                  } @else {
+                    <li class="event">
+                      <span class="material-icons-outlined" aria-hidden="true">{{ entryIcon[e.kind] ?? 'info' }}</span>
+                      <span class="grow">
+                        {{ 'relations.mine.' + e.kind | translate: { stage: e.stageName ?? '' } }}
+                        @if (e.kind === 'EvidenceAdded' && e.text) { <span class="reason">{{ e.text }}</span> }
+                      </span>
+                      <span class="num">{{ utc(e.at) | date: 'd MMM, HH:mm' : undefined : lang() }}</span>
+                    </li>
+                  }
+                }
+              </ul>
+              @if (cn.canMessage) {
+                <div class="reply-box">
+                  <textarea rows="3" maxlength="4000" [(ngModel)]="replyText" [placeholder]="'relations.replyPh' | translate" [attr.aria-label]="'relations.replyPh' | translate"></textarea>
+                  <div class="inline-actions">
+                    <button type="button" class="btn btn-ink btn-small" [disabled]="saving() || !replyText.trim()" (click)="sendReply(cn)">{{ 'relations.sendMessage' | translate }}</button>
+                  </div>
+                </div>
+              }
+
+              <div class="head-row">
+                <h4 class="sub-title">{{ 'relations.myEvidence' | translate }}</h4>
+                @if (cn.canMessage && !acting) {
+                  <button type="button" class="btn btn-quiet btn-small" (click)="startConcernEvidence()">{{ 'relations.do.evidence' | translate }}</button>
+                }
+              </div>
+              @if (acting === 'evidence' && act; as f) {
+                <div class="settings-box">
+                  <div class="form-grid two">
+                    <div class="field">
+                      <label for="ce-title">{{ 'relations.evTitle' | translate }}</label>
+                      <input id="ce-title" maxlength="150" [(ngModel)]="f.title" />
+                    </div>
+                    <div class="field">
+                      <label for="ce-url">{{ 'relations.evUrl' | translate }}</label>
+                      <input id="ce-url" type="url" maxlength="1000" [(ngModel)]="f.url" placeholder="https://" />
+                    </div>
+                  </div>
+                  <p class="field-hint">{{ 'relations.evPrivate' | translate }}</p>
+                  <div class="inline-actions">
+                    <button type="button" class="btn btn-quiet btn-small" (click)="cancelAct()">{{ 'common.cancel' | translate }}</button>
+                    <button type="button" class="btn btn-ink btn-small" [disabled]="saving() || !canSubmitAct()" (click)="sendConcernEvidence(cn)">{{ 'relations.do.evidence' | translate }}</button>
+                  </div>
+                </div>
+              }
+              <ul class="evidence">
+                @for (ev of cn.evidence; track ev.id) {
+                  <li>
+                    <span class="material-icons-outlined ev-icon" aria-hidden="true">description</span>
+                    <span class="stack grow">
+                      <a class="cell-main" [href]="ev.url" target="_blank" rel="noopener noreferrer">{{ ev.title }}</a>
+                      <span class="cell-sub">{{ utc(ev.addedAt) | date: 'd MMM y' : undefined : lang() }}</span>
+                    </span>
+                  </li>
+                } @empty {
+                  <li class="dim">{{ 'relations.noEvidence' | translate }}</li>
+                }
+              </ul>
+            } @else {
+              <p class="loading-line">{{ 'common.loading' | translate }}</p>
+            }
+          }
+
+          <!-- Stage form -->
+          @case ('stage') {
+            @if (stageForm; as f) {
+              <div class="field">
+                <label for="st-name">{{ 'relations.name' | translate }}</label>
+                <input id="st-name" maxlength="60" [(ngModel)]="f.name" />
+              </div>
+              <div class="field">
+                <label for="st-desc">{{ 'relations.description' | translate }}</label>
+                <textarea id="st-desc" rows="2" maxlength="300" [(ngModel)]="f.description"></textarea>
+              </div>
+              <div class="form-grid two">
+                <div class="field">
+                  <label for="st-phase">{{ 'relations.phaseCol' | translate }}</label>
+                  <select id="st-phase" [ngModel]="f.phase" (ngModelChange)="setStagePhase($event)" [disabled]="f.used">
+                    @for (p of phases; track p) { <option [value]="p">{{ 'relations.phase.' + p | translate }}</option> }
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="st-order">{{ 'relations.order' | translate }}</label>
+                  <input id="st-order" type="number" min="0" max="999" [(ngModel)]="f.sortOrder" />
+                </div>
+                @if (f.phase !== 'Closed') {
+                  <div class="field">
+                    <label for="st-days">{{ 'relations.target' | translate }}</label>
+                    <input id="st-days" type="number" min="1" max="365" [(ngModel)]="f.targetDays" />
+                  </div>
+                }
+              </div>
+              @if (f.used) { <p class="field-hint">{{ 'relations.stageUsed' | translate }}</p> }
+              <p class="field-hint">{{ 'relations.targetHint' | translate }}</p>
+              <label class="check-inline"><input type="checkbox" [(ngModel)]="f.isActive" />{{ 'relations.active' | translate }}</label>
+              @if (f.id && !f.used) {
+                <div class="inline-actions">
+                  <button type="button" class="btn-link danger-link" [disabled]="saving()" (click)="deleteStage()">
+                    {{ (confirm === 'stage' ? 'relations.sureDelete' : 'common.delete') | translate }}
+                  </button>
+                </div>
+              }
+            }
+          }
+        }
+      </div>
+
+      @if (d === 'caseForm' || d === 'raise' || d === 'stage') {
+        <footer class="drawer-foot">
+          <button type="button" class="btn btn-quiet" (click)="closeDrawer()">{{ 'common.cancel' | translate }}</button>
+          @switch (d) {
+            @case ('caseForm') { <button type="button" class="btn btn-ink" [disabled]="!canSaveCase() || saving()" (click)="saveCase()">{{ 'common.save' | translate }}</button> }
+            @case ('raise') { <button type="button" class="btn btn-ink" [disabled]="!canRaise() || saving()" (click)="sendConcern()">{{ 'relations.submitConcern' | translate }}</button> }
+            @case ('stage') { <button type="button" class="btn btn-ink" [disabled]="!canSaveStage() || saving()" (click)="saveStage()">{{ 'common.save' | translate }}</button> }
+          }
+        </footer>
+      }
+    </aside>
+  </div>
+}
