@@ -1,0 +1,857 @@
+<div class="page">
+  <header class="page-intro">
+    <p>{{ 'policies.intro' | translate }}</p>
+    <div class="intro-actions">
+      @if (tab() === 'statutory' && canManage()) {
+        <button type="button" class="btn btn-ink" (click)="newObligation()">
+          <span class="material-icons-outlined" aria-hidden="true">add</span>{{ 'policies.newObligation' | translate }}
+        </button>
+      } @else if (tab() === 'policies' && canManage()) {
+        <button type="button" class="btn btn-quiet" [disabled]="saving()" (click)="addStarter()">
+          <span class="material-icons-outlined" aria-hidden="true">auto_awesome</span>{{ 'policies.addStarter' | translate }}
+        </button>
+        <button type="button" class="btn btn-ink" (click)="newPolicy()">
+          <span class="material-icons-outlined" aria-hidden="true">add</span>{{ 'policies.newPolicy' | translate }}
+        </button>
+      }
+    </div>
+  </header>
+
+  @if (summary(); as s) {
+    <nav class="tabs">
+      <button type="button" class="tab" [class.is-active]="tab() === 'policies'" (click)="setTab('policies')">
+        {{ 'policies.tabs.policies' | translate }}
+        @if (s.published) { <span class="tab-count num">{{ s.published }}</span> }
+      </button>
+      <button type="button" class="tab" [class.is-active]="tab() === 'acknowledgements'" (click)="setTab('acknowledgements')">
+        {{ 'policies.tabs.acknowledgements' | translate }}
+        @if (s.myPending) { <span class="tab-count num alert-count">{{ s.myPending }}</span> }
+      </button>
+      @if (s.canViewStatutory) {
+        <button type="button" class="tab" [class.is-active]="tab() === 'statutory'" (click)="setTab('statutory')">
+          {{ 'policies.tabs.statutory' | translate }}
+          @if (s.obligationsOverdue + s.obligationsDueSoon) {
+            <span class="tab-count num" [class.alert-count]="s.obligationsOverdue > 0">{{ s.obligationsOverdue + s.obligationsDueSoon }}</span>
+          }
+        </button>
+      }
+    </nav>
+  } @else {
+    <p class="loading-line">{{ 'common.loading' | translate }}</p>
+  }
+
+  <!-- ═══ Policies ═══ -->
+  @if (tab() === 'policies' && summary(); as s) {
+    @if (s.myPending) {
+      <div class="notice" [class.notice-warn]="s.myOverdue > 0" [class.notice-info]="!s.myOverdue">
+        <span class="material-icons-outlined" aria-hidden="true">assignment_late</span>
+        <span class="grow">{{ (s.myOverdue ? 'policies.pendingOverdue' : 'policies.pendingNotice') | translate: { n: s.myPending, late: s.myOverdue } }}</span>
+        @if (!mineOnly()) {
+          <button type="button" class="btn btn-ink btn-small" (click)="showMine()">{{ 'policies.showThem' | translate }}</button>
+        }
+      </div>
+    }
+    @if (s.canManage && (s.reviewsDue || s.drafts)) {
+      <div class="notice notice-info">
+        <span class="material-icons-outlined" aria-hidden="true">edit_calendar</span>
+        <span class="grow">
+          @if (s.drafts) { {{ 'policies.draftsNotice' | translate: { n: s.drafts } }} }
+          @if (s.reviewsDue) { {{ 'policies.reviewsNotice' | translate: { n: s.reviewsDue } }} }
+        </span>
+        @if (s.drafts && status() !== 'Draft') {
+          <button type="button" class="btn btn-quiet btn-small" (click)="setStatus('Draft')">{{ 'policies.showDrafts' | translate }}</button>
+        }
+      </div>
+    }
+    @if (!linked() && !s.canManage) {
+      <div class="notice notice-info">
+        <span class="material-icons-outlined" aria-hidden="true">badge</span>
+        <span class="grow">{{ 'policies.notLinked' | translate }}</span>
+      </div>
+    }
+
+    <section class="panel panel-flush">
+      <div class="toolbar">
+        <label class="search">
+          <span class="material-icons-outlined" aria-hidden="true">search</span>
+          <input type="search" [ngModel]="search()" (ngModelChange)="onSearch($event)" [placeholder]="'policies.searchPh' | translate" [attr.aria-label]="'policies.searchPh' | translate" />
+        </label>
+        <select class="select-sm" [ngModel]="category()" (ngModelChange)="setCategory($event)" [attr.aria-label]="'policies.category' | translate">
+          <option value="">{{ 'policies.allCategories' | translate }}</option>
+          @for (c of categories; track c) { <option [value]="c">{{ 'policies.cat.' + c | translate }}</option> }
+        </select>
+        @if (s.canManage) {
+          <select class="select-sm" [ngModel]="status()" (ngModelChange)="setStatus($event)" [attr.aria-label]="'policies.statusCol' | translate">
+            <option value="">{{ 'policies.anyStatus' | translate }}</option>
+            @for (st of statuses; track st) { <option [value]="st">{{ 'policies.status.' + st | translate }}</option> }
+          </select>
+        }
+        @if (linked()) {
+          <label class="check-inline">
+            <input type="checkbox" [ngModel]="mineOnly()" (ngModelChange)="mineOnly.set($event)" />{{ 'policies.needsMine' | translate }}
+          </label>
+        }
+      </div>
+
+      @if (policies() === null) {
+        <p class="loading-line">{{ 'common.loading' | translate }}</p>
+      } @else if (!shown().length) {
+        <div class="empty-state">
+          <span class="material-icons-outlined" aria-hidden="true">policy</span>
+          @if (!s.hasPolicies && s.canManage) {
+            <p>{{ 'policies.emptyHr' | translate }}</p>
+            <div class="inline-actions">
+              <button type="button" class="btn btn-quiet" [disabled]="saving()" (click)="addStarter()">{{ 'policies.addStarter' | translate }}</button>
+              <button type="button" class="btn btn-ink" (click)="newPolicy()">{{ 'policies.newPolicy' | translate }}</button>
+            </div>
+          } @else if (mineOnly()) {
+            <p>{{ 'policies.allDone' | translate }}</p>
+          } @else {
+            <p>{{ (s.hasPolicies ? 'policies.noMatch' : 'policies.empty') | translate }}</p>
+          }
+        </div>
+      } @else {
+        <div class="pol-grid">
+          @for (p of shown(); track p.id) {
+            <button type="button" class="pol-card" [class.is-muted]="p.status === 'Archived'" (click)="openPolicy(p.id)">
+              <span class="pol-top">
+                <span class="material-icons-outlined cat-icon" aria-hidden="true">{{ categoryIcon[p.category] }}</span>
+                <span class="stack grow">
+                  <span class="cell-sub">{{ 'policies.cat.' + p.category | translate }}</span>
+                  <span class="pol-title">{{ p.title }}</span>
+                </span>
+              </span>
+              @if (p.summary) { <span class="pol-summary">{{ p.summary }}</span> }
+              <span class="pol-meta">
+                @if (p.currentVersion) { <span class="meta num">v{{ p.currentVersion }}</span> }
+                @if (p.effectiveOn) { <span class="meta"><span class="material-icons-outlined" aria-hidden="true">event</span>{{ p.effectiveOn | date: 'd MMM y' : undefined : lang() }}</span> }
+                <span class="meta"><span class="material-icons-outlined" aria-hidden="true">groups</span>{{ p.departmentName || ('policies.everyone' | translate) }}</span>
+              </span>
+              <span class="pol-foot">
+                @if (p.status !== 'Published') { <span [class]="statusChip[p.status]">{{ 'policies.status.' + p.status | translate }}</span> }
+                @if (s.canManage && p.hasUnpublishedChanges) { <span class="chip chip-brass">{{ 'policies.unpublished' | translate }}</span> }
+                @if (s.canManage && p.reviewDue) { <span class="chip chip-amber">{{ 'policies.reviewDue' | translate }}</span> }
+                @if (p.myAckState !== 'NotRequired') {
+                  <span [class]="ackChip[p.myAckState]">
+                    @if (p.myAckState === 'Done') { <span class="material-icons-outlined chip-icon" aria-hidden="true">check</span> }
+                    {{ 'policies.ack.' + p.myAckState | translate }}
+                  </span>
+                  @if (isOpenAck(p.myAckState) && p.ackDueOn) { <span class="meta" [class.warn]="p.myAckState === 'Overdue'">{{ 'policies.byDate' | translate: { date: (p.ackDueOn | date: 'd MMM' : undefined : lang()) } }}</span> }
+                }
+                @if (p.audienceCount !== null && p.ackVersion !== null) {
+                  <span class="mini-progress push" [attr.aria-label]="'policies.ackOf' | translate: { done: p.acknowledgedCount, total: p.audienceCount }">
+                    <span class="bar"><span [style.width.%]="percent(p.acknowledgedCount, p.audienceCount)"></span></span>
+                    <span class="num">{{ p.acknowledgedCount }}/{{ p.audienceCount }}</span>
+                  </span>
+                }
+              </span>
+            </button>
+          }
+        </div>
+      }
+    </section>
+  }
+
+  <!-- ═══ Acknowledgements ═══ -->
+  @if (tab() === 'acknowledgements' && summary(); as s) {
+    @if (s.canTrack) {
+      <section class="tallies">
+        <article class="tally static">
+          <span class="t-label">{{ 'policies.sum.rate' | translate }}</span>
+          <span class="t-figure num">@if (s.ackRate !== null) { {{ s.ackRate | number: '1.0-1' : lang() }}<small>%</small> } @else { — }</span>
+          <span class="t-sub">{{ 'policies.sum.rateSub' | translate }}</span>
+        </article>
+        <article class="tally static" [class.is-alert]="s.peoplePending > 0">
+          <span class="t-label">{{ 'policies.sum.people' | translate }}</span>
+          <span class="t-figure num">{{ s.peoplePending }}</span>
+          <span class="t-sub">{{ 'policies.sum.peopleSub' | translate }}</span>
+        </article>
+        <article class="tally static" [class.is-alert]="overdueTotal() > 0">
+          <span class="t-label">{{ 'policies.sum.overdue' | translate }}</span>
+          <span class="t-figure num">{{ overdueTotal() }}</span>
+          <span class="t-sub">{{ 'policies.sum.overdueSub' | translate }}</span>
+        </article>
+        <article class="tally static">
+          <span class="t-label">{{ 'policies.sum.tracked' | translate }}</span>
+          <span class="t-figure num">{{ tracked().length }}</span>
+          <span class="t-sub">{{ 'policies.sum.trackedSub' | translate }}</span>
+        </article>
+      </section>
+
+      <section class="panel panel-flush">
+        <header class="list-head">
+          <h3 class="section-title">{{ 'policies.trackTitle' | translate }}</h3>
+          <p class="panel-sub">{{ 'policies.trackSub' | translate }}</p>
+        </header>
+        <div class="table-wrap">
+          <table class="ledger-table">
+            <thead>
+              <tr>
+                <th>{{ 'policies.policy' | translate }}</th>
+                <th class="col-wide">{{ 'policies.audience' | translate }}</th>
+                <th>{{ 'policies.progress' | translate }}</th>
+                <th class="num-col col-wide">{{ 'policies.overdueCol' | translate }}</th>
+                <th class="col-wide">{{ 'policies.dueCol' | translate }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (p of tracked(); track p.id) {
+                <tr class="row-link" tabindex="0" (click)="openTracking(p.id)" (keydown.enter)="openTracking(p.id)">
+                  <td>
+                    <span class="cell-main wrap">{{ p.title }}</span>
+                    <span class="cell-sub">v{{ p.ackVersion }}@if (p.ackVersion !== p.currentVersion) { · {{ 'policies.currentV' | translate: { n: p.currentVersion } }} }</span>
+                  </td>
+                  <td class="col-wide">{{ p.departmentName || ('policies.everyone' | translate) }}</td>
+                  <td>
+                    <span class="mini-progress wide">
+                      <span class="bar"><span [style.width.%]="percent(p.acknowledgedCount, p.audienceCount)"></span></span>
+                      <span class="num">{{ p.acknowledgedCount }}/{{ p.audienceCount }}</span>
+                    </span>
+                  </td>
+                  <td class="num num-col col-wide" [class.warn]="(p.overdueCount ?? 0) > 0">{{ p.overdueCount }}</td>
+                  <td class="num col-wide">@if (p.ackDueOn) { {{ p.ackDueOn | date: 'd MMM y' : undefined : lang() }} } @else { <span class="dim">—</span> }</td>
+                </tr>
+              } @empty {
+                @if (policies() !== null) {
+                  <tr><td colspan="5" class="empty-line pad dim">{{ 'policies.noTracked' | translate }}</td></tr>
+                }
+              }
+            </tbody>
+          </table>
+        </div>
+      </section>
+    }
+
+    @if (linked()) {
+      <section class="panel panel-flush">
+        <header class="list-head">
+          <h3 class="section-title">{{ 'policies.myTitle' | translate }}</h3>
+          <p class="panel-sub">{{ 'policies.mySub' | translate }}</p>
+        </header>
+        @if (policies() === null) {
+          <p class="loading-line">{{ 'common.loading' | translate }}</p>
+        } @else {
+          <ul class="plain-list">
+            @for (p of myAcks(); track p.id) {
+              <li>
+                <button type="button" class="plain-row as-btn" (click)="openPolicy(p.id)">
+                  <span class="material-icons-outlined cat-icon sm" aria-hidden="true">{{ categoryIcon[p.category] }}</span>
+                  <span class="stack grow">
+                    <span class="cell-main wrap">{{ p.title }}</span>
+                    <span class="cell-sub">
+                      v{{ p.currentVersion }}
+                      @if (p.myAckState === 'Done' && p.myAcknowledgedAt) { · {{ 'policies.ackedOn' | translate: { date: (utc(p.myAcknowledgedAt) | date: 'd MMM y' : undefined : lang()) } }} }
+                      @else if (p.ackDueOn) { · <span [class.warn]="p.myAckState === 'Overdue'">{{ 'policies.byDate' | translate: { date: (p.ackDueOn | date: 'd MMM y' : undefined : lang()) } }}</span> }
+                    </span>
+                  </span>
+                  <span [class]="ackChip[p.myAckState]">{{ 'policies.ack.' + p.myAckState | translate }}</span>
+                </button>
+              </li>
+            } @empty {
+              <li class="empty-line pad dim">{{ 'policies.noMine' | translate }}</li>
+            }
+          </ul>
+        }
+      </section>
+    } @else if (!s.canTrack) {
+      <div class="notice notice-info">
+        <span class="material-icons-outlined" aria-hidden="true">badge</span>
+        <span class="grow">{{ 'policies.notLinked' | translate }}</span>
+      </div>
+    }
+  }
+
+  <!-- ═══ Statutory ═══ -->
+  @if (tab() === 'statutory' && summary(); as s) {
+    <section class="tallies">
+      <button type="button" class="tally" [class.is-alert]="s.obligationsOverdue > 0" [class.is-picked]="obligationFilter() === 'Overdue'"
+        (click)="obligationFilter.set(obligationFilter() === 'Overdue' ? '' : 'Overdue')">
+        <span class="t-label">{{ 'policies.state.Overdue' | translate }}</span>
+        <span class="t-figure num">{{ s.obligationsOverdue }}</span>
+        <span class="t-sub">{{ 'policies.sum.lateSub' | translate }}</span>
+      </button>
+      <button type="button" class="tally" [class.is-warn]="s.obligationsDueSoon > 0" [class.is-picked]="obligationFilter() === 'DueSoon'"
+        (click)="obligationFilter.set(obligationFilter() === 'DueSoon' ? '' : 'DueSoon')">
+        <span class="t-label">{{ 'policies.state.DueSoon' | translate }}</span>
+        <span class="t-figure num">{{ s.obligationsDueSoon }}</span>
+        <span class="t-sub">{{ 'policies.sum.soonSub' | translate }}</span>
+      </button>
+      <button type="button" class="tally" [class.is-picked]="obligationFilter() === 'Upcoming'"
+        (click)="obligationFilter.set(obligationFilter() === 'Upcoming' ? '' : 'Upcoming')">
+        <span class="t-label">{{ 'policies.state.Upcoming' | translate }}</span>
+        <span class="t-figure num">{{ upcomingCount() }}</span>
+        <span class="t-sub">{{ 'policies.sum.upcomingSub' | translate }}</span>
+      </button>
+      <article class="tally static">
+        <span class="t-label">{{ 'policies.sum.filed' | translate }}</span>
+        <span class="t-figure num">{{ s.filedThisYear }}</span>
+        <span class="t-sub">{{ 'policies.sum.filedSub' | translate }}</span>
+      </article>
+    </section>
+
+    <section class="panel panel-flush">
+      <header class="list-head head-row">
+        <span class="stack">
+          <h3 class="section-title">{{ 'policies.calendarTitle' | translate }}</h3>
+          <p class="panel-sub">{{ 'policies.calendarSub' | translate }}</p>
+        </span>
+        @if (obligationFilter(); as f) {
+          <button type="button" class="chip chip-plain chip-x" (click)="obligationFilter.set('')">
+            {{ 'policies.state.' + f | translate }}<span class="material-icons-outlined" aria-hidden="true">close</span>
+          </button>
+        }
+      </header>
+      @if (obligations() === null) {
+        <p class="loading-line">{{ 'common.loading' | translate }}</p>
+      } @else if (!obligations()!.length) {
+        <div class="empty-state">
+          <span class="material-icons-outlined" aria-hidden="true">event_available</span>
+          <p>{{ (s.canManage ? 'policies.noObligationsHr' : 'policies.noObligations') | translate }}</p>
+          @if (s.canManage) {
+            <button type="button" class="btn btn-ink" (click)="newObligation()">{{ 'policies.newObligation' | translate }}</button>
+          }
+        </div>
+      } @else {
+        <div class="table-wrap">
+          <table class="ledger-table">
+            <thead>
+              <tr>
+                <th>{{ 'policies.obligation' | translate }}</th>
+                <th class="col-wide">{{ 'policies.frequency' | translate }}</th>
+                <th>{{ 'policies.nextDue' | translate }}</th>
+                <th class="col-wide">{{ 'policies.owner' | translate }}</th>
+                <th class="col-wide">{{ 'policies.lastFiled' | translate }}</th>
+                @if (s.canManage) { <th class="col-action"><span class="sr-only">{{ 'policies.actions' | translate }}</span></th> }
+              </tr>
+            </thead>
+            <tbody>
+              @for (o of obligationRows(); track o.id) {
+                <tr class="row-link" [class.is-late]="o.state === 'Overdue'" tabindex="0" (click)="openObligation(o.id)" (keydown.enter)="openObligation(o.id)">
+                  <td>
+                    <span class="ob-name">
+                      <span class="material-icons-outlined cat-icon sm" aria-hidden="true">{{ obligationIcon[o.category] }}</span>
+                      <span class="stack">
+                        <span class="cell-main wrap">{{ o.title }}</span>
+                        <span class="cell-sub">{{ o.authority || ('policies.ocat.' + o.category | translate) }}<span class="mobile-only"> · {{ 'policies.freq.' + o.frequency | translate }}</span></span>
+                      </span>
+                    </span>
+                  </td>
+                  <td class="col-wide">{{ 'policies.freq.' + o.frequency | translate }}</td>
+                  <td>
+                    @if (o.nextDueOn) {
+                      <span class="cell-main num">{{ o.nextDueOn | date: 'd MMM y' : undefined : lang() }}</span>
+                    }
+                    <span class="due-line">
+                      <span [class]="stateChip[o.state]">{{ 'policies.state.' + o.state | translate }}</span>
+                      @if (o.state !== 'Completed' && o.state !== 'Paused' && dueKey(o.daysLeft); as k) {
+                        <span class="cell-sub" [class.warn]="o.state === 'Overdue'">{{ k.key | translate: { n: k.n } }}</span>
+                      }
+                    </span>
+                  </td>
+                  <td class="col-wide">@if (o.ownerName) { {{ o.ownerName }} } @else { <span class="dim">—</span> }</td>
+                  <td class="col-wide num">
+                    @if (o.lastFiledOn) { {{ o.lastFiledOn | date: 'd MMM y' : undefined : lang() }} } @else { <span class="dim">—</span> }
+                    @if (o.lateCount) { <span class="cell-sub warn">{{ 'policies.lateN' | translate: { n: o.lateCount } }}</span> }
+                  </td>
+                  @if (s.canManage) {
+                    <td class="col-action" (click)="$event.stopPropagation()">
+                      @if (canFile(o)) {
+                        <button type="button" class="btn btn-quiet btn-small" [attr.aria-label]="'policies.markFiled' | translate" (click)="startFiling(o)">
+                          <span class="material-icons-outlined" aria-hidden="true">task_alt</span><span class="btn-label">{{ 'policies.markFiled' | translate }}</span>
+                        </button>
+                      }
+                    </td>
+                  }
+                </tr>
+              } @empty {
+                <tr><td [attr.colspan]="s.canManage ? 6 : 5" class="empty-line pad dim">{{ 'policies.noMatchObligations' | translate }}</td></tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </section>
+  }
+</div>
+
+@if (drawer(); as d) {
+  <div class="overlay" (click)="closeDrawer()">
+    <aside class="drawer" [class.drawer-wide]="d !== 'obligationEdit'" [class.drawer-read]="d === 'policy'" role="dialog" aria-modal="true" (click)="$event.stopPropagation()">
+      <header class="drawer-head">
+        <h3>
+          @switch (d) {
+            @case ('policy') { {{ policy()?.policy?.title ?? ('common.loading' | translate) }} }
+            @case ('policyEdit') { {{ (policyForm?.id ? 'policies.editPolicy' : 'policies.newPolicy') | translate }} }
+            @case ('tracking') { {{ trackedPolicy()?.title }} }
+            @case ('obligation') { {{ obligation()?.obligation?.title ?? ('common.loading' | translate) }} }
+            @case ('obligationEdit') { {{ (obligationForm?.id ? 'policies.editObligation' : 'policies.newObligation') | translate }} }
+          }
+        </h3>
+        <button type="button" class="btn-link" (click)="closeDrawer()" [attr.aria-label]="'common.close' | translate">
+          <span class="material-icons-outlined" aria-hidden="true">close</span>
+        </button>
+      </header>
+
+      <div class="drawer-body">
+        @switch (d) {
+          <!-- Reader -->
+          @case ('policy') {
+            @if (policy(); as pd) {
+              @let p = pd.policy;
+              <div class="doc-head">
+                <span class="cell-sub">
+                  {{ 'policies.cat.' + p.category | translate }}
+                  @if (p.currentVersion) { · <span class="num">v{{ viewing()?.number ?? p.currentVersion }}</span> }
+                  · {{ p.departmentName || ('policies.everyone' | translate) }}
+                </span>
+                <span class="head-chips">
+                  @if (p.status !== 'Published') { <span [class]="statusChip[p.status]">{{ 'policies.status.' + p.status | translate }}</span> }
+                  @if (p.myAckState !== 'NotRequired') { <span [class]="ackChip[p.myAckState]">{{ 'policies.ack.' + p.myAckState | translate }}</span> }
+                </span>
+              </div>
+
+              @if (viewing(); as v) {
+                <div class="notice notice-info">
+                  <span class="material-icons-outlined" aria-hidden="true">history</span>
+                  <span class="grow">{{ 'policies.viewingOld' | translate: { n: v.number, date: (utc(v.publishedAt) | date: 'd MMM y' : undefined : lang()) } }}</span>
+                  <button type="button" class="btn btn-quiet btn-small" (click)="viewing.set(null)">{{ 'policies.backToCurrent' | translate }}</button>
+                </div>
+              } @else if (pd.canEdit && p.hasUnpublishedChanges && p.currentVersion) {
+                <p class="confirm-note">{{ 'policies.unpublishedNote' | translate: { n: p.currentVersion } }}</p>
+              } @else if (reading()?.draft) {
+                <p class="confirm-note">{{ 'policies.draftNote' | translate }}</p>
+              }
+
+              <dl class="facts">
+                @if (p.effectiveOn) { <div><dt>{{ 'policies.effective' | translate }}</dt><dd class="num">{{ (viewing()?.effectiveOn ?? p.effectiveOn) | date: 'd MMM y' : undefined : lang() }}</dd></div> }
+                @if (p.ownerName) { <div><dt>{{ 'policies.owner' | translate }}</dt><dd>{{ p.ownerName }}</dd></div> }
+                @if (p.ackVersion !== null && p.ackDueOn) { <div><dt>{{ 'policies.ackDue' | translate }}</dt><dd class="num">{{ p.ackDueOn | date: 'd MMM y' : undefined : lang() }}</dd></div> }
+                @if (pd.canEdit && p.nextReviewOn) { <div><dt>{{ 'policies.nextReview' | translate }}</dt><dd class="num" [class.warn]="p.reviewDue">{{ p.nextReviewOn | date: 'd MMM y' : undefined : lang() }}</dd></div> }
+              </dl>
+
+              @if (p.summary) { <p class="doc-summary">{{ p.summary }}</p> }
+
+              @if (reading(); as r) {
+                @if (r.documentUrl) {
+                  <a class="doc-link" [href]="r.documentUrl" target="_blank" rel="noopener noreferrer">
+                    <span class="material-icons-outlined" aria-hidden="true">description</span>
+                    <span class="grow">{{ 'policies.openDocument' | translate }}</span>
+                    <span class="material-icons-outlined" aria-hidden="true">open_in_new</span>
+                  </a>
+                }
+                @if (r.body.length) {
+                  <article class="doc">
+                    @for (b of r.body; track $index) {
+                      @switch (b.kind) {
+                        @case ('h') { <h4>{{ b.text }}</h4> }
+                        @case ('p') { <p>{{ b.text }}</p> }
+                        @case ('ul') { <ul>@for (i of b.items; track $index) { <li>{{ i }}</li> }</ul> }
+                      }
+                    }
+                  </article>
+                } @else if (!r.documentUrl) {
+                  <p class="empty-line dim">{{ 'policies.noText' | translate }}</p>
+                }
+              }
+
+              <!-- Acknowledge -->
+              @if (pd.canAcknowledge && !viewing()) {
+                <div class="ack-box" [class.is-late]="p.myAckState === 'Overdue'">
+                  <label class="check-inline wrap-text">
+                    <input type="checkbox" [(ngModel)]="ackChecked" />{{ 'policies.ackStatement' | translate: { n: p.currentVersion } }}
+                  </label>
+                  <div class="inline-actions">
+                    @if (p.ackDueOn) { <span class="cell-sub push-end" [class.warn]="p.myAckState === 'Overdue'">{{ 'policies.byDate' | translate: { date: (p.ackDueOn | date: 'd MMM y' : undefined : lang()) } }}</span> }
+                    <button type="button" class="btn btn-ink btn-small" [disabled]="!ackChecked || saving()" (click)="acknowledge()">
+                      <span class="material-icons-outlined" aria-hidden="true">draw</span>{{ 'policies.acknowledge' | translate }}
+                    </button>
+                  </div>
+                </div>
+              } @else if (p.myAckState === 'Done' && p.myAcknowledgedAt) {
+                <p class="done-note">
+                  <span class="material-icons-outlined" aria-hidden="true">verified</span>
+                  {{ 'policies.youAcked' | translate: { date: (utc(p.myAcknowledgedAt) | date: 'd MMM y, HH:mm' : undefined : lang()) } }}
+                </p>
+              }
+
+              <!-- Manage -->
+              @if (task === 'publish') {
+                <div class="task-form">
+                  <p>{{ (firstPublish(pd) ? 'policies.publishFirstHint' : 'policies.publishHint') | translate }}</p>
+                  @if (!firstPublish(pd)) {
+                    <textarea rows="2" maxlength="500" [(ngModel)]="publishSummary" [placeholder]="'policies.whatChangedPh' | translate" [attr.aria-label]="'policies.whatChanged' | translate"></textarea>
+                    @if (p.requiresAcknowledgement) {
+                      <label class="check-inline wrap-text"><input type="checkbox" [(ngModel)]="publishReack" />{{ 'policies.reackToggle' | translate }}</label>
+                    }
+                  }
+                  <div class="field inline-field">
+                    <label for="pub-eff">{{ 'policies.effective' | translate }}</label>
+                    <input id="pub-eff" type="date" [(ngModel)]="publishEffective" />
+                  </div>
+                  <div class="inline-actions">
+                    <button type="button" class="btn btn-quiet btn-small" (click)="task = null">{{ 'common.cancel' | translate }}</button>
+                    <button type="button" class="btn btn-ink btn-small" [disabled]="saving() || !canRunPublish(pd)" (click)="runPublish()">
+                      {{ 'policies.publishVn' | translate: { n: p.currentVersion + 1 } }}
+                    </button>
+                  </div>
+                </div>
+              } @else if (task === 'delete' || task === 'archive') {
+                <div class="task-form">
+                  <p>{{ 'policies.' + task + 'Hint' | translate }}</p>
+                  <div class="inline-actions">
+                    <button type="button" class="btn btn-quiet btn-small" (click)="task = null">{{ 'common.cancel' | translate }}</button>
+                    <button type="button" class="btn btn-danger btn-small" [disabled]="saving()" (click)="task === 'delete' ? deletePolicy() : policyAction('archive')">
+                      {{ (task === 'delete' ? 'common.delete' : 'policies.archive') | translate }}
+                    </button>
+                  </div>
+                </div>
+              } @else if (pd.canEdit || pd.canRestore || pd.canTrack) {
+                <div class="inline-actions start wrap">
+                  @if (pd.canPublish) {
+                    <button type="button" class="btn btn-ink btn-small" (click)="startTask('publish')">
+                      <span class="material-icons-outlined" aria-hidden="true">publish</span>{{ (p.currentVersion ? 'policies.publishChanges' : 'policies.publish') | translate }}
+                    </button>
+                  }
+                  @if (pd.canEdit) { <button type="button" class="btn btn-quiet btn-small" (click)="editPolicy()">{{ 'common.edit' | translate }}</button> }
+                  @if (pd.canTrack && p.ackVersion !== null) {
+                    <button type="button" class="btn btn-quiet btn-small" (click)="openTracking(p.id)">
+                      <span class="material-icons-outlined" aria-hidden="true">fact_check</span>{{ 'policies.whoAcked' | translate }}
+                    </button>
+                  }
+                  @if (pd.canMarkReviewed) {
+                    <button type="button" class="btn btn-quiet btn-small" [disabled]="saving()" (click)="policyAction('reviewed')">{{ 'policies.markReviewed' | translate }}</button>
+                  }
+                  @if (pd.canRestore) {
+                    <button type="button" class="btn btn-quiet btn-small" [disabled]="saving()" (click)="policyAction('restore')">{{ 'policies.restore' | translate }}</button>
+                  }
+                  @if (pd.canDelete) {
+                    <button type="button" class="btn-link danger-link push" (click)="startTask('delete')">{{ 'common.delete' | translate }}</button>
+                  } @else if (pd.canArchive) {
+                    <button type="button" class="btn-link danger-link push" (click)="startTask('archive')">{{ 'policies.archive' | translate }}</button>
+                  }
+                </div>
+              }
+
+              @if (pd.versions.length) {
+                <section class="sub-panel">
+                  <header class="sub-head"><h4>{{ 'policies.history' | translate }}</h4></header>
+                  <ul class="versions">
+                    @for (v of pd.versions; track v.number) {
+                      <li>
+                        <button type="button" class="ver" [class.is-current]="(viewing()?.number ?? p.currentVersion) === v.number" (click)="viewVersion(v.number)">
+                          <span class="ver-n num">v{{ v.number }}</span>
+                          <span class="stack grow">
+                            <span class="cell-main wrap">{{ v.changeSummary || ('policies.firstVersion' | translate) }}</span>
+                            <span class="cell-sub">
+                              {{ utc(v.publishedAt) | date: 'd MMM y' : undefined : lang() }}@if (v.publishedByName) { · {{ v.publishedByName }} }
+                              @if (v.requiresAcknowledgement) { · {{ 'policies.askedAck' | translate }} }
+                            </span>
+                          </span>
+                          @if (v.number === p.currentVersion) { <span class="chip chip-moss">{{ 'policies.current' | translate }}</span> }
+                        </button>
+                      </li>
+                    }
+                  </ul>
+                </section>
+              }
+            } @else {
+              <p class="loading-line">{{ 'common.loading' | translate }}</p>
+            }
+          }
+
+          <!-- Edit policy -->
+          @case ('policyEdit') {
+            @if (policyForm; as f) {
+              <div class="form-grid">
+                <div class="field span-2">
+                  <label for="p-title">{{ 'policies.title' | translate }}</label>
+                  <input id="p-title" maxlength="150" [(ngModel)]="f.title" />
+                </div>
+                <div class="field">
+                  <label for="p-cat">{{ 'policies.category' | translate }}</label>
+                  <select id="p-cat" [(ngModel)]="f.category">
+                    @for (c of categories; track c) { <option [value]="c">{{ 'policies.cat.' + c | translate }}</option> }
+                  </select>
+                </div>
+                <div class="field span-all">
+                  <label for="p-sum">{{ 'policies.summary' | translate }}</label>
+                  <input id="p-sum" maxlength="500" [(ngModel)]="f.summary" [placeholder]="'policies.summaryPh' | translate" />
+                </div>
+                <div class="field">
+                  <label for="p-aud">{{ 'policies.audience' | translate }}</label>
+                  <select id="p-aud" [(ngModel)]="f.departmentId">
+                    <option value="">{{ 'policies.everyone' | translate }}</option>
+                    @for (o of lookups().departments; track o.id) { <option [value]="o.id">{{ o.name }}</option> }
+                  </select>
+                </div>
+                <div class="field span-2">
+                  <label for="p-own">{{ 'policies.owner' | translate }}</label>
+                  <select id="p-own" [(ngModel)]="f.ownerEmployeeId">
+                    <option value="">{{ 'policies.noOwner' | translate }}</option>
+                    @for (o of lookups().people; track o.id) { <option [value]="o.id">{{ o.name }}@if (o.extra) { · {{ o.extra }} }</option> }
+                  </select>
+                </div>
+                <div class="field span-all">
+                  <label for="p-body">{{ 'policies.text' | translate }}</label>
+                  <textarea id="p-body" class="body-input" rows="14" maxlength="20000" [(ngModel)]="f.body" [placeholder]="'policies.textPh' | translate"></textarea>
+                  <p class="field-hint">{{ 'policies.textHint' | translate }}</p>
+                </div>
+                <div class="field span-all">
+                  <label for="p-doc">{{ 'policies.documentLink' | translate }}</label>
+                  <input id="p-doc" type="url" maxlength="1000" [(ngModel)]="f.documentUrl" placeholder="https://" />
+                  @if (!linkOk(f.documentUrl)) { <p class="err">{{ 'policies.linkBad' | translate }}</p> }
+                </div>
+              </div>
+              <div class="settings-box">
+                <label class="check-inline wrap-text">
+                  <input type="checkbox" [(ngModel)]="f.requiresAcknowledgement" />{{ 'policies.requireAck' | translate }}
+                </label>
+                <div class="form-grid two">
+                  @if (f.requiresAcknowledgement) {
+                    <div class="field">
+                      <label for="p-days">{{ 'policies.ackWithin' | translate }}</label>
+                      <input id="p-days" type="number" min="1" max="365" [(ngModel)]="f.acknowledgeWithinDays" />
+                    </div>
+                  }
+                  <div class="field">
+                    <label for="p-rev">{{ 'policies.reviewEvery' | translate }}</label>
+                    <input id="p-rev" type="number" min="1" max="60" [(ngModel)]="f.reviewEveryMonths" [placeholder]="'policies.noReview' | translate" />
+                  </div>
+                </div>
+              </div>
+              <p class="field-hint">{{ (f.id ? 'policies.editHint' : 'policies.newHint') | translate }}</p>
+            }
+          }
+
+          <!-- Tracking -->
+          @case ('tracking') {
+            @if (trackedPolicy(); as tp) {
+              <p class="cell-sub">
+                {{ 'policies.trackingSub' | translate: { n: tp.ackVersion ?? 0, audience: tp.departmentName || ('policies.everyone' | translate) } }}
+              </p>
+              <div class="mini-progress big">
+                <span class="bar"><span [style.width.%]="percent(tp.acknowledgedCount, tp.audienceCount)"></span></span>
+                <span class="num">{{ 'policies.ackOf' | translate: { done: tp.acknowledgedCount, total: tp.audienceCount } }}</span>
+              </div>
+              <div class="seg-row" role="group" [attr.aria-label]="'policies.statusCol' | translate">
+                <button type="button" class="seg" [class.is-active]="!peopleState()" (click)="setPeopleState('')">{{ 'policies.all' | translate }}</button>
+                @for (st of ackStates; track st) {
+                  <button type="button" class="seg" [class.is-active]="peopleState() === st" (click)="setPeopleState(st)">{{ 'policies.ack.' + st | translate }}</button>
+                }
+              </div>
+              <div class="filter-row">
+                <label class="search grow">
+                  <span class="material-icons-outlined" aria-hidden="true">search</span>
+                  <input type="search" [ngModel]="peopleSearch()" (ngModelChange)="onPeopleSearch($event)" [placeholder]="'policies.peopleSearchPh' | translate" [attr.aria-label]="'policies.peopleSearchPh' | translate" />
+                </label>
+                @if (!tp.departmentId) {
+                  <select class="select-sm" [ngModel]="peopleDept()" (ngModelChange)="setPeopleDept($event)" [attr.aria-label]="'policies.department' | translate">
+                    <option value="">{{ 'policies.allDepartments' | translate }}</option>
+                    @for (o of lookups().departments; track o.id) { <option [value]="o.id">{{ o.name }}</option> }
+                  </select>
+                }
+              </div>
+              @if (people() === null) {
+                <p class="loading-line">{{ 'common.loading' | translate }}</p>
+              } @else {
+                <ul class="plain-list people">
+                  @for (m of people(); track m.employeeId) {
+                    <li class="plain-row">
+                      <span class="stack grow">
+                        <span class="cell-main wrap">{{ m.name }}</span>
+                        <span class="cell-sub">{{ m.code }} · {{ m.departmentName }}@if (m.designationName) { · {{ m.designationName }} }</span>
+                      </span>
+                      <span class="stack end">
+                        <span [class]="ackChip[m.state]">{{ 'policies.ack.' + m.state | translate }}</span>
+                        @if (m.acknowledgedAt) {
+                          <span class="cell-sub num">{{ utc(m.acknowledgedAt) | date: 'd MMM y' : undefined : lang() }}@if (m.state !== 'Done' && m.versionNumber) { · v{{ m.versionNumber }} }</span>
+                        }
+                      </span>
+                    </li>
+                  } @empty {
+                    <li class="empty-line pad dim">{{ 'policies.noPeople' | translate }}</li>
+                  }
+                </ul>
+              }
+            }
+          }
+
+          <!-- Obligation -->
+          @case ('obligation') {
+            @if (obligation(); as od) {
+              @let o = od.obligation;
+              <div class="doc-head">
+                <span class="cell-sub">{{ 'policies.ocat.' + o.category | translate }}@if (o.authority) { · {{ o.authority }} } · {{ 'policies.freq.' + o.frequency | translate }}</span>
+                <span [class]="stateChip[o.state]">{{ 'policies.state.' + o.state | translate }}</span>
+              </div>
+              <dl class="facts">
+                <div>
+                  <dt>{{ 'policies.nextDue' | translate }}</dt>
+                  <dd class="num">
+                    @if (o.nextDueOn) { {{ o.nextDueOn | date: 'd MMM y' : undefined : lang() }} } @else { — }
+                    @if (o.state !== 'Completed' && o.state !== 'Paused' && dueKey(o.daysLeft); as k) {
+                      <span class="cell-sub" [class.warn]="o.state === 'Overdue'">{{ k.key | translate: { n: k.n } }}</span>
+                    }
+                  </dd>
+                </div>
+                <div><dt>{{ 'policies.remind' | translate }}</dt><dd>{{ 'policies.daysBefore' | translate: { n: o.remindDaysBefore } }}</dd></div>
+                <div><dt>{{ 'policies.owner' | translate }}</dt><dd>{{ o.ownerName || '—' }}</dd></div>
+                <div><dt>{{ 'policies.filings' | translate }}</dt><dd class="num">{{ o.filingCount }}@if (o.lateCount) { <span class="cell-sub warn">{{ 'policies.lateN' | translate: { n: o.lateCount } }}</span> }</dd></div>
+              </dl>
+              @if (o.description) { <p class="pre desc">{{ o.description }}</p> }
+              @if (o.linkUrl) {
+                <a class="doc-link" [href]="o.linkUrl" target="_blank" rel="noopener noreferrer">
+                  <span class="material-icons-outlined" aria-hidden="true">language</span>
+                  <span class="grow break">{{ o.linkUrl }}</span>
+                  <span class="material-icons-outlined" aria-hidden="true">open_in_new</span>
+                </a>
+              }
+
+              @if (filingForm; as f) {
+                <div class="task-form">
+                  <p>{{ 'policies.fileHint' | translate: { date: (o.nextDueOn | date: 'd MMM y' : undefined : lang()) } }}</p>
+                  <div class="form-grid two">
+                    <div class="field">
+                      <label for="f-on">{{ 'policies.filedOn' | translate }}</label>
+                      <input id="f-on" type="date" [max]="today" [(ngModel)]="f.filedOn" />
+                    </div>
+                    <div class="field">
+                      <label for="f-ref">{{ 'policies.reference' | translate }}</label>
+                      <input id="f-ref" maxlength="100" [(ngModel)]="f.reference" [placeholder]="'policies.referencePh' | translate" />
+                    </div>
+                    <div class="field span-all">
+                      <label for="f-ev">{{ 'policies.evidence' | translate }}</label>
+                      <input id="f-ev" type="url" maxlength="1000" [(ngModel)]="f.evidenceUrl" placeholder="https://" />
+                      @if (!linkOk(f.evidenceUrl)) { <p class="err">{{ 'policies.linkBad' | translate }}</p> }
+                    </div>
+                    <div class="field span-all">
+                      <label for="f-notes">{{ 'policies.notes' | translate }}</label>
+                      <textarea id="f-notes" rows="2" maxlength="1000" [(ngModel)]="f.notes"></textarea>
+                    </div>
+                  </div>
+                  <div class="inline-actions">
+                    <button type="button" class="btn btn-quiet btn-small" (click)="filingForm = null">{{ 'common.cancel' | translate }}</button>
+                    <button type="button" class="btn btn-ink btn-small" [disabled]="saving() || !canSaveFiling()" (click)="saveFiling()">{{ 'policies.saveFiling' | translate }}</button>
+                  </div>
+                </div>
+              } @else if (od.canManage) {
+                <div class="inline-actions start wrap">
+                  @if (canFile(o)) {
+                    <button type="button" class="btn btn-ink btn-small" (click)="startFiling(o)">
+                      <span class="material-icons-outlined" aria-hidden="true">task_alt</span>{{ 'policies.markFiled' | translate }}
+                    </button>
+                  }
+                  <button type="button" class="btn btn-quiet btn-small" (click)="editObligation()">{{ 'common.edit' | translate }}</button>
+                  @if (!o.filingCount) {
+                    <button type="button" class="btn-link danger-link push" [disabled]="saving()" (click)="deleteObligation()">{{ (confirm === 'delete' ? 'policies.confirmDelete' : 'common.delete') | translate }}</button>
+                  }
+                </div>
+              }
+
+              <section class="sub-panel">
+                <header class="sub-head"><h4>{{ 'policies.filingHistory' | translate }}</h4></header>
+                <ul class="plain-list">
+                  @for (fl of od.filings; track fl.id) {
+                    <li class="plain-row filing">
+                      <span class="material-icons-outlined filing-icon" [class.late]="fl.isLate" aria-hidden="true">{{ fl.isLate ? 'running_with_errors' : 'task_alt' }}</span>
+                      <span class="stack grow">
+                        <span class="cell-main wrap">
+                          {{ 'policies.periodDue' | translate: { date: (fl.periodDueOn | date: 'd MMM y' : undefined : lang()) } }}
+                          @if (fl.reference) { · <span class="num">{{ fl.reference }}</span> }
+                        </span>
+                        <span class="cell-sub">
+                          {{ 'policies.filedOnDate' | translate: { date: (fl.filedOn | date: 'd MMM y' : undefined : lang()) } }}@if (fl.byName) { · {{ fl.byName }} }
+                          @if (fl.isLate) { · <span class="warn">{{ 'policies.late' | translate }}</span> }
+                        </span>
+                        @if (fl.notes) { <span class="cell-sub pre">{{ fl.notes }}</span> }
+                      </span>
+                      <span class="row-btns">
+                        @if (fl.evidenceUrl) {
+                          <a class="btn-link" [href]="fl.evidenceUrl" target="_blank" rel="noopener noreferrer" [attr.aria-label]="'policies.evidence' | translate">
+                            <span class="material-icons-outlined" aria-hidden="true">attach_file</span>
+                          </a>
+                        }
+                        @if (fl.canUndo) {
+                          <button type="button" class="btn-link danger-link" [disabled]="saving()" (click)="undoFiling(fl.id)">{{ (confirm === 'undo:' + fl.id ? 'policies.confirmUndo' : 'policies.undo') | translate }}</button>
+                        }
+                      </span>
+                    </li>
+                  } @empty {
+                    <li class="empty-line dim">{{ 'policies.noFilings' | translate }}</li>
+                  }
+                </ul>
+              </section>
+            } @else {
+              <p class="loading-line">{{ 'common.loading' | translate }}</p>
+            }
+          }
+
+          <!-- Edit obligation -->
+          @case ('obligationEdit') {
+            @if (obligationForm; as f) {
+              <div class="form-grid two">
+                <div class="field span-all">
+                  <label for="o-title">{{ 'policies.obligationTitle' | translate }}</label>
+                  <input id="o-title" maxlength="150" [(ngModel)]="f.title" [placeholder]="'policies.obligationTitlePh' | translate" />
+                </div>
+                <div class="field">
+                  <label for="o-auth">{{ 'policies.authority' | translate }}</label>
+                  <input id="o-auth" maxlength="100" [(ngModel)]="f.authority" [placeholder]="'policies.authorityPh' | translate" />
+                </div>
+                <div class="field">
+                  <label for="o-cat">{{ 'policies.category' | translate }}</label>
+                  <select id="o-cat" [(ngModel)]="f.category">
+                    @for (c of obligationCategories; track c) { <option [value]="c">{{ 'policies.ocat.' + c | translate }}</option> }
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="o-freq">{{ 'policies.frequency' | translate }}</label>
+                  <select id="o-freq" [(ngModel)]="f.frequency">
+                    @for (q of frequencies; track q) { <option [value]="q">{{ 'policies.freq.' + q | translate }}</option> }
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="o-due">{{ 'policies.nextDue' | translate }}</label>
+                  <input id="o-due" type="date" [(ngModel)]="f.nextDueOn" [disabled]="f.completed" />
+                </div>
+                <div class="field">
+                  <label for="o-rem">{{ 'policies.remindDays' | translate }}</label>
+                  <input id="o-rem" type="number" min="0" max="90" [(ngModel)]="f.remindDaysBefore" />
+                </div>
+                <div class="field">
+                  <label for="o-own">{{ 'policies.owner' | translate }}</label>
+                  <select id="o-own" [(ngModel)]="f.ownerEmployeeId">
+                    <option value="">{{ 'policies.noOwner' | translate }}</option>
+                    @for (o of lookups().people; track o.id) { <option [value]="o.id">{{ o.name }}</option> }
+                  </select>
+                </div>
+                <div class="field span-all">
+                  <label for="o-link">{{ 'policies.portalLink' | translate }}</label>
+                  <input id="o-link" type="url" maxlength="1000" [(ngModel)]="f.linkUrl" placeholder="https://" />
+                  @if (!linkOk(f.linkUrl)) { <p class="err">{{ 'policies.linkBad' | translate }}</p> }
+                </div>
+                <div class="field span-all">
+                  <label for="o-desc">{{ 'policies.howTo' | translate }}</label>
+                  <textarea id="o-desc" rows="3" maxlength="1000" [(ngModel)]="f.description" [placeholder]="'policies.howToPh' | translate"></textarea>
+                </div>
+              </div>
+              <label class="check-inline wrap-text"><input type="checkbox" [(ngModel)]="f.isActive" />{{ 'policies.activeLong' | translate }}</label>
+              <p class="field-hint">{{ (f.completed ? 'policies.completedHint' : 'policies.obligationHint') | translate }}</p>
+            }
+          }
+        }
+      </div>
+
+      @if (d === 'policyEdit' || d === 'obligationEdit') {
+        <footer class="drawer-foot">
+          <button type="button" class="btn btn-quiet" (click)="closeDrawer()">{{ 'common.cancel' | translate }}</button>
+          @if (d === 'policyEdit') {
+            <button type="button" class="btn btn-ink" [disabled]="!canSavePolicy() || saving()" (click)="savePolicy()">{{ (policyForm?.id ? 'common.save' : 'policies.saveDraft') | translate }}</button>
+          } @else {
+            <button type="button" class="btn btn-ink" [disabled]="!canSaveObligation() || saving()" (click)="saveObligation()">{{ 'common.save' | translate }}</button>
+          }
+        </footer>
+      }
+    </aside>
+  </div>
+}
