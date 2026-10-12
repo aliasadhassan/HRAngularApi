@@ -49,9 +49,6 @@ const soon = (
  * Consolidation: ek kaam ke chhote pages ek page ke tabs hain (56 → 19 planned pages).
  */
 const PLANNED: Route[] = [
-  // Talent
-  soon('talent/learning', 'nav.learningGrowth', undefined, ['courses', 'skills', 'career']),
-
   // Employee experience
   soon('engagement', 'nav.engagement', undefined, ['surveys', 'recognition']),
 
@@ -94,6 +91,7 @@ export const routes: Routes = [
       { path: 'talent/performance', loadComponent: () => import('./pages/performance/performance').then(m => m.PerformanceComponent), data: { titleKey: 'nav.performance' } },
       { path: 'talent/recruitment', loadComponent: () => import('./pages/recruitment/recruitment').then(m => m.RecruitmentComponent), data: { titleKey: 'nav.recruitment' } },
       { path: 'requests', loadComponent: () => import('./pages/requests/requests').then(m => m.RequestsComponent), data: { titleKey: 'nav.requestsHelpdesk' } },
+      { path: 'talent/learning', loadComponent: () => import('./pages/learning/learning').then(m => m.LearningComponent), data: { titleKey: 'nav.learningGrowth' } },
       { path: 'talent/lifecycle', loadComponent: () => import('./pages/lifecycle/lifecycle').then(m => m.LifecycleComponent), data: { titleKey: 'nav.onboardingExit' } },
       { path: 'compliance/policies', loadComponent: () => import('./pages/policies/policies').then(m => m.PoliciesComponent), data: { titleKey: 'nav.policiesCompliance' } },
       { path: 'compliance/audit', loadComponent: () => import('./pages/audit/audit').then(m => m.AuditComponent), canActivate: [permissionGuard], data: { titleKey: 'nav.audit', permission: P.settingsView } },

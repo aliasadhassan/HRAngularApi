@@ -1,0 +1,1205 @@
+<div class="page">
+  <header class="page-intro">
+    <p>{{ 'learning.intro' | translate }}</p>
+    <div class="intro-actions">
+      @if (tab() === 'courses' && canManage()) {
+        <button type="button" class="btn btn-ink" (click)="newCourse()">
+          <span class="material-icons-outlined" aria-hidden="true">add</span>{{ 'learning.newCourse' | translate }}
+        </button>
+      } @else if (tab() === 'skills' && canManage()) {
+        <button type="button" class="btn btn-quiet" [disabled]="saving()" (click)="addStarterSkills()">
+          <span class="material-icons-outlined" aria-hidden="true">auto_awesome</span>{{ 'learning.addStarter' | translate }}
+        </button>
+        <button type="button" class="btn btn-ink" (click)="newSkill()">
+          <span class="material-icons-outlined" aria-hidden="true">add</span>{{ 'learning.newSkill' | translate }}
+        </button>
+      }
+    </div>
+  </header>
+
+  @if (summary(); as s) {
+    <nav class="tabs">
+      <button type="button" class="tab" [class.is-active]="tab() === 'courses'" (click)="setTab('courses')">
+        {{ 'learning.tabs.courses' | translate }}
+        @if (s.myOpen) { <span class="tab-count num" [class.alert-count]="s.myOverdue > 0">{{ s.myOpen }}</span> }
+      </button>
+      <button type="button" class="tab" [class.is-active]="tab() === 'skills'" (click)="setTab('skills')">
+        {{ 'learning.tabs.skills' | translate }}
+        @if (s.skillCount) { <span class="tab-count num">{{ s.skillCount }}</span> }
+      </button>
+      <button type="button" class="tab" [class.is-active]="tab() === 'career'" (click)="setTab('career')">
+        {{ 'learning.tabs.career' | translate }}
+        @if (canSeeTeam() && s.activeGoals) { <span class="tab-count num">{{ s.activeGoals }}</span> }
+      </button>
+    </nav>
+  } @else {
+    <p class="loading-line">{{ 'common.loading' | translate }}</p>
+  }
+
+  <!-- ═══ Courses ═══ -->
+  @if (tab() === 'courses' && summary(); as s) {
+    @if (s.myOverdue) {
+      <div class="notice notice-warn">
+        <span class="material-icons-outlined" aria-hidden="true">assignment_late</span>
+        <span class="grow">{{ 'learning.myOverdueNotice' | translate: { n: s.myOverdue } }}</span>
+      </div>
+    }
+    @if (canSeeTeam() && s.teamOverdue) {
+      <div class="notice notice-info">
+        <span class="material-icons-outlined" aria-hidden="true">groups</span>
+        <span class="grow">{{ 'learning.teamOverdueNotice' | translate: { n: s.teamOverdue } }}</span>
+        <button type="button" class="btn btn-quiet btn-small" (click)="showOverdue()">{{ 'learning.showThem' | translate }}</button>
+      </div>
+    }
+
+    @if (linked()) {
+      <section class="tallies">
+        <article class="tally static" [class.is-warn]="s.myOpen > 0">
+          <span class="t-label">{{ 'learning.sum.myOpen' | translate }}</span>
+          <span class="t-figure num">{{ s.myOpen }}</span>
+          <span class="t-sub">{{ 'learning.sum.myOpenSub' | translate }}</span>
+        </article>
+        <article class="tally static" [class.is-alert]="s.myOverdue > 0">
+          <span class="t-label">{{ 'learning.sum.myOverdue' | translate }}</span>
+          <span class="t-figure num">{{ s.myOverdue }}</span>
+          <span class="t-sub">{{ 'learning.sum.myOverdueSub' | translate }}</span>
+        </article>
+        <article class="tally static">
+          <span class="t-label">{{ 'learning.sum.myDone' | translate }}</span>
+          <span class="t-figure num">{{ s.myCompletedThisYear }}</span>
+          <span class="t-sub">{{ 'learning.sum.myDoneSub' | translate }}</span>
+        </article>
+        <article class="tally static">
+          <span class="t-label">{{ 'learning.sum.hours' | translate }}</span>
+          <span class="t-figure num">{{ s.myHoursThisYear | number: '1.0-1' : lang() }}</span>
+          <span class="t-sub">{{ 'learning.sum.hoursSub' | translate }}</span>
+        </article>
+      </section>
+    }
+
+    @if (myOpen().length) {
+      <section class="panel panel-flush">
+        <header class="list-head">
+          <h3 class="section-title">{{ 'learning.myLearning' | translate }}</h3>
+          <p class="panel-sub">{{ 'learning.myLearningSub' | translate }}</p>
+        </header>
+        <ul class="my-list">
+          @for (e of myOpen(); track e.id) {
+            <li>
+              <button type="button" class="my-row" [class.is-late]="e.isOverdue" (click)="openEnrollment(e)">
+                <span class="material-icons-outlined cat-icon sm" aria-hidden="true">{{ courseIcon[e.category] }}</span>
+                <span class="stack grow">
+                  <span class="cell-main wrap">{{ e.courseTitle }}</span>
+                  <span class="cell-sub">
+                    {{ 'learning.source.' + e.source | translate }}
+                    @if (e.assignedByName) { · {{ e.assignedByName }} }
+                  </span>
+                </span>
+                <span class="my-due">
+                  @if (dueKey(e.daysLeft); as k) {
+                    <span class="cell-sub" [class.warn]="e.isOverdue">{{ k.key | translate: { n: k.n } }}</span>
+                  }
+                  <span class="mini-progress">
+                    <span class="bar"><span [style.width.%]="e.progress"></span></span>
+                    <span class="num">{{ e.progress }}%</span>
+                  </span>
+                </span>
+              </button>
+            </li>
+          }
+        </ul>
+      </section>
+    }
+
+    @if (canSeeTeam()) {
+      <div class="seg-row view-switch" role="group" [attr.aria-label]="'learning.view' | translate">
+        <button type="button" class="seg" [class.is-active]="courseView() === 'catalogue'" (click)="setCourseView('catalogue')">{{ 'learning.catalogue' | translate }}</button>
+        <button type="button" class="seg" [class.is-active]="courseView() === 'team'" (click)="setCourseView('team')">
+          {{ (s.canSeeAll ? 'learning.allLearning' : 'learning.teamLearning') | translate }}
+        </button>
+      </div>
+    }
+
+    @if (courseView() === 'catalogue' || !canSeeTeam()) {
+      <section class="panel panel-flush">
+        <div class="toolbar">
+          <label class="search">
+            <span class="material-icons-outlined" aria-hidden="true">search</span>
+            <input type="search" [ngModel]="search()" (ngModelChange)="onSearch($event)" [placeholder]="'learning.searchPh' | translate" [attr.aria-label]="'learning.searchPh' | translate" />
+          </label>
+          <select class="select-sm" [ngModel]="category()" (ngModelChange)="setCategory($event)" [attr.aria-label]="'learning.category' | translate">
+            <option value="">{{ 'learning.allCategories' | translate }}</option>
+            @for (c of categories; track c) { <option [value]="c">{{ 'learning.cat.' + c | translate }}</option> }
+          </select>
+          @if (s.canManage) {
+            <label class="check-inline">
+              <input type="checkbox" [ngModel]="showInactive()" (ngModelChange)="setInactive($event)" />{{ 'learning.showInactive' | translate }}
+            </label>
+          }
+        </div>
+
+        @if (courses() === null) {
+          <p class="loading-line">{{ 'common.loading' | translate }}</p>
+        } @else if (!courses()!.length) {
+          <div class="empty-state">
+            <span class="material-icons-outlined" aria-hidden="true">school</span>
+            @if (!s.hasCourses && s.canManage) {
+              <p>{{ 'learning.emptyHr' | translate }}</p>
+              <button type="button" class="btn btn-ink" (click)="newCourse()">{{ 'learning.newCourse' | translate }}</button>
+            } @else {
+              <p>{{ (s.hasCourses ? 'learning.noMatch' : 'learning.empty') | translate }}</p>
+            }
+          </div>
+        } @else {
+          <div class="card-grid">
+            @for (c of courses(); track c.id) {
+              <button type="button" class="course-card" [class.is-muted]="!c.isActive" (click)="openCourse(c.id)">
+                <span class="card-top">
+                  <span class="material-icons-outlined cat-icon" aria-hidden="true">{{ courseIcon[c.category] }}</span>
+                  <span class="stack grow">
+                    <span class="cell-sub">{{ 'learning.cat.' + c.category | translate }}@if (c.provider) { · {{ c.provider }} }</span>
+                    <span class="card-title">{{ c.title }}</span>
+                  </span>
+                </span>
+                @if (c.description) { <span class="card-summary">{{ c.description }}</span> }
+                <span class="card-meta">
+                  <span class="meta"><span class="material-icons-outlined" aria-hidden="true">{{ formatIcon[c.format] }}</span>{{ 'learning.format.' + c.format | translate }}</span>
+                  @if (c.durationHours) { <span class="meta num"><span class="material-icons-outlined" aria-hidden="true">schedule</span>{{ 'learning.hoursN' | translate: { n: (c.durationHours | number: '1.0-1' : lang()) } }}</span> }
+                  @if (c.skillName) { <span class="meta"><span class="material-icons-outlined" aria-hidden="true">trending_up</span>{{ c.skillName }} · {{ 'learning.levelN' | translate: { n: c.skillLevel } }}</span> }
+                </span>
+                <span class="card-foot">
+                  @if (!c.isActive) { <span class="chip chip-plain">{{ 'learning.inactive' | translate }}</span> }
+                  @if (c.myStatus) {
+                    <span [class]="enrollmentChip[c.myStatus]">
+                      @if (c.myStatus === 'Completed') { <span class="material-icons-outlined chip-icon" aria-hidden="true">check</span> }
+                      {{ 'learning.status.' + c.myStatus | translate }}
+                    </span>
+                    @if (isOpen(c.myStatus) && c.myDueOn) {
+                      <span class="meta" [class.warn]="c.myDueOn < today">{{ 'learning.byDate' | translate: { date: (c.myDueOn | date: 'd MMM' : undefined : lang()) } }}</span>
+                    }
+                  } @else if (!c.allowSelfEnrol && c.isActive) {
+                    <span class="meta">{{ 'learning.assignedOnly' | translate }}</span>
+                  }
+                  <span class="push card-stats">
+                    @if (c.averageRating !== null) {
+                      <span class="meta num"><span class="material-icons-outlined star" aria-hidden="true">star</span>{{ c.averageRating | number: '1.1-1' : lang() }}</span>
+                    }
+                    <span class="meta num" [attr.title]="'learning.statsTitle' | translate">
+                      <span class="material-icons-outlined" aria-hidden="true">group</span>{{ c.openCount }} · {{ c.completedCount }}
+                    </span>
+                  </span>
+                </span>
+              </button>
+            }
+          </div>
+        }
+      </section>
+    } @else {
+      <section class="tallies three">
+        <button type="button" class="tally" [class.is-picked]="teamStatus() === 'InProgress' || teamStatus() === 'NotStarted'" (click)="setTeamStatus('')">
+          <span class="t-label">{{ 'learning.sum.teamOpen' | translate }}</span>
+          <span class="t-figure num">{{ s.teamOpen }}</span>
+          <span class="t-sub">{{ 'learning.sum.teamOpenSub' | translate }}</span>
+        </button>
+        <button type="button" class="tally" [class.is-alert]="s.teamOverdue > 0" [class.is-picked]="teamOverdue()" (click)="showOverdue()">
+          <span class="t-label">{{ 'learning.sum.teamOverdue' | translate }}</span>
+          <span class="t-figure num">{{ s.teamOverdue }}</span>
+          <span class="t-sub">{{ 'learning.sum.teamOverdueSub' | translate }}</span>
+        </button>
+        <button type="button" class="tally" [class.is-picked]="teamStatus() === 'Completed'" (click)="setTeamStatus('Completed')">
+          <span class="t-label">{{ 'learning.sum.teamDone' | translate }}</span>
+          <span class="t-figure num">{{ s.teamCompletedThisYear }}</span>
+          <span class="t-sub">{{ 'learning.sum.teamDoneSub' | translate }}</span>
+        </button>
+      </section>
+
+      <section class="panel panel-flush">
+        <div class="toolbar">
+          <label class="search">
+            <span class="material-icons-outlined" aria-hidden="true">search</span>
+            <input type="search" [ngModel]="teamSearch()" (ngModelChange)="onTeamSearch($event)" [placeholder]="'learning.peopleSearchPh' | translate" [attr.aria-label]="'learning.peopleSearchPh' | translate" />
+          </label>
+          <select class="select-sm" [ngModel]="teamStatus()" (ngModelChange)="setTeamStatus($event)" [attr.aria-label]="'learning.statusCol' | translate">
+            <option value="">{{ 'learning.anyStatus' | translate }}</option>
+            @for (st of statuses; track st) { <option [value]="st">{{ 'learning.status.' + st | translate }}</option> }
+          </select>
+          @if (s.canSeeAll) {
+            <select class="select-sm" [ngModel]="teamDept()" (ngModelChange)="setTeamDept($event)" [attr.aria-label]="'learning.department' | translate">
+              <option value="">{{ 'learning.allDepartments' | translate }}</option>
+              @for (o of lookups().departments; track o.id) { <option [value]="o.id">{{ o.name }}</option> }
+            </select>
+          }
+          @if (teamOverdue()) {
+            <button type="button" class="chip chip-plain chip-x" (click)="setTeamStatus('')">
+              {{ 'learning.overdueOnly' | translate }}<span class="material-icons-outlined" aria-hidden="true">close</span>
+            </button>
+          }
+        </div>
+        @if (team() === null) {
+          <p class="loading-line">{{ 'common.loading' | translate }}</p>
+        } @else if (!team()!.length) {
+          <div class="empty-state">
+            <span class="material-icons-outlined" aria-hidden="true">assignment_turned_in</span>
+            <p>{{ 'learning.noTeamRows' | translate }}</p>
+          </div>
+        } @else {
+          <div class="table-wrap">
+            <table class="ledger-table">
+              <thead>
+                <tr>
+                  <th>{{ 'learning.person' | translate }}</th>
+                  <th>{{ 'learning.course' | translate }}</th>
+                  <th>{{ 'learning.statusCol' | translate }}</th>
+                  <th class="col-wide">{{ 'learning.due' | translate }}</th>
+                  <th class="col-wide">{{ 'learning.sourceCol' | translate }}</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (e of team(); track e.id) {
+                  <tr class="row-link" [class.is-late]="e.isOverdue" tabindex="0" (click)="openEnrollment(e)" (keydown.enter)="openEnrollment(e)">
+                    <td>
+                      <span class="stack">
+                        <span class="cell-main">{{ e.employeeName }}</span>
+                        <span class="cell-sub">{{ e.employeeCode }} · {{ e.departmentName }}</span>
+                      </span>
+                    </td>
+                    <td><span class="cell-main wrap">{{ e.courseTitle }}</span></td>
+                    <td>
+                      <span class="due-line">
+                        <span [class]="enrollmentChip[e.status]">{{ 'learning.status.' + e.status | translate }}</span>
+                        @if (e.status === 'InProgress') { <span class="cell-sub num">{{ e.progress }}%</span> }
+                      </span>
+                      @if (e.isOverdue && dueKey(e.daysLeft); as k) { <span class="cell-sub warn mobile-only">{{ k.key | translate: { n: k.n } }}</span> }
+                    </td>
+                    <td class="col-wide">
+                      @if (e.status === 'Completed') {
+                        <span class="num">{{ e.completedOn | date: 'd MMM y' : undefined : lang() }}</span>
+                      } @else if (e.dueOn) {
+                        <span class="stack">
+                          <span class="num">{{ e.dueOn | date: 'd MMM y' : undefined : lang() }}</span>
+                          @if (isOpen(e.status) && dueKey(e.daysLeft); as k) { <span class="cell-sub" [class.warn]="e.isOverdue">{{ k.key | translate: { n: k.n } }}</span> }
+                        </span>
+                      } @else { <span class="dim">—</span> }
+                    </td>
+                    <td class="col-wide">{{ 'learning.source.' + e.source | translate }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      </section>
+    }
+  }
+
+  <!-- ═══ Skills ═══ -->
+  @if (tab() === 'skills' && summary(); as s) {
+    @if (linked()) {
+      <section class="panel">
+        <header class="head-row">
+          <span class="stack">
+            <h3 class="section-title">{{ 'learning.mySkills' | translate }}</h3>
+            <p class="panel-sub">{{ 'learning.mySkillsSub' | translate }}</p>
+          </span>
+        </header>
+        @if (me(); as p) {
+          @if (p.skills.length) {
+            <ul class="skill-list">
+              @for (k of p.skills; track k.skillId) {
+                <li class="skill-row">
+                  <span class="stack grow">
+                    <span class="cell-main">{{ k.name }}</span>
+                    <span class="cell-sub">
+                      {{ 'learning.scat.' + k.category | translate }}
+                      @if (k.requiredNow) { · {{ 'learning.roleNeeds' | translate: { n: k.requiredNow } }} }
+                    </span>
+                  </span>
+                  <span class="level-dots" role="group" [attr.aria-label]="k.name">
+                    @for (n of levels; track n) {
+                      <button type="button" class="dot" [class.on]="n <= k.level" [class.need]="!!k.requiredNow && n === k.requiredNow"
+                        [disabled]="saving() || !p.canRate" [attr.aria-label]="levelLabel(n)" [attr.title]="levelLabel(n)" (click)="rate(p, k.skillId, n)"></button>
+                    }
+                  </span>
+                  <span [class]="sourceChip[k.source]">{{ 'learning.src.' + k.source | translate }}</span>
+                  <button type="button" class="btn-link danger-link" [disabled]="saving()" (click)="removeSkill(p, k.skillId)"
+                    [attr.aria-label]="'learning.removeSkill' | translate">
+                    @if (confirm === 'skill:' + p.employeeId + ':' + k.skillId) { {{ 'learning.sureRemove' | translate }} }
+                    @else { <span class="material-icons-outlined" aria-hidden="true">close</span> }
+                  </button>
+                </li>
+              }
+            </ul>
+          } @else {
+            <p class="dim pad-y">{{ 'learning.noSkillsYet' | translate }}</p>
+          }
+          @if (p.canRate && unratedSkills().length) {
+            <div class="add-row">
+              <select class="select-sm" [(ngModel)]="addSkillId" [attr.aria-label]="'learning.addSkill' | translate">
+                <option value="">{{ 'learning.pickSkill' | translate }}</option>
+                @for (o of unratedSkills(); track o.id) { <option [value]="o.id">{{ o.name }}</option> }
+              </select>
+              <select class="select-sm" [(ngModel)]="addSkillLevel" [attr.aria-label]="'learning.level.label' | translate">
+                @for (n of levels; track n) { <option [ngValue]="n">{{ n }} · {{ levelLabel(n) }}</option> }
+              </select>
+              <button type="button" class="btn btn-ink btn-small" [disabled]="!addSkillId || saving()" (click)="addMySkill()">{{ 'learning.addSkill' | translate }}</button>
+            </div>
+          }
+          <p class="field-hint">{{ 'learning.levelHint' | translate }}</p>
+        } @else if (meError()) {
+          <p class="dim">{{ 'learning.notLinked' | translate }}</p>
+        } @else {
+          <p class="loading-line">{{ 'common.loading' | translate }}</p>
+        }
+      </section>
+    } @else if (!s.canManage) {
+      <div class="notice notice-info">
+        <span class="material-icons-outlined" aria-hidden="true">badge</span>
+        <span class="grow">{{ 'learning.notLinked' | translate }}</span>
+      </div>
+    }
+
+    @if (canSeeTeam()) {
+      <section class="panel panel-flush">
+        <header class="list-head">
+          <h3 class="section-title">{{ (s.canSeeAll ? 'learning.matrixAll' : 'learning.matrixTeam') | translate }}</h3>
+          <p class="panel-sub">{{ 'learning.matrixSub' | translate }}</p>
+        </header>
+        <div class="toolbar">
+          <label class="search">
+            <span class="material-icons-outlined" aria-hidden="true">search</span>
+            <input type="search" [ngModel]="matrixSearch()" (ngModelChange)="onMatrixSearch($event)" [placeholder]="'learning.peopleSearchPh' | translate" [attr.aria-label]="'learning.peopleSearchPh' | translate" />
+          </label>
+          @if (s.canSeeAll) {
+            <select class="select-sm" [ngModel]="matrixDept()" (ngModelChange)="setMatrixDept($event)" [attr.aria-label]="'learning.department' | translate">
+              <option value="">{{ 'learning.allDepartments' | translate }}</option>
+              @for (o of lookups().departments; track o.id) { <option [value]="o.id">{{ o.name }}</option> }
+            </select>
+          }
+          <select class="select-sm" [ngModel]="matrixSkill()" (ngModelChange)="setMatrixSkill($event)" [attr.aria-label]="'learning.skill' | translate">
+            <option value="">{{ 'learning.anySkill' | translate }}</option>
+            @for (o of lookups().skills; track o.id) { <option [value]="o.id">{{ o.name }}</option> }
+          </select>
+        </div>
+        @if (matrix(); as m) {
+          @if (!m.people.length) {
+            <div class="empty-state">
+              <span class="material-icons-outlined" aria-hidden="true">grid_view</span>
+              <p>{{ 'learning.matrixEmpty' | translate }}</p>
+            </div>
+          } @else {
+            <div class="table-wrap matrix-wrap">
+              <table class="ledger-table matrix">
+                <thead>
+                  @if (m.skills.length) {
+                    <tr class="cat-row">
+                      <th></th>
+                      @for (g of matrixCategories(); track $index) { <th [attr.colspan]="g.span" class="cat-cell">{{ 'learning.scat.' + g.category | translate }}</th> }
+                    </tr>
+                  }
+                  <tr>
+                    <th class="sticky-col">{{ 'learning.person' | translate }}</th>
+                    @for (k of m.skills; track k.id) { <th class="lvl-head"><span>{{ k.name }}</span></th> }
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (r of m.people; track r.employeeId) {
+                    <tr class="row-link" tabindex="0" (click)="openPerson(r.employeeId)" (keydown.enter)="openPerson(r.employeeId)">
+                      <td class="sticky-col">
+                        <span class="stack">
+                          <span class="cell-main">{{ r.name }}</span>
+                          <span class="cell-sub">{{ r.designationName }}</span>
+                        </span>
+                      </td>
+                      @for (k of m.skills; track k.id) {
+                        <td class="lvl-cell">
+                          @if (r.levels[k.id]; as l) { <span class="lvl num" [attr.data-l]="l" [attr.title]="levelLabel(l)">{{ l }}</span> }
+                          @else { <span class="dim">·</span> }
+                        </td>
+                      }
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          }
+        } @else {
+          <p class="loading-line">{{ 'common.loading' | translate }}</p>
+        }
+      </section>
+    }
+
+    @if (s.canManage) {
+      <section class="panel panel-flush">
+        <header class="list-head">
+          <h3 class="section-title">{{ 'learning.library' | translate }}</h3>
+          <p class="panel-sub">{{ 'learning.librarySub' | translate }}</p>
+        </header>
+        @if (library() === null) {
+          <p class="loading-line">{{ 'common.loading' | translate }}</p>
+        } @else if (!library()!.length) {
+          <div class="empty-state">
+            <span class="material-icons-outlined" aria-hidden="true">psychology</span>
+            <p>{{ 'learning.libraryEmpty' | translate }}</p>
+            <div class="inline-actions">
+              <button type="button" class="btn btn-quiet" [disabled]="saving()" (click)="addStarterSkills()">{{ 'learning.addStarter' | translate }}</button>
+              <button type="button" class="btn btn-ink" (click)="newSkill()">{{ 'learning.newSkill' | translate }}</button>
+            </div>
+          </div>
+        } @else {
+          <div class="table-wrap">
+            <table class="ledger-table">
+              <thead>
+                <tr>
+                  <th>{{ 'learning.skill' | translate }}</th>
+                  <th class="col-wide">{{ 'learning.category' | translate }}</th>
+                  <th class="num-col">{{ 'learning.people' | translate }}</th>
+                  <th class="num-col col-wide">{{ 'learning.avgLevel' | translate }}</th>
+                  <th class="num-col col-wide">{{ 'learning.courses' | translate }}</th>
+                  <th class="num-col col-wide">{{ 'learning.roles' | translate }}</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (k of library(); track k.id) {
+                  <tr class="row-link" [class.is-muted]="!k.isActive" tabindex="0" (click)="editSkill(k)" (keydown.enter)="editSkill(k)">
+                    <td>
+                      <span class="stack">
+                        <span class="cell-main">{{ k.name }}@if (!k.isActive) { <span class="chip chip-plain chip-inline">{{ 'learning.inactive' | translate }}</span> }</span>
+                        @if (k.description) { <span class="cell-sub wrap">{{ k.description }}</span> }
+                      </span>
+                    </td>
+                    <td class="col-wide">{{ 'learning.scat.' + k.category | translate }}</td>
+                    <td class="num">{{ k.peopleCount }}</td>
+                    <td class="num col-wide">@if (k.averageLevel !== null) { {{ k.averageLevel | number: '1.1-1' : lang() }} } @else { <span class="dim">—</span> }</td>
+                    <td class="num col-wide">{{ k.courseCount }}</td>
+                    <td class="num col-wide">{{ k.roleCount }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      </section>
+    }
+  }
+
+  <!-- ═══ Career ═══ -->
+  @if (tab() === 'career' && summary(); as s) {
+    @if (linked()) {
+      @if (me(); as p) {
+        <section class="career-grid">
+          <article class="panel role-card">
+            <span class="t-label">{{ 'learning.currentRole' | translate }}</span>
+            <h3 class="role-title">{{ p.designationName }}</h3>
+            @if (p.currentRoleReadiness !== null) {
+              <div class="ready" [class]="'ready ' + tone(p.currentRoleReadiness)">
+                <span class="bar"><span [style.width.%]="p.currentRoleReadiness"></span></span>
+                <span class="num">{{ 'learning.readyPct' | translate: { n: p.currentRoleReadiness } }}</span>
+              </div>
+              <ul class="gap-list">
+                @for (g of p.currentRoleGaps; track g.skillId) {
+                  <li [class.met]="g.met">
+                    <span class="material-icons-outlined" aria-hidden="true">{{ g.met ? 'check_circle' : 'radio_button_unchecked' }}</span>
+                    <span class="grow">{{ g.name }}</span>
+                    <span class="num cell-sub">{{ g.current ?? 0 }} / {{ g.required }}</span>
+                  </li>
+                }
+              </ul>
+            } @else {
+              <p class="dim">{{ 'learning.noRoleSkills' | translate }}</p>
+            }
+          </article>
+
+          <article class="panel role-card goal-card">
+            <span class="t-label">{{ 'learning.nextRole' | translate }}</span>
+            @if (p.goal; as g) {
+              <h3 class="role-title">
+                {{ g.targetTitle }}
+                @if (g.status === 'Achieved') { <span class="chip chip-moss">{{ 'learning.achieved' | translate }}</span> }
+              </h3>
+              <p class="cell-sub">
+                @if (g.status === 'Achieved') { {{ 'learning.achievedOn' | translate: { date: (g.achievedOn | date: 'd MMM y' : undefined : lang()) } }} }
+                @else if (g.targetDate) { {{ 'learning.targetBy' | translate: { date: (g.targetDate | date: 'MMM y' : undefined : lang()) } }} }
+              </p>
+              @if (g.notes) { <p class="goal-notes">{{ g.notes }}</p> }
+              @if (g.status === 'Active') {
+                @if (g.readiness !== null) {
+                  <div [class]="'ready ' + tone(g.readiness)">
+                    <span class="bar"><span [style.width.%]="g.readiness"></span></span>
+                    <span class="num">{{ 'learning.readyPct' | translate: { n: g.readiness } }}</span>
+                  </div>
+                  <ul class="gap-list">
+                    @for (x of g.gaps; track x.skillId) {
+                      <li [class.met]="x.met">
+                        <span class="material-icons-outlined" aria-hidden="true">{{ x.met ? 'check_circle' : 'radio_button_unchecked' }}</span>
+                        <span class="grow">{{ x.name }}</span>
+                        <span class="num cell-sub">{{ x.current ?? 0 }} / {{ x.required }}</span>
+                      </li>
+                    }
+                  </ul>
+                } @else {
+                  <p class="dim">{{ 'learning.noTargetSkills' | translate }}</p>
+                }
+              }
+              <div class="inline-actions">
+                <button type="button" class="btn btn-quiet btn-small" (click)="editGoal(p)">{{ (g.status === 'Active' ? 'learning.changeGoal' : 'learning.newGoal') | translate }}</button>
+                <button type="button" class="btn-link danger-link" [disabled]="saving()" (click)="clearGoal(p)">
+                  {{ (confirm === 'clearGoal' ? 'learning.sureClear' : 'learning.clearGoal') | translate }}
+                </button>
+              </div>
+            } @else {
+              <p class="dim">{{ 'learning.noGoal' | translate }}</p>
+              <button type="button" class="btn btn-ink btn-small" (click)="editGoal(p)">{{ 'learning.setGoal' | translate }}</button>
+            }
+          </article>
+        </section>
+
+        @if (p.goal?.suggestions?.length) {
+          <section class="panel panel-flush">
+            <header class="list-head">
+              <h3 class="section-title">{{ 'learning.suggested' | translate }}</h3>
+              <p class="panel-sub">{{ 'learning.suggestedSub' | translate }}</p>
+            </header>
+            <ul class="my-list">
+              @for (c of p.goal!.suggestions; track c.courseId) {
+                <li>
+                  <div class="my-row static">
+                    <span class="material-icons-outlined cat-icon sm" aria-hidden="true">school</span>
+                    <span class="stack grow">
+                      <button type="button" class="link-title" (click)="openCourse(c.courseId)">{{ c.title }}</button>
+                      <span class="cell-sub">
+                        @if (c.skillLevel) { {{ 'learning.levelN' | translate: { n: c.skillLevel } }} }
+                        @if (c.durationHours) { · {{ 'learning.hoursN' | translate: { n: (c.durationHours | number: '1.0-1' : lang()) } }} }
+                      </span>
+                    </span>
+                    @if (c.myStatus && isOpen(c.myStatus)) {
+                      <span [class]="enrollmentChip[c.myStatus]">{{ 'learning.status.' + c.myStatus | translate }}</span>
+                    } @else if (c.allowSelfEnrol) {
+                      <button type="button" class="btn btn-quiet btn-small" [disabled]="saving()" (click)="enrol(c.courseId, c.title)">{{ 'learning.enrol' | translate }}</button>
+                    } @else {
+                      <span class="cell-sub">{{ 'learning.askManager' | translate }}</span>
+                    }
+                  </div>
+                </li>
+              }
+            </ul>
+          </section>
+        }
+      } @else if (meError()) {
+        <div class="notice notice-info"><span class="material-icons-outlined" aria-hidden="true">badge</span><span class="grow">{{ 'learning.notLinked' | translate }}</span></div>
+      } @else {
+        <p class="loading-line">{{ 'common.loading' | translate }}</p>
+      }
+    }
+
+    @if (canSeeTeam()) {
+      <section class="panel panel-flush">
+        <header class="list-head head-row">
+          <span class="stack">
+            <h3 class="section-title">{{ 'learning.goalsTitle' | translate }}</h3>
+            <p class="panel-sub">{{ 'learning.goalsSub' | translate }}</p>
+          </span>
+          @if (s.canSeeAll) {
+            <select class="select-sm" [ngModel]="goalsDept()" (ngModelChange)="setGoalsDept($event)" [attr.aria-label]="'learning.department' | translate">
+              <option value="">{{ 'learning.allDepartments' | translate }}</option>
+              @for (o of lookups().departments; track o.id) { <option [value]="o.id">{{ o.name }}</option> }
+            </select>
+          }
+        </header>
+        @if (goals() === null) {
+          <p class="loading-line">{{ 'common.loading' | translate }}</p>
+        } @else if (!goals()!.length) {
+          <div class="empty-state">
+            <span class="material-icons-outlined" aria-hidden="true">flag</span>
+            <p>{{ 'learning.goalsEmpty' | translate }}</p>
+          </div>
+        } @else {
+          <div class="table-wrap">
+            <table class="ledger-table">
+              <thead>
+                <tr>
+                  <th>{{ 'learning.person' | translate }}</th>
+                  <th class="col-wide">{{ 'learning.currentRole' | translate }}</th>
+                  <th>{{ 'learning.nextRole' | translate }}</th>
+                  <th>{{ 'learning.readiness' | translate }}</th>
+                  <th class="col-wide">{{ 'learning.target' | translate }}</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (g of goals(); track g.employeeId) {
+                  <tr class="row-link" tabindex="0" (click)="openPerson(g.employeeId)" (keydown.enter)="openPerson(g.employeeId)">
+                    <td>
+                      <span class="stack">
+                        <span class="cell-main">{{ g.name }}</span>
+                        <span class="cell-sub">{{ g.code }} · {{ g.departmentName }}</span>
+                      </span>
+                    </td>
+                    <td class="col-wide">{{ g.currentTitle }}</td>
+                    <td><span class="cell-main wrap">{{ g.targetTitle }}</span></td>
+                    <td>
+                      @if (g.status === 'Achieved') {
+                        <span class="chip chip-moss">{{ 'learning.achieved' | translate }}</span>
+                      } @else if (g.readiness !== null) {
+                        <span [class]="'ready compact ' + tone(g.readiness)">
+                          <span class="bar"><span [style.width.%]="g.readiness"></span></span>
+                          <span class="num">{{ g.readiness }}%</span>
+                        </span>
+                      } @else { <span class="dim">—</span> }
+                    </td>
+                    <td class="col-wide num">
+                      @if (g.status === 'Achieved') { {{ g.achievedOn | date: 'd MMM y' : undefined : lang() }} }
+                      @else if (g.targetDate) { {{ g.targetDate | date: 'MMM y' : undefined : lang() }} }
+                      @else { <span class="dim">—</span> }
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      </section>
+    }
+
+    <section class="panel panel-flush">
+      <header class="list-head">
+        <h3 class="section-title">{{ 'learning.rolesTitle' | translate }}</h3>
+        <p class="panel-sub">{{ (s.canManage ? 'learning.rolesSubHr' : 'learning.rolesSub') | translate }}</p>
+      </header>
+      @if (roles() === null) {
+        <p class="loading-line">{{ 'common.loading' | translate }}</p>
+      } @else if (!roles()!.length) {
+        <p class="dim pad">{{ 'learning.noRoles' | translate }}</p>
+      } @else {
+        <ul class="role-list">
+          @for (r of roles(); track r.designationId) {
+            <li class="role-row">
+              <span class="stack role-name">
+                <span class="cell-main">{{ r.title }}</span>
+                <span class="cell-sub">
+                  @if (r.level) { {{ 'learning.gradeN' | translate: { n: r.level } }} · }
+                  {{ 'learning.holders' | translate: { n: r.peopleCount } }}
+                  @if (r.aimingCount) { · {{ 'learning.aiming' | translate: { n: r.aimingCount } }} }
+                </span>
+              </span>
+              <span class="role-skills grow">
+                @for (k of r.skills; track k.skillId) {
+                  <span class="chip chip-plain">{{ k.name }} <span class="num">{{ k.requiredLevel }}</span></span>
+                } @empty {
+                  <span class="dim">{{ 'learning.noRoleSkillsShort' | translate }}</span>
+                }
+              </span>
+              @if (s.canManage) {
+                <button type="button" class="btn btn-quiet btn-small" (click)="editRole(r)">{{ 'common.edit' | translate }}</button>
+              }
+            </li>
+          }
+        </ul>
+      }
+    </section>
+  }
+</div>
+
+@if (drawer(); as d) {
+  <div class="overlay" (click)="closeDrawer()">
+    <aside class="drawer" [class.drawer-wide]="d === 'course' || d === 'person' || d === 'courseEdit'" role="dialog" aria-modal="true" (click)="$event.stopPropagation()">
+      <header class="drawer-head">
+        <h3>
+          @switch (d) {
+            @case ('course') { {{ course()?.course?.title ?? ('common.loading' | translate) }} }
+            @case ('courseEdit') { {{ (courseForm?.id ? 'learning.editCourse' : 'learning.newCourse') | translate }} }
+            @case ('enrollment') { {{ enrollment()?.courseTitle }} }
+            @case ('person') { {{ person()?.name ?? ('common.loading' | translate) }} }
+            @case ('skillEdit') { {{ (skillForm?.id ? 'learning.editSkill' : 'learning.newSkill') | translate }} }
+            @case ('goalEdit') { {{ 'learning.goalFor' | translate: { name: goalForm?.name } }} }
+            @case ('roleEdit') { {{ roleForm?.title }} }
+          }
+        </h3>
+        <button type="button" class="btn-link" (click)="closeDrawer()" [attr.aria-label]="'common.close' | translate">
+          <span class="material-icons-outlined" aria-hidden="true">close</span>
+        </button>
+      </header>
+
+      <div class="drawer-body">
+        @switch (d) {
+          <!-- Course -->
+          @case ('course') {
+            @if (course(); as cd) {
+              @let c = cd.course;
+              <div class="doc-head">
+                <span class="cell-sub">{{ 'learning.cat.' + c.category | translate }}@if (c.provider) { · {{ c.provider }} }</span>
+                @if (!c.isActive) { <span class="chip chip-plain">{{ 'learning.inactive' | translate }}</span> }
+              </div>
+              <dl class="facts">
+                <div><dt>{{ 'learning.formatLabel' | translate }}</dt><dd>{{ 'learning.format.' + c.format | translate }}</dd></div>
+                <div><dt>{{ 'learning.duration' | translate }}</dt><dd class="num">@if (c.durationHours) { {{ 'learning.hoursN' | translate: { n: (c.durationHours | number: '1.0-1' : lang()) } }} } @else { — }</dd></div>
+                <div><dt>{{ 'learning.builds' | translate }}</dt><dd>@if (c.skillName) { {{ c.skillName }} · {{ 'learning.levelN' | translate: { n: c.skillLevel } }} } @else { — }</dd></div>
+                <div><dt>{{ 'learning.completeWithin' | translate }}</dt><dd class="num">@if (c.completeWithinDays) { {{ 'learning.daysN' | translate: { n: c.completeWithinDays } }} } @else { — }</dd></div>
+              </dl>
+              @if (c.description) { <p class="doc-summary">{{ c.description }}</p> }
+              @if (c.linkUrl) {
+                <a class="doc-link" [href]="c.linkUrl" target="_blank" rel="noopener noreferrer">
+                  <span class="material-icons-outlined" aria-hidden="true">open_in_new</span>
+                  <span class="grow">{{ 'learning.openCourse' | translate }}</span>
+                </a>
+              }
+
+              @if (c.myStatus && isOpen(c.myStatus)) {
+                <div class="my-box">
+                  <span class="stack grow">
+                    <span class="cell-main">{{ 'learning.youAre' | translate }} <span [class]="enrollmentChip[c.myStatus]">{{ 'learning.status.' + c.myStatus | translate }}</span></span>
+                    @if (c.myDueOn) { <span class="cell-sub" [class.warn]="c.myDueOn < today">{{ 'learning.byDate' | translate: { date: (c.myDueOn | date: 'd MMM y' : undefined : lang()) } }}</span> }
+                  </span>
+                  <button type="button" class="btn btn-ink btn-small" (click)="openMyEnrollment(c.myEnrollmentId)">{{ 'learning.updateProgress' | translate }}</button>
+                </div>
+              } @else if (c.myStatus === 'Completed') {
+                <div class="my-box done">
+                  <span class="material-icons-outlined" aria-hidden="true">verified</span>
+                  <span class="grow">{{ 'learning.youCompleted' | translate: { date: (c.myCompletedOn | date: 'd MMM y' : undefined : lang()) } }}</span>
+                  @if (cd.canEnrol) { <button type="button" class="btn btn-quiet btn-small" [disabled]="saving()" (click)="enrol(c.id, c.title)">{{ 'learning.takeAgain' | translate }}</button> }
+                </div>
+              } @else if (cd.canEnrol) {
+                <div class="my-box">
+                  <span class="grow">{{ 'learning.enrolHint' | translate: { n: c.completeWithinDays ?? 0 } }}</span>
+                  <button type="button" class="btn btn-ink btn-small" [disabled]="saving()" (click)="enrol(c.id, c.title)">{{ 'learning.enrol' | translate }}</button>
+                </div>
+              } @else if (!c.allowSelfEnrol && c.isActive && linked()) {
+                <p class="cell-sub">{{ 'learning.assignedOnlyLong' | translate }}</p>
+              }
+
+              @if (cd.canEdit || cd.canAssign) {
+                <div class="inline-actions">
+                  @if (cd.canAssign && !assignForm) {
+                    <button type="button" class="btn btn-ink btn-small" (click)="startAssign()">
+                      <span class="material-icons-outlined" aria-hidden="true">person_add</span>{{ 'learning.assign' | translate }}
+                    </button>
+                  }
+                  @if (cd.canEdit) { <button type="button" class="btn btn-quiet btn-small" (click)="editCourse()">{{ 'common.edit' | translate }}</button> }
+                  @if (cd.canDelete) {
+                    <button type="button" class="btn-link danger-link" [disabled]="saving()" (click)="deleteCourse()">
+                      {{ (confirm === 'deleteCourse' ? 'learning.sureDelete' : 'common.delete') | translate }}
+                    </button>
+                  }
+                </div>
+              }
+
+              @if (assignForm; as f) {
+                <div class="settings-box">
+                  <div class="head-row">
+                    <h4 class="sub-title">{{ 'learning.assignTitle' | translate }}</h4>
+                    <span class="cell-sub num">{{ 'learning.pickedN' | translate: { n: f.picked.size } }}</span>
+                  </div>
+                  <div class="form-grid two">
+                    <div class="field">
+                      <label for="a-search">{{ 'learning.findPeople' | translate }}</label>
+                      <input id="a-search" type="search" [(ngModel)]="f.search" [placeholder]="'learning.peopleSearchPh' | translate" />
+                    </div>
+                    <div class="field">
+                      <label for="a-due">{{ 'learning.dueOn' | translate }}</label>
+                      <input id="a-due" type="date" [min]="today" [(ngModel)]="f.dueOn" />
+                      <p class="field-hint">{{ 'learning.dueDefault' | translate: { n: c.completeWithinDays ?? 0 } }}</p>
+                    </div>
+                  </div>
+                  <div class="pick-list">
+                    @for (o of assignPeople(); track o.id) {
+                      <label class="pick">
+                        <input type="checkbox" [checked]="f.picked.has(o.id)" (change)="togglePick(o.id)" />
+                        <span class="stack"><span class="cell-main">{{ o.name }}</span>@if (o.extra) { <span class="cell-sub">{{ o.extra }}</span> }</span>
+                      </label>
+                    } @empty {
+                      <p class="dim">{{ 'learning.noPeople' | translate }}</p>
+                    }
+                  </div>
+                  <div class="inline-actions">
+                    <button type="button" class="btn-link" (click)="pickAllShown()">{{ 'learning.pickAll' | translate }}</button>
+                    <span class="push"></span>
+                    <button type="button" class="btn btn-quiet btn-small" (click)="assignForm = null">{{ 'common.cancel' | translate }}</button>
+                    <button type="button" class="btn btn-ink btn-small" [disabled]="!f.picked.size || saving()" (click)="runAssign()">{{ 'learning.assignN' | translate: { n: f.picked.size } }}</button>
+                  </div>
+                </div>
+              }
+
+              @if (cd.enrollments.length) {
+                <h4 class="sub-title">{{ 'learning.whoIsTaking' | translate }}</h4>
+                <ul class="people-list">
+                  @for (e of cd.enrollments; track e.id) {
+                    <li>
+                      <button type="button" class="person-row" (click)="openEnrollment(e)">
+                        <span class="stack grow">
+                          <span class="cell-main">{{ e.employeeName }}</span>
+                          <span class="cell-sub">{{ e.employeeCode }} · {{ e.departmentName }}</span>
+                        </span>
+                        <span class="stack end">
+                          <span [class]="enrollmentChip[e.status]">{{ 'learning.status.' + e.status | translate }}</span>
+                          @if (e.status === 'Completed') { <span class="cell-sub num">{{ e.completedOn | date: 'd MMM y' : undefined : lang() }}</span> }
+                          @else if (isOpen(e.status) && dueKey(e.daysLeft); as k) { <span class="cell-sub" [class.warn]="e.isOverdue">{{ k.key | translate: { n: k.n } }}</span> }
+                        </span>
+                      </button>
+                    </li>
+                  }
+                </ul>
+              }
+            } @else {
+              <p class="loading-line">{{ 'common.loading' | translate }}</p>
+            }
+          }
+
+          <!-- Course form -->
+          @case ('courseEdit') {
+            @if (courseForm; as f) {
+              <div class="form-grid">
+                <div class="field span-2">
+                  <label for="c-title">{{ 'learning.titleLabel' | translate }}</label>
+                  <input id="c-title" maxlength="150" [(ngModel)]="f.title" />
+                </div>
+                <div class="field">
+                  <label for="c-cat">{{ 'learning.category' | translate }}</label>
+                  <select id="c-cat" [(ngModel)]="f.category">
+                    @for (c of categories; track c) { <option [value]="c">{{ 'learning.cat.' + c | translate }}</option> }
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="c-fmt">{{ 'learning.formatLabel' | translate }}</label>
+                  <select id="c-fmt" [(ngModel)]="f.format">
+                    @for (x of formats; track x) { <option [value]="x">{{ 'learning.format.' + x | translate }}</option> }
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="c-prov">{{ 'learning.provider' | translate }}</label>
+                  <input id="c-prov" maxlength="100" [(ngModel)]="f.provider" [placeholder]="'learning.providerPh' | translate" />
+                </div>
+                <div class="field">
+                  <label for="c-hrs">{{ 'learning.durationHours' | translate }}</label>
+                  <input id="c-hrs" type="number" min="0.5" max="1000" step="0.5" [(ngModel)]="f.durationHours" />
+                </div>
+                <div class="field span-all">
+                  <label for="c-desc">{{ 'learning.description' | translate }}</label>
+                  <textarea id="c-desc" rows="4" maxlength="2000" [(ngModel)]="f.description" [placeholder]="'learning.descriptionPh' | translate"></textarea>
+                </div>
+                <div class="field span-all">
+                  <label for="c-link">{{ 'learning.link' | translate }}</label>
+                  <input id="c-link" type="url" maxlength="1000" [(ngModel)]="f.linkUrl" placeholder="https://" />
+                  @if (!linkOk(f.linkUrl)) { <p class="err">{{ 'learning.linkBad' | translate }}</p> }
+                </div>
+                <div class="field span-2">
+                  <label for="c-skill">{{ 'learning.builds' | translate }}</label>
+                  <select id="c-skill" [(ngModel)]="f.skillId" (ngModelChange)="f.skillLevel = $event ? (f.skillLevel ?? 3) : null">
+                    <option value="">{{ 'learning.noSkill' | translate }}</option>
+                    @for (o of lookups().skills; track o.id) { <option [value]="o.id">{{ o.name }}</option> }
+                  </select>
+                </div>
+                @if (f.skillId) {
+                  <div class="field">
+                    <label for="c-lvl">{{ 'learning.toLevel' | translate }}</label>
+                    <select id="c-lvl" [(ngModel)]="f.skillLevel">
+                      @for (n of levels; track n) { <option [ngValue]="n">{{ n }} · {{ levelLabel(n) }}</option> }
+                    </select>
+                  </div>
+                }
+              </div>
+              <div class="settings-box">
+                <label class="check-inline wrap-text"><input type="checkbox" [(ngModel)]="f.allowSelfEnrol" />{{ 'learning.allowSelf' | translate }}</label>
+                <div class="form-grid two">
+                  <div class="field">
+                    <label for="c-days">{{ 'learning.completeWithin' | translate }}</label>
+                    <input id="c-days" type="number" min="1" max="365" [(ngModel)]="f.completeWithinDays" [placeholder]="'learning.noDeadline' | translate" />
+                  </div>
+                </div>
+                <label class="check-inline wrap-text"><input type="checkbox" [(ngModel)]="f.isActive" />{{ 'learning.activeLong' | translate }}</label>
+              </div>
+              <p class="field-hint">{{ 'learning.courseHint' | translate }}</p>
+            }
+          }
+
+          <!-- Enrollment -->
+          @case ('enrollment') {
+            @if (enrollment(); as e) {
+              <div class="doc-head">
+                <span class="stack">
+                  <span class="cell-main">{{ e.employeeName }}</span>
+                  <span class="cell-sub">{{ e.employeeCode }} · {{ e.departmentName }}</span>
+                </span>
+                <span [class]="enrollmentChip[e.status]">{{ 'learning.status.' + e.status | translate }}</span>
+              </div>
+              <dl class="facts">
+                <div><dt>{{ 'learning.sourceCol' | translate }}</dt><dd>{{ 'learning.source.' + e.source | translate }}@if (e.assignedByName) { · {{ e.assignedByName }} }</dd></div>
+                <div><dt>{{ 'learning.started' | translate }}</dt><dd class="num">@if (e.startedAt) { {{ utc(e.startedAt) | date: 'd MMM y' : undefined : lang() }} } @else { — }</dd></div>
+                <div><dt>{{ 'learning.due' | translate }}</dt><dd class="num" [class.warn]="e.isOverdue">@if (e.dueOn) { {{ e.dueOn | date: 'd MMM y' : undefined : lang() }} } @else { — }</dd></div>
+                @if (e.status === 'Completed') {
+                  <div><dt>{{ 'learning.completedOn' | translate }}</dt><dd class="num">{{ e.completedOn | date: 'd MMM y' : undefined : lang() }}</dd></div>
+                  <div><dt>{{ 'learning.score' | translate }}</dt><dd class="num">{{ e.score ?? '—' }}</dd></div>
+                  <div><dt>{{ 'learning.rating' | translate }}</dt><dd>@if (e.rating) { <span class="stars" [attr.aria-label]="e.rating + '/5'">@for (n of levels; track n) { <span class="material-icons-outlined" [class.on]="n <= e.rating!" aria-hidden="true">star</span> }</span> } @else { — }</dd></div>
+                }
+              </dl>
+              @if (e.feedback) { <p class="doc-summary">“{{ e.feedback }}”</p> }
+              @if (e.linkUrl && e.status !== 'Completed') {
+                <a class="doc-link" [href]="e.linkUrl" target="_blank" rel="noopener noreferrer">
+                  <span class="material-icons-outlined" aria-hidden="true">open_in_new</span><span class="grow">{{ 'learning.openCourse' | translate }}</span>
+                </a>
+              }
+              @if (e.certificateUrl) {
+                <a class="doc-link" [href]="e.certificateUrl" target="_blank" rel="noopener noreferrer">
+                  <span class="material-icons-outlined" aria-hidden="true">workspace_premium</span><span class="grow">{{ 'learning.certificate' | translate }}</span>
+                </a>
+              }
+
+              @if (e.canUpdate && !completeForm) {
+                <div class="settings-box">
+                  <label for="e-prog" class="sub-title">{{ 'learning.progress' | translate }} <span class="num">{{ progressValue }}%</span></label>
+                  <input id="e-prog" type="range" min="0" max="99" step="5" [(ngModel)]="progressValue" />
+                  <div class="inline-actions">
+                    <button type="button" class="btn btn-quiet btn-small" [disabled]="saving() || progressValue === e.progress" (click)="saveProgress()">{{ 'learning.saveProgress' | translate }}</button>
+                    <button type="button" class="btn btn-ink btn-small" (click)="startComplete()">
+                      <span class="material-icons-outlined" aria-hidden="true">task_alt</span>{{ 'learning.markComplete' | translate }}
+                    </button>
+                  </div>
+                </div>
+              }
+
+              @if (completeForm; as f) {
+                <div class="settings-box">
+                  <h4 class="sub-title">{{ 'learning.completeTitle' | translate }}</h4>
+                  <div class="form-grid two">
+                    <div class="field">
+                      <label for="f-on">{{ 'learning.completedOn' | translate }}</label>
+                      <input id="f-on" type="date" [max]="today" [(ngModel)]="f.completedOn" />
+                    </div>
+                    <div class="field">
+                      <label for="f-score">{{ 'learning.scoreOptional' | translate }}</label>
+                      <input id="f-score" type="number" min="0" max="100" [(ngModel)]="f.score" />
+                    </div>
+                    <div class="field span-all">
+                      <span class="label">{{ 'learning.rateCourse' | translate }}</span>
+                      <span class="stars pick-stars" role="radiogroup" [attr.aria-label]="'learning.rateCourse' | translate">
+                        @for (n of levels; track n) {
+                          <button type="button" role="radio" [attr.aria-checked]="f.rating === n" [attr.aria-label]="n + '/5'" [class.on]="(f.rating ?? 0) >= n" (click)="f.rating = f.rating === n ? null : n">
+                            <span class="material-icons-outlined" aria-hidden="true">star</span>
+                          </button>
+                        }
+                      </span>
+                    </div>
+                    <div class="field span-all">
+                      <label for="f-fb">{{ 'learning.feedback' | translate }}</label>
+                      <textarea id="f-fb" rows="3" maxlength="1000" [(ngModel)]="f.feedback" [placeholder]="'learning.feedbackPh' | translate"></textarea>
+                    </div>
+                    <div class="field span-all">
+                      <label for="f-cert">{{ 'learning.certificateLink' | translate }}</label>
+                      <input id="f-cert" type="url" maxlength="1000" [(ngModel)]="f.certificateUrl" placeholder="https://" />
+                      @if (!linkOk(f.certificateUrl)) { <p class="err">{{ 'learning.linkBad' | translate }}</p> }
+                    </div>
+                  </div>
+                  <div class="inline-actions">
+                    <span class="push"></span>
+                    <button type="button" class="btn btn-quiet btn-small" (click)="completeForm = null">{{ 'common.cancel' | translate }}</button>
+                    <button type="button" class="btn btn-ink btn-small" [disabled]="!canComplete() || saving()" (click)="runComplete()">{{ 'learning.markComplete' | translate }}</button>
+                  </div>
+                </div>
+              }
+
+              @if (e.canManage && !completeForm) {
+                <div class="settings-box">
+                  <h4 class="sub-title">{{ 'learning.dueOn' | translate }}</h4>
+                  <div class="add-row">
+                    <input type="date" [min]="today" [(ngModel)]="dueValue" [attr.aria-label]="'learning.dueOn' | translate" />
+                    <button type="button" class="btn btn-quiet btn-small" [disabled]="saving() || dueValue === (e.dueOn ?? '') || (!!dueValue && dueValue < today)" (click)="saveDue()">{{ 'learning.changeDue' | translate }}</button>
+                  </div>
+                </div>
+              }
+              @if (isOpen(e.status) && canCancel(e) && !completeForm) {
+                <div class="inline-actions">
+                  <button type="button" class="btn-link danger-link" [disabled]="saving()" (click)="cancelEnrollment()">
+                    {{ (confirm === 'cancel' ? 'learning.sureCancel' : (e.canManage ? 'learning.cancelAssignment' : 'learning.leaveCourse')) | translate }}
+                  </button>
+                </div>
+              }
+            }
+          }
+
+          <!-- Person growth -->
+          @case ('person') {
+            @if (person(); as p) {
+              <p class="cell-sub">{{ p.code }} · {{ p.designationName }} · {{ p.departmentName }}</p>
+              <div class="career-grid">
+                <article class="role-card mini">
+                  <span class="t-label">{{ 'learning.currentRole' | translate }}</span>
+                  <span class="cell-main">{{ p.designationName }}</span>
+                  @if (p.currentRoleReadiness !== null) {
+                    <div [class]="'ready ' + tone(p.currentRoleReadiness)">
+                      <span class="bar"><span [style.width.%]="p.currentRoleReadiness"></span></span>
+                      <span class="num">{{ p.currentRoleReadiness }}%</span>
+                    </div>
+                  } @else { <span class="dim">{{ 'learning.noRoleSkillsShort' | translate }}</span> }
+                </article>
+                <article class="role-card mini">
+                  <span class="t-label">{{ 'learning.nextRole' | translate }}</span>
+                  @if (p.goal; as g) {
+                    <span class="cell-main">{{ g.targetTitle }} @if (g.status === 'Achieved') { <span class="chip chip-moss">{{ 'learning.achieved' | translate }}</span> }</span>
+                    @if (g.status === 'Active' && g.readiness !== null) {
+                      <div [class]="'ready ' + tone(g.readiness)">
+                        <span class="bar"><span [style.width.%]="g.readiness"></span></span>
+                        <span class="num">{{ g.readiness }}%</span>
+                      </div>
+                    }
+                    @if (g.targetDate && g.status === 'Active') { <span class="cell-sub">{{ 'learning.targetBy' | translate: { date: (g.targetDate | date: 'MMM y' : undefined : lang()) } }}</span> }
+                  } @else { <span class="dim">{{ 'learning.noGoalShort' | translate }}</span> }
+                </article>
+              </div>
+              @if (p.goal?.notes) { <p class="goal-notes">{{ p.goal!.notes }}</p> }
+              @if (p.canSetGoal || p.canMarkAchieved) {
+                <div class="inline-actions">
+                  @if (p.canSetGoal) { <button type="button" class="btn btn-quiet btn-small" (click)="editGoal(p)">{{ (p.goal?.status === 'Active' ? 'learning.changeGoal' : 'learning.setGoal') | translate }}</button> }
+                  @if (p.canMarkAchieved) {
+                    <button type="button" class="btn btn-ink btn-small" [disabled]="saving()" (click)="achieveGoal(p)">
+                      <span class="material-icons-outlined" aria-hidden="true">military_tech</span>{{ (confirm === 'achieve' ? 'learning.sureAchieve' : 'learning.markAchieved') | translate }}
+                    </button>
+                  }
+                </div>
+              }
+
+              <h4 class="sub-title">{{ 'learning.skillsTitle' | translate }}</h4>
+              @if (p.skills.length) {
+                <ul class="skill-list">
+                  @for (k of p.skills; track k.skillId) {
+                    <li class="skill-row">
+                      <span class="stack grow">
+                        <span class="cell-main">{{ k.name }}</span>
+                        <span class="cell-sub">
+                          {{ 'learning.src.' + k.source | translate }}@if (k.byName) { · {{ k.byName }} } · {{ utc(k.updatedAt) | date: 'd MMM y' : undefined : lang() }}
+                        </span>
+                      </span>
+                      <span class="level-dots" role="group" [attr.aria-label]="k.name">
+                        @for (n of levels; track n) {
+                          <button type="button" class="dot" [class.on]="n <= k.level" [class.need]="!!k.requiredNext && n === k.requiredNext"
+                            [disabled]="saving() || !p.canAssess" [attr.aria-label]="levelLabel(n)" [attr.title]="levelLabel(n)" (click)="rate(p, k.skillId, n)"></button>
+                        }
+                      </span>
+                    </li>
+                  }
+                </ul>
+              } @else {
+                <p class="dim">{{ 'learning.noSkillsOther' | translate }}</p>
+              }
+              @if (p.goal?.status === 'Active' && p.goal!.gaps.length) {
+                <h4 class="sub-title">{{ 'learning.gapsFor' | translate: { role: p.goal!.targetTitle } }}</h4>
+                <ul class="gap-list">
+                  @for (x of p.goal!.gaps; track x.skillId) {
+                    <li [class.met]="x.met">
+                      <span class="material-icons-outlined" aria-hidden="true">{{ x.met ? 'check_circle' : 'radio_button_unchecked' }}</span>
+                      <span class="grow">{{ x.name }}</span>
+                      @if (p.canAssess && !x.met) {
+                        <select class="select-xs" [ngModel]="x.current ?? ''" (ngModelChange)="rate(p, x.skillId, +$event)" [attr.aria-label]="'learning.assess' | translate">
+                          <option value="" disabled>{{ 'learning.assess' | translate }}</option>
+                          @for (n of levels; track n) { <option [value]="n">{{ n }}</option> }
+                        </select>
+                      }
+                      <span class="num cell-sub">{{ x.current ?? 0 }} / {{ x.required }}</span>
+                    </li>
+                  }
+                </ul>
+              }
+              @if (p.canAssess) { <p class="field-hint">{{ 'learning.assessHint' | translate }}</p> }
+            } @else {
+              <p class="loading-line">{{ 'common.loading' | translate }}</p>
+            }
+          }
+
+          <!-- Skill form -->
+          @case ('skillEdit') {
+            @if (skillForm; as f) {
+              <div class="form-grid two">
+                <div class="field">
+                  <label for="s-name">{{ 'learning.skillName' | translate }}</label>
+                  <input id="s-name" maxlength="100" [(ngModel)]="f.name" />
+                </div>
+                <div class="field">
+                  <label for="s-cat">{{ 'learning.category' | translate }}</label>
+                  <select id="s-cat" [(ngModel)]="f.category">
+                    @for (c of skillCategories; track c) { <option [value]="c">{{ 'learning.scat.' + c | translate }}</option> }
+                  </select>
+                </div>
+                <div class="field span-all">
+                  <label for="s-desc">{{ 'learning.description' | translate }}</label>
+                  <textarea id="s-desc" rows="3" maxlength="500" [(ngModel)]="f.description"></textarea>
+                </div>
+              </div>
+              <label class="check-inline wrap-text"><input type="checkbox" [(ngModel)]="f.isActive" />{{ 'learning.skillActive' | translate }}</label>
+              <p class="field-hint">{{ 'learning.levelsExplained' | translate }}</p>
+              @if (f.id) {
+                <div class="inline-actions">
+                  <button type="button" class="btn-link danger-link" [disabled]="saving()" (click)="deleteSkill()">
+                    {{ (confirm === 'deleteSkill' ? 'learning.sureDelete' : 'common.delete') | translate }}
+                  </button>
+                </div>
+              }
+            }
+          }
+
+          <!-- Goal form -->
+          @case ('goalEdit') {
+            @if (goalForm; as f) {
+              <div class="form-grid two">
+                <div class="field span-all">
+                  <label for="g-role">{{ 'learning.targetRole' | translate }}</label>
+                  <select id="g-role" [(ngModel)]="f.targetDesignationId">
+                    <option value="" disabled>{{ 'learning.pickRole' | translate }}</option>
+                    @for (o of lookups().designations; track o.id) {
+                      @if (o.id !== f.currentDesignationId) { <option [value]="o.id">{{ o.name }}@if (o.extra) { · {{ 'learning.gradeN' | translate: { n: o.extra } }} }</option> }
+                    }
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="g-date">{{ 'learning.targetDate' | translate }}</label>
+                  <input id="g-date" type="date" [min]="today" [(ngModel)]="f.targetDate" />
+                </div>
+                <div class="field span-all">
+                  <label for="g-notes">{{ 'learning.notes' | translate }}</label>
+                  <textarea id="g-notes" rows="3" maxlength="1000" [(ngModel)]="f.notes" [placeholder]="'learning.notesPh' | translate"></textarea>
+                </div>
+              </div>
+              <p class="field-hint">{{ 'learning.goalHint' | translate }}</p>
+            }
+          }
+
+          <!-- Role skills -->
+          @case ('roleEdit') {
+            @if (roleForm; as f) {
+              <p class="cell-sub">{{ 'learning.roleEditSub' | translate }}</p>
+              <ul class="role-rows">
+                @for (r of f.rows; track $index; let i = $index) {
+                  <li class="add-row">
+                    <select class="grow" [(ngModel)]="r.skillId" [attr.aria-label]="'learning.skill' | translate">
+                      <option value="">{{ 'learning.pickSkill' | translate }}</option>
+                      @for (o of lookups().skills; track o.id) { <option [value]="o.id" [disabled]="roleSkillTaken(o.id, i)">{{ o.name }}</option> }
+                    </select>
+                    <select [(ngModel)]="r.level" [attr.aria-label]="'learning.level.label' | translate">
+                      @for (n of levels; track n) { <option [ngValue]="n">{{ n }} · {{ levelLabel(n) }}</option> }
+                    </select>
+                    <button type="button" class="btn-link danger-link" (click)="removeRoleRow(i)" [attr.aria-label]="'learning.removeSkill' | translate">
+                      <span class="material-icons-outlined" aria-hidden="true">close</span>
+                    </button>
+                  </li>
+                }
+              </ul>
+              @if (f.rows.length < 30) {
+                <button type="button" class="btn btn-quiet btn-small" (click)="addRoleRow()">
+                  <span class="material-icons-outlined" aria-hidden="true">add</span>{{ 'learning.addSkill' | translate }}
+                </button>
+              }
+              @if (!lookups().skills.length) { <p class="err">{{ 'learning.libraryFirst' | translate }}</p> }
+            }
+          }
+        }
+      </div>
+
+      @if (d === 'courseEdit' || d === 'skillEdit' || d === 'goalEdit' || d === 'roleEdit') {
+        <footer class="drawer-foot">
+          <button type="button" class="btn btn-quiet" (click)="closeDrawer()">{{ 'common.cancel' | translate }}</button>
+          @switch (d) {
+            @case ('courseEdit') { <button type="button" class="btn btn-ink" [disabled]="!canSaveCourse() || saving()" (click)="saveCourse()">{{ 'common.save' | translate }}</button> }
+            @case ('skillEdit') { <button type="button" class="btn btn-ink" [disabled]="!skillForm?.name?.trim() || saving()" (click)="saveSkill()">{{ 'common.save' | translate }}</button> }
+            @case ('goalEdit') { <button type="button" class="btn btn-ink" [disabled]="!canSaveGoal() || saving()" (click)="saveGoal()">{{ 'common.save' | translate }}</button> }
+            @case ('roleEdit') { <button type="button" class="btn btn-ink" [disabled]="saving()" (click)="saveRole()">{{ 'common.save' | translate }}</button> }
+          }
+        </footer>
+      }
+    </aside>
+  </div>
+}
