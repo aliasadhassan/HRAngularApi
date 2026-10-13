@@ -1,0 +1,339 @@
+<div class="page">
+  @if (error(); as err) {
+    <div class="notice notice-error" role="alert">
+      <span class="material-icons-outlined" aria-hidden="true">error</span><span>{{ err }}</span>
+    </div>
+  } @else if (loading()) {
+    <p class="loading-line">{{ 'common.loading' | translate }}</p>
+  } @else if (detail(); as d) {
+    <div class="bar">
+      <div class="bar-title">
+        <a class="back" routerLink="/app/reports/builder" [queryParams]="{ tab: 'templates' }" [attr.aria-label]="'rb.backToLibrary' | translate">
+          <span class="material-icons-outlined flip-rtl" aria-hidden="true">arrow_back</span>
+        </a>
+        <div class="title-stack">
+          <label class="sr-only" for="le-name">{{ 'rb.name' | translate }}</label>
+          <input id="le-name" maxlength="120" [(ngModel)]="settings.name" (ngModelChange)="settingsChanged()">
+          <div class="title-meta">
+            <span class="chip" [class]="'chip ' + templateChip[d.status]">
+              {{ 'rb.status.' + d.status | translate }}@if (d.publishedVersion) { · v{{ d.publishedVersion }} }
+            </span>
+            <span class="save-state" [class.is-bad]="saveState() === 'error' || saveState() === 'conflict'" aria-live="polite">
+              @switch (saveState()) {
+                @case ('saving') { {{ 'common.saving' | translate }} }
+                @case ('dirty') { {{ 'rb.unsaved' | translate }} }
+                @case ('error') { {{ 'rb.saveFailed' | translate }} }
+                @case ('conflict') { {{ 'rb.conflict' | translate }} }
+                @default {
+                  @if (savedAt(); as at) { {{ 'rb.savedAt' | translate: { time: (at | date: 'HH:mm') } }} }
+                  @else if (d.hasUnpublishedChanges) { {{ 'rb.unpublished' | translate }} }
+                }
+              }
+            </span>
+          </div>
+        </div>
+      </div>
+      <div class="bar-actions">
+        @if (languages().length > 1) {
+          <div class="seg" role="group" [attr.aria-label]="'rb.templateLanguage' | translate">
+            <button type="button" [class.is-on]="active() === 'en'" [attr.aria-pressed]="active() === 'en'" (click)="switchLang('en')">English</button>
+            <button type="button" [class.is-on]="active() === 'ar'" [attr.aria-pressed]="active() === 'ar'" (click)="switchLang('ar')">العربية</button>
+          </div>
+        }
+        <button type="button" class="btn btn-quiet btn-small" (click)="openPreview()">
+          <span class="material-icons-outlined" aria-hidden="true">visibility</span>{{ 'rb.previewWith' | translate }}
+        </button>
+        <button type="button" class="btn btn-ink btn-small" [disabled]="publishing() || saveState() === 'conflict' || d.status === 'Archived' || (d.status === 'Published' && !d.hasUnpublishedChanges && saveState() === 'saved')" (click)="publish()">
+          <span class="material-icons-outlined" aria-hidden="true">publish</span>{{ (publishing() ? 'rb.publishing' : 'rb.publish') | translate }}
+        </button>
+      </div>
+    </div>
+
+    @if (saveState() === 'conflict') {
+      <div class="notice notice-error" role="alert">
+        <span class="material-icons-outlined" aria-hidden="true">sync_problem</span>
+        <span class="grow">{{ 'rb.conflictHelp' | translate }}</span>
+        <button type="button" class="btn btn-quiet btn-small" (click)="reload()">{{ 'rb.reload' | translate }}</button>
+      </div>
+    }
+
+    <!-- ── Toolbar ── -->
+    <div class="toolbar-rb" role="toolbar" [attr.aria-label]="'rb.formatting' | translate">
+      @if (state(); as s) {
+        <select class="tb-select" [attr.aria-label]="'rb.textStyle' | translate" [ngModel]="s.block" (ngModelChange)="setBlock($event)" [disabled]="source()">
+          <option value="p">{{ 'rb.tb.paragraph' | translate }}</option>
+          <option value="h1">{{ 'rb.tb.h1' | translate }}</option>
+          <option value="h2">{{ 'rb.tb.h2' | translate }}</option>
+          <option value="h3">{{ 'rb.tb.h3' | translate }}</option>
+        </select>
+        <span class="tb-sep"></span>
+        <button type="button" class="tb" [class.is-on]="s.bold" [disabled]="source()" [attr.aria-label]="'rb.tb.bold' | translate" [title]="'rb.tb.bold' | translate" (click)="bold()"><span class="material-icons-outlined">format_bold</span></button>
+        <button type="button" class="tb" [class.is-on]="s.italic" [disabled]="source()" [attr.aria-label]="'rb.tb.italic' | translate" [title]="'rb.tb.italic' | translate" (click)="italic()"><span class="material-icons-outlined">format_italic</span></button>
+        <button type="button" class="tb" [class.is-on]="s.underline" [disabled]="source()" [attr.aria-label]="'rb.tb.underline' | translate" [title]="'rb.tb.underline' | translate" (click)="underline()"><span class="material-icons-outlined">format_underlined</span></button>
+        <span class="tb-sep"></span>
+        <button type="button" class="tb" [class.is-on]="s.left" [disabled]="source()" [attr.aria-label]="'rb.tb.left' | translate" [title]="'rb.tb.left' | translate" (click)="align('left')"><span class="material-icons-outlined">format_align_left</span></button>
+        <button type="button" class="tb" [class.is-on]="s.center" [disabled]="source()" [attr.aria-label]="'rb.tb.center' | translate" [title]="'rb.tb.center' | translate" (click)="align('center')"><span class="material-icons-outlined">format_align_center</span></button>
+        <button type="button" class="tb" [class.is-on]="s.right" [disabled]="source()" [attr.aria-label]="'rb.tb.right' | translate" [title]="'rb.tb.right' | translate" (click)="align('right')"><span class="material-icons-outlined">format_align_right</span></button>
+        <button type="button" class="tb" [class.is-on]="s.justify" [disabled]="source()" [attr.aria-label]="'rb.tb.justify' | translate" [title]="'rb.tb.justify' | translate" (click)="align('justify')"><span class="material-icons-outlined">format_align_justify</span></button>
+        <span class="tb-sep"></span>
+        <button type="button" class="tb" [class.is-on]="s.bullet" [disabled]="source()" [attr.aria-label]="'rb.tb.bullet' | translate" [title]="'rb.tb.bullet' | translate" (click)="bullet()"><span class="material-icons-outlined">format_list_bulleted</span></button>
+        <button type="button" class="tb" [class.is-on]="s.ordered" [disabled]="source()" [attr.aria-label]="'rb.tb.ordered' | translate" [title]="'rb.tb.ordered' | translate" (click)="ordered()"><span class="material-icons-outlined">format_list_numbered</span></button>
+        <button type="button" class="tb" [disabled]="source()" [attr.aria-label]="'rb.tb.table' | translate" [title]="'rb.tb.table' | translate" (click)="insertTable()"><span class="material-icons-outlined">table_chart</span></button>
+        <div class="tb-pop-wrap">
+          <button type="button" class="tb" [class.is-on]="pop() === 'image'" [disabled]="source()" [attr.aria-label]="'rb.tb.image' | translate" [title]="'rb.tb.image' | translate" (click)="togglePop('image')"><span class="material-icons-outlined">image</span></button>
+          @if (pop() === 'image') {
+            <div class="tb-pop">
+              <label class="field">
+                <span>{{ 'rb.imageUrl' | translate }}</span>
+                <input type="url" placeholder="https://" [(ngModel)]="imageUrl" (keydown.enter)="insertImage()">
+              </label>
+              <span class="field-hint">{{ 'rb.imageHint' | translate }}</span>
+              <button type="button" class="btn btn-ink btn-small" (click)="insertImage()">{{ 'common.add' | translate }}</button>
+            </div>
+          }
+        </div>
+        <button type="button" class="tb" [disabled]="source()" [attr.aria-label]="'rb.tb.line' | translate" [title]="'rb.tb.line' | translate" (click)="hr()"><span class="material-icons-outlined">horizontal_rule</span></button>
+        <button type="button" class="tb tb-text" [disabled]="source()" (click)="pageBreak()"><span class="material-icons-outlined">insert_page_break</span>{{ 'rb.tb.pageBreak' | translate }}</button>
+        <span class="tb-sep"></span>
+        <div class="tb-pop-wrap">
+          <button type="button" class="tb tb-text tb-brass" [class.is-on]="pop() === 'repeat' || !!s.repeat" [disabled]="source() || !s.table" (click)="togglePop('repeat')">
+            <span class="material-icons-outlined">repeat</span>{{ 'rb.tb.repeat' | translate }}
+          </button>
+          @if (pop() === 'repeat') {
+            <div class="tb-pop">
+              <p class="pop-help">{{ 'rb.repeatHelp' | translate }}</p>
+              <label class="field">
+                <span>{{ 'rb.repeatFor' | translate }}</span>
+                <select [(ngModel)]="repeatField">
+                  @for (f of listFields; track f.key) { <option [value]="f.key">{{ fieldName(f.key) }}</option> }
+                </select>
+              </label>
+              <div class="pop-actions">
+                @if (s.repeat) { <button type="button" class="btn btn-quiet btn-small" (click)="applyRepeat(true)">{{ 'rb.stopRepeat' | translate }}</button> }
+                <button type="button" class="btn btn-ink btn-small" (click)="applyRepeat()">{{ 'rb.apply' | translate }}</button>
+              </div>
+            </div>
+          }
+        </div>
+        <div class="tb-pop-wrap">
+          <button type="button" class="tb tb-text tb-brass" [class.is-on]="pop() === 'if' || s.inIf" [disabled]="source()" (click)="togglePop('if')">
+            <span class="material-icons-outlined">alt_route</span>{{ 'rb.tb.if' | translate }}
+          </button>
+          @if (pop() === 'if') {
+            <div class="tb-pop">
+              <p class="pop-help">{{ 'rb.ifHelp' | translate }}</p>
+              <label class="field">
+                <span>{{ 'rb.field' | translate }}</span>
+                <select [(ngModel)]="ifDraft.field">
+                  @for (f of ifFields; track f.key) { <option [value]="f.key">{{ fieldName(f.key) }}</option> }
+                </select>
+              </label>
+              <label class="field">
+                <span>{{ 'rb.condition' | translate }}</span>
+                <select [(ngModel)]="ifDraft.op">
+                  @for (o of ifOps; track o) { <option [value]="o">{{ 'rb.ifOp.' + o | translate }}</option> }
+                </select>
+              </label>
+              @if (ifDraft.op === 'eq' || ifDraft.op === 'ne') {
+                <label class="field">
+                  <span>{{ 'rb.value' | translate }}</span>
+                  <input [(ngModel)]="ifDraft.value" (keydown.enter)="applyIf()" [placeholder]="'rb.ifValueHint' | translate">
+                </label>
+              }
+              <div class="pop-actions">
+                @if (s.inIf) { <button type="button" class="btn btn-quiet btn-small" (click)="removeIf()">{{ 'rb.removeCondition' | translate }}</button> }
+                <button type="button" class="btn btn-ink btn-small" (click)="applyIf()">{{ 'rb.apply' | translate }}</button>
+              </div>
+            </div>
+          }
+        </div>
+        <span class="tb-sep"></span>
+        <button type="button" class="tb tb-text" [class.is-on]="source()" (click)="toggleSource()"><span class="material-icons-outlined">code</span>HTML</button>
+        <span class="tb-grow"></span>
+        <button type="button" class="tb" [disabled]="source() || !s.canUndo" [attr.aria-label]="'rb.tb.undo' | translate" [title]="'rb.tb.undo' | translate" (click)="undo()"><span class="material-icons-outlined flip-rtl">undo</span></button>
+        <button type="button" class="tb" [disabled]="source() || !s.canRedo" [attr.aria-label]="'rb.tb.redo' | translate" [title]="'rb.tb.redo' | translate" (click)="redo()"><span class="material-icons-outlined flip-rtl">redo</span></button>
+
+        @if (s.table && !source()) {
+          <div class="tb-context">
+            <span class="ctx-label">{{ 'rb.tb.tableTools' | translate }}</span>
+            <button type="button" class="btn-link" (click)="tableOp('rowAfter')">+ {{ 'rb.tb.row' | translate }}</button>
+            <button type="button" class="btn-link" (click)="tableOp('colAfter')">+ {{ 'rb.tb.col' | translate }}</button>
+            <button type="button" class="btn-link" (click)="tableOp('delRow')">− {{ 'rb.tb.row' | translate }}</button>
+            <button type="button" class="btn-link" (click)="tableOp('delCol')">− {{ 'rb.tb.col' | translate }}</button>
+            <button type="button" class="btn-link danger" (click)="tableOp('delTable')">{{ 'rb.tb.delTable' | translate }}</button>
+          </div>
+        }
+        @if (s.field; as f) {
+          <div class="tb-context">
+            <span class="ctx-label">{{ fieldName(f.key) }}</span>
+            <label class="ctx-select">
+              {{ 'rb.format' | translate }}
+              <select [ngModel]="f.format" (ngModelChange)="setFormat($event)">
+                @for (fm of formatsFor(f.key); track fm) { <option [value]="fm">{{ 'rb.fmt.' + (fm || 'default') | translate }}</option> }
+              </select>
+            </label>
+          </div>
+        }
+      }
+    </div>
+
+    <div class="workspace">
+      <!-- ── Page setup ── -->
+      <aside class="panel side">
+        <span class="step-label">{{ 'rb.pageSetup' | translate }}</span>
+        <div class="field">
+          <label for="le-cat">{{ 'rb.category' | translate }}</label>
+          <select id="le-cat" [(ngModel)]="settings.category" (ngModelChange)="settingsChanged()">
+            @for (c of categories; track c) { <option [value]="c">{{ 'rb.cat.' + c | translate }}</option> }
+          </select>
+        </div>
+        <div class="field">
+          <label for="le-langs">{{ 'rb.languages' | translate }}</label>
+          <select id="le-langs" [(ngModel)]="settings.languages" (ngModelChange)="settingsChanged()">
+            @for (l of languageModes; track l) { <option [value]="l">{{ 'rb.langMode.' + l | translate }}</option> }
+          </select>
+        </div>
+        <div class="field">
+          <label for="le-paper">{{ 'rb.paper' | translate }}</label>
+          <select id="le-paper" [(ngModel)]="settings.paper" (ngModelChange)="settingsChanged()">
+            <option value="A4">A4</option>
+            <option value="Letter">Letter</option>
+          </select>
+        </div>
+        <label class="check"><input type="checkbox" [(ngModel)]="settings.showLetterhead" (ngModelChange)="settingsChanged()">{{ 'rb.showLetterhead' | translate }}</label>
+        <label class="check"><input type="checkbox" [(ngModel)]="settings.showPageNumbers" (ngModelChange)="settingsChanged()">{{ 'rb.showPageNumbers' | translate }}</label>
+        <div class="field">
+          <label for="le-prefix">{{ 'rb.refPrefix' | translate }}</label>
+          <input id="le-prefix" class="mono" maxlength="6" [(ngModel)]="settings.refPrefix" (ngModelChange)="settings.refPrefix = ($event || '').toUpperCase(); settingsChanged()">
+          <span class="field-hint num">{{ (settings.refPrefix || 'LTR') }}-{{ year }}-00001</span>
+        </div>
+        <div class="field">
+          <label for="le-sname">{{ 'rb.signatoryName' | translate }}</label>
+          <input id="le-sname" maxlength="120" [(ngModel)]="settings.signatoryName" (ngModelChange)="settingsChanged()">
+        </div>
+        <div class="field">
+          <label for="le-stitle">{{ 'rb.signatoryTitle' | translate }}</label>
+          <input id="le-stitle" maxlength="120" [(ngModel)]="settings.signatoryTitle" (ngModelChange)="settingsChanged()">
+        </div>
+        <div class="field">
+          <label for="le-desc">{{ 'rb.description' | translate }}</label>
+          <textarea id="le-desc" rows="2" maxlength="500" [(ngModel)]="settings.description" (ngModelChange)="settingsChanged()"></textarea>
+        </div>
+
+        <span class="step-label versions-title">{{ 'rb.versions' | translate }}</span>
+        <ol class="versions">
+          @if (d.hasUnpublishedChanges || d.status === 'Draft') {
+            <li><span class="v v-draft">v{{ d.publishedVersion + 1 }}</span>{{ 'rb.draftYou' | translate }}</li>
+          }
+          @for (v of d.versions; track v.version) {
+            <li>
+              <span class="v">v{{ v.version }}</span>
+              <span class="grow">{{ utc(v.publishedAt) | date: 'd MMM y' : undefined : lang() }}@if (v.publishedByName) { · {{ v.publishedByName }} }</span>
+            </li>
+          }
+        </ol>
+      </aside>
+
+      <!-- ── Sheet ── -->
+      <section class="canvas">
+        <article class="rb-page" [class.rb-letter]="settings.paper === 'Letter'" [attr.dir]="active() === 'ar' ? 'rtl' : 'ltr'" [attr.lang]="active()">
+          @if (settings.showLetterhead) {
+            <header class="rb-lh">
+              @if (letterhead()?.logoUrl; as logo) { <img class="rb-lh-logo" [src]="logo" alt=""> }
+              @else { <span class="rb-lh-mark">{{ (letterhead()?.name || 'C').charAt(0) }}</span> }
+              <span class="rb-lh-name">
+                <strong>{{ letterhead()?.legalName || letterhead()?.name || ('rb.f.company.name' | translate) }}</strong>
+                <span class="rb-lh-contact">{{ 'rb.letterheadFrom' | translate }}</span>
+              </span>
+            </header>
+          }
+          <div class="rb-editor" [attr.dir]="active() === 'ar' ? 'rtl' : 'ltr'" [hidden]="source()" #host></div>
+          @if (source()) {
+            <textarea class="source" dir="ltr" spellcheck="false" [attr.aria-label]="'rb.htmlSource' | translate" [(ngModel)]="sourceText" (ngModelChange)="onSourceChange()"></textarea>
+          }
+          @if (settings.showPageNumbers) { <span class="page-no">1 / 1</span> }
+        </article>
+      </section>
+
+      <!-- ── Fields ── -->
+      <aside class="panel side fields">
+        <span class="step-label">{{ 'rb.fieldsInsert' | translate }}</span>
+        <label class="search search-sm">
+          <span class="material-icons-outlined" aria-hidden="true">search</span>
+          <span class="sr-only">{{ 'rb.searchFields' | translate }}</span>
+          <input [ngModel]="fieldSearch()" (ngModelChange)="fieldSearch.set($event)" [placeholder]="'rb.searchFields' | translate">
+        </label>
+        @for (g of filteredGroups(); track g.key) {
+          <div class="fgroup">
+            <span class="fgroup-name">{{ 'rb.fg.' + g.key | translate }}</span>
+            <div class="chips">
+              @for (f of g.fields; track f.key) {
+                <button type="button" class="fchip" [disabled]="source()" [title]="f.key" (click)="insertField(f)">{{ fieldName(f.key) }}</button>
+              }
+            </div>
+            @if (g.key === 'item') { <span class="field-hint">{{ 'rb.itemHint' | translate }}</span> }
+          </div>
+        }
+        <p class="field-hint formats-hint">{{ 'rb.formatsHint' | translate }}</p>
+      </aside>
+    </div>
+  }
+</div>
+
+<!-- ── Preview with an employee ── -->
+@if (preview; as p) {
+  <div class="overlay" (click)="preview = null">
+    <aside class="drawer drawer-preview" role="dialog" aria-modal="true" aria-labelledby="pv-title" (click)="$event.stopPropagation()">
+      <header class="drawer-head">
+        <h3 id="pv-title">{{ 'rb.previewWith' | translate }}</h3>
+        <button type="button" class="icon-btn-sm" [attr.aria-label]="'common.close' | translate" (click)="preview = null">
+          <span class="material-icons-outlined" aria-hidden="true">close</span>
+        </button>
+      </header>
+      <div class="preview-body">
+        <div class="pv-side">
+          <label class="search search-sm">
+            <span class="material-icons-outlined" aria-hidden="true">search</span>
+            <span class="sr-only">{{ 'rb.searchPeople' | translate }}</span>
+            <input [(ngModel)]="p.search" (ngModelChange)="onPeopleSearch($event)" [placeholder]="'rb.searchPeople' | translate">
+          </label>
+          <ul class="people">
+            @for (x of p.people; track x.id) {
+              <li>
+                <button type="button" [class.is-on]="p.person?.id === x.id" (click)="previewWith(x)">
+                  <span class="cell-main">{{ x.name }}</span>
+                  <span class="cell-sub">{{ x.code }}@if (x.department) { · {{ x.department }} }</span>
+                </button>
+              </li>
+            }
+          </ul>
+        </div>
+        <div class="pv-main">
+          @if (languages().length > 1) {
+            <div class="seg pv-lang" role="group" [attr.aria-label]="'rb.language' | translate">
+              <button type="button" [class.is-on]="p.lang === 'en'" (click)="previewLang('en')">English</button>
+              <button type="button" [class.is-on]="p.lang === 'ar'" (click)="previewLang('ar')">العربية</button>
+            </div>
+          }
+          @if (p.missing.length) {
+            <div class="notice notice-info">
+              <span class="material-icons-outlined" aria-hidden="true">info</span>
+              <span>{{ 'rb.missingFields' | translate: { n: p.missing.length } }}: {{ missingText(p.missing) }}</span>
+            </div>
+          }
+          @if (p.loading) {
+            <p class="loading-line">{{ 'common.loading' | translate }}</p>
+          } @else if (p.html) {
+            <div class="rb-sheets" [innerHTML]="p.html"></div>
+          } @else {
+            <div class="empty-state">
+              <span class="material-icons-outlined" aria-hidden="true">person_search</span>
+              <h3>{{ 'rb.pickEmployee' | translate }}</h3>
+              <p>{{ 'rb.previewHelp' | translate }}</p>
+            </div>
+          }
+        </div>
+      </div>
+    </aside>
+  </div>
+}

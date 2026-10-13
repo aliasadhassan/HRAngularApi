@@ -1,0 +1,347 @@
+<div class="page">
+  <div class="bar no-print">
+    <div class="bar-title">
+      <a class="back" routerLink="/app/reports/builder" [queryParams]="{ tab: 'reports' }" [attr.aria-label]="'rb.backToLibrary' | translate">
+        <span class="material-icons-outlined flip-rtl" aria-hidden="true">arrow_back</span>
+      </a>
+      <label class="sr-only" for="tr-name">{{ 'rb.reportName' | translate }}</label>
+      <input id="tr-name" maxlength="120" [ngModel]="name()" (ngModelChange)="name.set($event); dirty.set(true)" [readonly]="!canBuild()">
+      @if (dirty() && canBuild()) { <span class="save-state">{{ 'rb.unsaved' | translate }}</span> }
+    </div>
+    <div class="bar-actions">
+      <button type="button" class="btn btn-quiet btn-small" [disabled]="!result()?.rows?.length" (click)="exportCsv()">
+        <span class="material-icons-outlined" aria-hidden="true">download</span>{{ 'rb.exportCsv' | translate }}
+      </button>
+      <button type="button" class="btn btn-quiet btn-small" [disabled]="!result()" (click)="print()">
+        <span class="material-icons-outlined" aria-hidden="true">print</span>{{ 'rb.print' | translate }}
+      </button>
+      @if (canBuild()) {
+        <button type="button" class="btn btn-ink btn-small" [disabled]="saving || !source()" (click)="saveOpen = true">
+          <span class="material-icons-outlined" aria-hidden="true">save</span>{{ 'rb.saveReport' | translate }}
+        </button>
+      }
+    </div>
+  </div>
+
+  @if (error(); as err) {
+    <div class="notice notice-error" role="alert">
+      <span class="material-icons-outlined" aria-hidden="true">error</span><span>{{ err }}</span>
+    </div>
+  } @else if (loading()) {
+    <p class="loading-line">{{ 'common.loading' | translate }}</p>
+  } @else if (!sources().length) {
+    <div class="panel empty-state">
+      <span class="material-icons-outlined" aria-hidden="true">lock</span>
+      <h3>{{ 'rb.noSources' | translate }}</h3>
+      <p>{{ 'rb.noSourcesHelp' | translate }}</p>
+    </div>
+  } @else {
+    <div class="builder">
+      <!-- ── 1 + 2: source and fields ── -->
+      <aside class="side panel no-print">
+        <div class="field">
+          <label for="tr-src" class="step-label">1 · {{ 'rb.dataSource' | translate }}</label>
+          <select id="tr-src" [ngModel]="source()" (ngModelChange)="pickSource($event)">
+            @for (s of sources(); track s.key) { <option [value]="s.key">{{ srcLabel(s) }}</option> }
+          </select>
+          @if (current(); as c) { <span class="field-hint">{{ srcDesc(c) }}</span> }
+        </div>
+
+        @if (current()?.needsRange) {
+          <div class="field">
+            <label for="tr-period">{{ 'rb.period' | translate }}</label>
+            <select id="tr-period" [ngModel]="period()" (ngModelChange)="setPeriod($event)">
+              @for (p of periods; track p) { <option [value]="p">{{ 'rb.periods.' + p | translate }}</option> }
+            </select>
+            @if (period() === 'Custom') {
+              <div class="dates">
+                <input type="date" [attr.aria-label]="'rb.from' | translate" [ngModel]="fromDate()" (ngModelChange)="setDate('from', $event)">
+                <input type="date" [attr.aria-label]="'rb.to' | translate" [ngModel]="toDate()" (ngModelChange)="setDate('to', $event)">
+              </div>
+            } @else if (range(); as r) {
+              <span class="field-hint num">{{ r.from }} → {{ r.to }}</span>
+            }
+          </div>
+        }
+
+        <div class="fields-box">
+          <span class="step-label">2 · {{ (grouped() ? 'rb.fieldsGrouped' : 'rb.fields') | translate }}</span>
+          <label class="search search-sm">
+            <span class="material-icons-outlined" aria-hidden="true">search</span>
+            <span class="sr-only">{{ 'rb.searchFields' | translate }}</span>
+            <input [ngModel]="fieldSearch()" (ngModelChange)="fieldSearch.set($event)" [placeholder]="'rb.searchFields' | translate">
+          </label>
+          @for (g of fieldGroups(); track g.group) {
+            <div class="fgroup">
+              <span class="fgroup-name">{{ gLabel(g.group) }}</span>
+              @for (f of g.fields; track f.key) {
+                <label class="fcheck" [class.is-on]="hasColumn(f.key)">
+                  <input type="checkbox" [checked]="hasColumn(f.key)" [disabled]="grouped()" (change)="toggleColumn(f.key)">
+                  <span class="grow">{{ fLabel(f) }}</span>
+                  <span class="ftype" [class]="'ftype t-' + f.type">{{ 'rb.type.' + f.type | translate }}</span>
+                </label>
+              }
+            </div>
+          }
+        </div>
+      </aside>
+
+      <section class="main">
+        <!-- ── 3: filters ── -->
+        <div class="strip panel no-print">
+          <span class="step-label">3 · {{ 'rb.filters' | translate }}</span>
+          <div class="pills">
+            @for (f of spec().filters; track $index; let i = $index) {
+              <span class="pill" [class.is-editing]="filterDraft?.index === i">
+                <button type="button" class="pill-main" (click)="editFilter(i)">
+                  {{ labelOf(f.field) }} <b>{{ 'rb.op.' + f.op | translate }}</b> {{ filterText(f) }}
+                </button>
+                <button type="button" class="pill-x" [attr.aria-label]="'rb.removeFilter' | translate" (click)="removeFilter(i)">
+                  <span class="material-icons-outlined" aria-hidden="true">close</span>
+                </button>
+              </span>
+            }
+            @if (spec().filters.length < 12) {
+              <button type="button" class="btn-link add" (click)="addFilter()">
+                <span class="material-icons-outlined" aria-hidden="true">add</span>{{ 'rb.addFilter' | translate }}
+              </button>
+            }
+          </div>
+          @if (filterDraft; as d) {
+            <div class="editor-row">
+              <select [attr.aria-label]="'rb.field' | translate" [ngModel]="d.field" (ngModelChange)="draftField($event)">
+                @for (f of fields(); track f.key) { <option [value]="f.key">{{ fLabel(f) }}</option> }
+              </select>
+              <select [attr.aria-label]="'rb.operator' | translate" [(ngModel)]="d.op">
+                @for (o of opsFor(d.field); track o) { <option [value]="o">{{ 'rb.op.' + o | translate }}</option> }
+              </select>
+              @if (!noValueOps.includes(d.op)) {
+                @if (typeOf(d.field) === 'Bool') {
+                  <select [attr.aria-label]="'rb.value' | translate" [(ngModel)]="d.value">
+                    <option value="true">{{ 'common.yes' | translate }}</option>
+                    <option value="false">{{ 'common.no' | translate }}</option>
+                  </select>
+                } @else {
+                  <input [type]="d.op === 'in' ? 'text' : inputType(d.field)" [attr.aria-label]="'rb.value' | translate" [(ngModel)]="d.value"
+                    [placeholder]="(d.op === 'in' ? 'rb.inHint' : 'rb.value') | translate" (keydown.enter)="saveFilter()">
+                  @if (d.op === 'between') {
+                    <span class="dim">–</span>
+                    <input [type]="inputType(d.field)" [attr.aria-label]="'rb.value2' | translate" [(ngModel)]="d.value2" (keydown.enter)="saveFilter()">
+                  }
+                }
+              }
+              <button type="button" class="btn btn-ink btn-small" [disabled]="!draftValid()" (click)="saveFilter()">{{ 'rb.apply' | translate }}</button>
+              <button type="button" class="btn btn-quiet btn-small" (click)="filterDraft = null">{{ 'common.cancel' | translate }}</button>
+            </div>
+          }
+        </div>
+
+        <!-- ── 4: group + totals ── -->
+        <div class="strip panel no-print">
+          <span class="step-label">4 · {{ 'rb.groupTotal' | translate }}</span>
+          <div class="pills">
+            <label class="inline-select">
+              {{ 'rb.groupBy' | translate }}
+              <select [ngModel]="spec().groupBy ?? ''" (ngModelChange)="setGroup($event)">
+                <option value="">{{ 'rb.noGrouping' | translate }}</option>
+                @for (f of fields(); track f.key) {
+                  @if (f.type !== 'Money') { <option [value]="f.key">{{ fLabel(f) }}</option> }
+                }
+              </select>
+            </label>
+            @if (grouped()) {
+              @for (a of spec().aggregates; track $index; let i = $index) {
+                <span class="pill pill-moss">
+                  <span class="pill-main">{{ labelOf(a.field ? a.fn + ':' + a.field : a.fn) }}</span>
+                  @if (spec().aggregates.length > 1) {
+                    <button type="button" class="pill-x" [attr.aria-label]="'rb.removeTotal' | translate" (click)="removeAgg(i)">
+                      <span class="material-icons-outlined" aria-hidden="true">close</span>
+                    </button>
+                  }
+                </span>
+              }
+              @if (spec().aggregates.length < 6) {
+                <button type="button" class="btn-link add" (click)="addAgg()">
+                  <span class="material-icons-outlined" aria-hidden="true">add</span>{{ 'rb.addTotal' | translate }}
+                </button>
+              }
+            }
+            <label class="inline-select">
+              {{ 'rb.sort' | translate }}
+              <select [ngModel]="spec().sort?.key ?? ''" (ngModelChange)="setSort($event)">
+                <option value="">{{ 'rb.noSort' | translate }}</option>
+                @for (k of outputKeys(); track k) { <option [value]="k">{{ labelOf(k) }}</option> }
+              </select>
+            </label>
+            @if (spec().sort; as s) {
+              <button type="button" class="icon-btn-sm" [attr.aria-label]="(s.desc ? 'rb.desc' : 'rb.asc') | translate" (click)="toggleSortDir()">
+                <span class="material-icons-outlined" aria-hidden="true">{{ s.desc ? 'arrow_downward' : 'arrow_upward' }}</span>
+              </button>
+            }
+            <label class="inline-select">
+              {{ 'rb.limit' | translate }}
+              <input type="number" min="1" max="5000" class="limit" [placeholder]="'rb.all' | translate" [ngModel]="spec().limit" (ngModelChange)="setLimit($event)">
+            </label>
+          </div>
+          @if (aggDraft; as d) {
+            <div class="editor-row">
+              <select [attr.aria-label]="'rb.total' | translate" [ngModel]="d.fn" (ngModelChange)="draftFn($event)">
+                @for (fn of fns; track fn) {
+                  @if (fn === 'count' || aggFields(fn).length) { <option [value]="fn">{{ 'rb.fn.' + fn | translate }}</option> }
+                }
+              </select>
+              @if (d.fn !== 'count') {
+                <select [attr.aria-label]="'rb.field' | translate" [(ngModel)]="d.field">
+                  @for (f of aggFields(d.fn); track f.key) { <option [value]="f.key">{{ fLabel(f) }}</option> }
+                </select>
+              }
+              <button type="button" class="btn btn-ink btn-small" (click)="saveAgg()">{{ 'common.add' | translate }}</button>
+              <button type="button" class="btn btn-quiet btn-small" (click)="aggDraft = null">{{ 'common.cancel' | translate }}</button>
+            </div>
+          }
+        </div>
+
+        <!-- ── Results + chart ── -->
+        <div class="results print-area" [class.with-chart]="!!chartData()">
+          <div class="panel panel-flush result-panel">
+            <div class="result-head">
+              <div>
+                <h2 class="print-title">{{ name() }}</h2>
+                @if (result(); as r) {
+                  <span class="dim small">
+                    {{ 'rb.rowsCount' | translate: { n: r.rows.length } }}
+                    @if (ranFrom()) { · <span class="num">{{ ranFrom() }} → {{ ranTo() }}</span> }
+                    @if (current(); as c) { · {{ srcLabel(c) }} }
+                  </span>
+                }
+              </div>
+              @if (running()) { <span class="spinner no-print" [attr.aria-label]="'common.loading' | translate"></span> }
+            </div>
+            @if (runError(); as err) {
+              <div class="notice notice-error inset" role="alert">
+                <span class="material-icons-outlined" aria-hidden="true">error</span><span>{{ err }}</span>
+              </div>
+            }
+            @if (result(); as r) {
+              @if (r.truncated) {
+                <div class="notice notice-info inset">
+                  <span class="material-icons-outlined" aria-hidden="true">info</span>
+                  <span>{{ 'rb.truncated' | translate: { shown: r.rows.length, total: r.totalRows } }}</span>
+                </div>
+              }
+              @if (r.rows.length) {
+                <div class="table-wrap">
+                  <table class="ledger-table result-table">
+                    <thead>
+                      <tr>
+                        @for (c of r.columns; track c.key) {
+                          <th [class.num-col]="isNum(c)">
+                            <button type="button" class="th-sort" (click)="sortBy(c)">
+                              {{ colLabel(c) }}
+                              @if (spec().sort?.key === c.key) {
+                                <span class="material-icons-outlined" aria-hidden="true">{{ spec().sort!.desc ? 'arrow_downward' : 'arrow_upward' }}</span>
+                              }
+                            </button>
+                          </th>
+                        }
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (row of r.rows; track $index) {
+                        <tr>
+                          @for (c of r.columns; track c.key; let i = $index) {
+                            <td [class.num-col]="isNum(c)" [class.num]="isNum(c)">{{ cellText(row[i], c) }}</td>
+                          }
+                        </tr>
+                      }
+                    </tbody>
+                    @if (r.totals) {
+                      <tfoot>
+                        <tr>
+                          @for (c of r.columns; track c.key; let i = $index) {
+                            <td [class.num-col]="isNum(c)" [class.num]="isNum(c)">
+                              {{ i === 0 && r.totals[i] === null ? ('rb.total' | translate) : cellText(r.totals[i], c) }}
+                            </td>
+                          }
+                        </tr>
+                      </tfoot>
+                    }
+                  </table>
+                </div>
+              } @else {
+                <div class="empty-state">
+                  <span class="material-icons-outlined" aria-hidden="true">filter_alt_off</span>
+                  <h3>{{ 'rb.noRows' | translate }}</h3>
+                  <p>{{ 'rb.noRowsHelp' | translate }}</p>
+                </div>
+              }
+            } @else if (!running() && !runError()) {
+              <div class="empty-state">
+                <span class="material-icons-outlined" aria-hidden="true">checklist</span>
+                <h3>{{ 'rb.pickColumns' | translate }}</h3>
+                <p>{{ (current()?.needsRange && !range() ? 'rb.pickDates' : 'rb.pickColumnsHelp') | translate }}</p>
+              </div>
+            }
+          </div>
+
+          @if (grouped()) {
+            <div class="panel chart-panel">
+              <div class="chart-head">
+                <span class="step-label">5 · {{ 'rb.chart' | translate }}</span>
+                <div class="seg no-print" role="group" [attr.aria-label]="'rb.chart' | translate">
+                  @for (c of charts; track c) {
+                    <button type="button" [class.is-on]="chart() === c" [attr.aria-pressed]="chart() === c" (click)="setChart(c)">{{ 'rb.charts.' + c | translate }}</button>
+                  }
+                </div>
+              </div>
+              @if (chartData(); as cd) {
+                <span class="dim small">{{ cd.measure }}</span>
+                <div class="chart-box" [class.is-pie]="cd.type === 'doughnut'">
+                  <app-chart [type]="cd.type" [labels]="cd.labels" [datasets]="cd.datasets"></app-chart>
+                </div>
+                @if (cd.legend.length) {
+                  <ul class="legend">
+                    @for (l of cd.legend; track $index) {
+                      <li><i [style.background]="l.color"></i><span class="grow">{{ l.label }}</span><span class="num">{{ l.value | number: '1.0-2' }}</span></li>
+                    }
+                  </ul>
+                }
+              } @else if (chart() === 'None') {
+                <p class="dim small">{{ 'rb.chartOff' | translate }}</p>
+              } @else {
+                <p class="dim small">{{ 'rb.chartNeedsNumber' | translate }}</p>
+              }
+            </div>
+          }
+        </div>
+      </section>
+    </div>
+  }
+</div>
+
+<!-- ── Save ── -->
+@if (saveOpen) {
+  <div class="overlay" (click)="saveOpen = false">
+    <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="sv-title" (click)="$event.stopPropagation()">
+      <h3 id="sv-title">{{ 'rb.saveReport' | translate }}</h3>
+      <p>{{ 'rb.saveHelp' | translate }}</p>
+      <div class="form-grid">
+        <div class="field span-all">
+          <label for="sv-name">{{ 'rb.reportName' | translate }}</label>
+          <input id="sv-name" maxlength="120" [ngModel]="name()" (ngModelChange)="name.set($event)">
+        </div>
+        <div class="field span-all">
+          <label for="sv-desc">{{ 'rb.description' | translate }}</label>
+          <textarea id="sv-desc" rows="3" maxlength="500" [(ngModel)]="description"></textarea>
+        </div>
+      </div>
+      @if (ownerName()) { <p class="small owner">{{ 'rb.createdBy' | translate: { name: ownerName() } }}</p> }
+      <div class="dialog-actions">
+        <button type="button" class="btn btn-quiet" (click)="saveOpen = false">{{ 'common.cancel' | translate }}</button>
+        <button type="button" class="btn btn-ink" [disabled]="saving || !name().trim()" (click)="save()">
+          {{ (saving ? 'common.saving' : 'common.save') | translate }}
+        </button>
+      </div>
+    </div>
+  </div>
+}

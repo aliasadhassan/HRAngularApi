@@ -1,0 +1,170 @@
+<div class="page">
+  @if (error(); as err) {
+    <div class="notice notice-error" role="alert">
+      <span class="material-icons-outlined" aria-hidden="true">error</span><span>{{ err }}</span>
+    </div>
+  } @else if (loading()) {
+    <p class="loading-line">{{ 'common.loading' | translate }}</p>
+  } @else if (detail(); as d) {
+    @if (!published()) {
+      <div class="panel empty-state">
+        <span class="material-icons-outlined" aria-hidden="true">unpublished</span>
+        <h3>{{ 'rb.notPublished' | translate }}</h3>
+        <p>{{ 'rb.notPublishedHelp' | translate }}</p>
+        <a class="btn btn-quiet" routerLink="/app/reports/builder" [queryParams]="{ tab: 'templates' }">{{ 'rb.backToLibrary' | translate }}</a>
+      </div>
+    } @else {
+      <div class="gen">
+        <!-- ── Who, language, issue ── -->
+        <aside class="panel side no-print">
+          <div class="who-head">
+            <a class="back" routerLink="/app/reports/builder" [queryParams]="{ tab: 'templates' }" [attr.aria-label]="'rb.backToLibrary' | translate">
+              <span class="material-icons-outlined flip-rtl" aria-hidden="true">arrow_back</span>
+            </a>
+            <div>
+              <h1>{{ d.name }}</h1>
+              <span class="dim small">{{ 'rb.templateVersion' | translate: { v: published()!.version } }} · {{ 'rb.cat.' + d.category | translate }}</span>
+            </div>
+          </div>
+
+          <fieldset class="group">
+            <legend class="step-label">{{ 'rb.whoFor' | translate }}</legend>
+            <div class="seg wide">
+              <button type="button" [class.is-on]="mode() === 'one'" [attr.aria-pressed]="mode() === 'one'" (click)="setMode('one')">{{ 'rb.oneEmployee' | translate }}</button>
+              <button type="button" [class.is-on]="mode() === 'many'" [attr.aria-pressed]="mode() === 'many'" (click)="setMode('many')">{{ 'rb.manyEmployees' | translate }}</button>
+            </div>
+          </fieldset>
+
+          <div class="pick">
+            <div class="pick-tools">
+              <label class="search search-sm">
+                <span class="material-icons-outlined" aria-hidden="true">search</span>
+                <span class="sr-only">{{ 'rb.searchPeople' | translate }}</span>
+                <input [(ngModel)]="search" (ngModelChange)="onSearch()" [placeholder]="'rb.searchPeople' | translate">
+              </label>
+              @if (departments().length) {
+                <select class="dep" [attr.aria-label]="'rb.department' | translate" [(ngModel)]="departmentId" (ngModelChange)="loadPeople()">
+                  <option [ngValue]="null">{{ 'rb.allDepartments' | translate }}</option>
+                  @for (dep of departments(); track dep.id) { <option [ngValue]="dep.id">{{ dep.name }}</option> }
+                </select>
+              }
+              <label class="check small"><input type="checkbox" [(ngModel)]="includeExited" (ngModelChange)="loadPeople()">{{ 'rb.includeExited' | translate }}</label>
+            </div>
+            @if (mode() === 'many') {
+              <div class="pick-bar">
+                <span class="small"><b class="num">{{ selected().length }}</b> {{ 'rb.selected' | translate }}</span>
+                <button type="button" class="btn-link" (click)="selectAll()">{{ 'rb.selectShown' | translate }}</button>
+                @if (selected().length) { <button type="button" class="btn-link" (click)="clearAll()">{{ 'rb.clear' | translate }}</button> }
+              </div>
+            }
+            <ul class="people" [attr.aria-busy]="peopleLoading()">
+              @for (p of people(); track p.id) {
+                <li>
+                  <button type="button" class="person" [class.is-on]="isSelected(p)" [attr.aria-pressed]="isSelected(p)" (click)="toggle(p)">
+                    <span class="avatar" aria-hidden="true">{{ initials(p.name) }}</span>
+                    <span class="grow">
+                      <span class="cell-main">{{ p.name }}</span>
+                      <span class="cell-sub">{{ p.code }}@if (p.department) { · {{ p.department }} }@if (p.status === 'Exited') { · {{ 'rb.exited' | translate }} }</span>
+                    </span>
+                    @if (isSelected(p)) { <span class="material-icons-outlined tick" aria-hidden="true">check_circle</span> }
+                  </button>
+                </li>
+              } @empty {
+                <li class="dim small pad">{{ (peopleLoading() ? 'common.loading' : 'common.noData') | translate }}</li>
+              }
+            </ul>
+          </div>
+
+          @if (langs().length > 1) {
+            <fieldset class="group">
+              <legend class="step-label">{{ 'rb.language' | translate }}</legend>
+              <div class="seg wide">
+                @for (l of langs(); track l) {
+                  <button type="button" [class.is-on]="language() === l" [attr.aria-pressed]="language() === l" (click)="setLanguage(l)">
+                    {{ l === 'en' ? 'English' : l === 'ar' ? 'العربية' : ('rb.both' | translate) }}
+                  </button>
+                }
+              </div>
+            </fieldset>
+          }
+
+          <div class="field">
+            <label for="lg-purpose">{{ 'rb.purpose' | translate }}</label>
+            <input id="lg-purpose" maxlength="200" [(ngModel)]="purpose" (change)="refreshPreview()" [placeholder]="'rb.purposeHint' | translate">
+          </div>
+
+          @if (missing().length && current()) {
+            <div class="notice notice-info warn-box">
+              <span class="material-icons-outlined" aria-hidden="true">warning</span>
+              <span>
+                <b>{{ 'rb.missingFields' | translate: { n: missing().length } }}</b><br>
+                {{ missingText() }}. {{ 'rb.missingHelp' | translate }}
+              </span>
+            </div>
+          }
+
+          <button type="button" class="btn btn-ink issue" [disabled]="!selected().length || issuing()" (click)="issue()">
+            <span class="material-icons-outlined" aria-hidden="true">print</span>
+            {{ (issuing() ? 'rb.issuing' : 'rb.issuePrint') | translate: { n: letterCount() } }}
+          </button>
+          <p class="dim small">{{ 'rb.issueNote' | translate }}</p>
+
+          @if (recent().length) {
+            <div class="recent">
+              <span class="step-label">{{ 'rb.recentlyIssued' | translate }}</span>
+              @for (r of recent(); track r.id) {
+                <a class="recent-row" [routerLink]="['/app/reports/builder/letter', r.id]">
+                  <span class="grow">{{ r.employeeName }}</span>
+                  <span class="mono small" [class.void]="r.isVoid">{{ r.ref }}</span>
+                </a>
+              }
+            </div>
+          }
+        </aside>
+
+        <!-- ── Preview / issued ── -->
+        <section class="canvas print-area">
+          @if (issued(); as done) {
+            <div class="issued-bar no-print">
+              <span class="material-icons-outlined ok" aria-hidden="true">task_alt</span>
+              <span class="grow">
+                <b>{{ 'rb.issuedN' | translate: { n: done.results.length } }}</b>
+                <span class="refs mono">{{ done.results[0].ref }}@if (done.results.length > 1) { … {{ done.results[done.results.length - 1].ref }} }</span>
+              </span>
+              <button type="button" class="btn btn-quiet btn-small" (click)="print()">
+                <span class="material-icons-outlined" aria-hidden="true">print</span>{{ 'rb.printAgain' | translate }}
+              </button>
+            </div>
+            <div class="rb-sheets" [innerHTML]="done.html"></div>
+          } @else if (current(); as cur) {
+            <div class="pv-head no-print">
+              <span class="dim small">{{ 'rb.previewFor' | translate: { name: cur.name } }}</span>
+              @if (selected().length > 1) {
+                <span class="pager-mini">
+                  <button type="button" class="icon-btn-sm" [disabled]="index() === 0" [attr.aria-label]="'rb.prev' | translate" (click)="step(-1)">
+                    <span class="material-icons-outlined flip-rtl" aria-hidden="true">chevron_left</span>
+                  </button>
+                  <span class="num small">{{ index() + 1 }} / {{ selected().length }}</span>
+                  <button type="button" class="icon-btn-sm" [disabled]="index() >= selected().length - 1" [attr.aria-label]="'rb.next' | translate" (click)="step(1)">
+                    <span class="material-icons-outlined flip-rtl" aria-hidden="true">chevron_right</span>
+                  </button>
+                </span>
+              }
+            </div>
+            @if (previewLoading()) {
+              <p class="loading-line">{{ 'common.loading' | translate }}</p>
+            } @else if (previewHtml(); as html) {
+              <div class="rb-sheets no-print" [innerHTML]="html"></div>
+            }
+          } @else {
+            <div class="empty-state pick-first">
+              <span class="material-icons-outlined" aria-hidden="true">person_search</span>
+              <h3>{{ 'rb.pickEmployee' | translate }}</h3>
+              <p>{{ 'rb.generateHelp' | translate }}</p>
+            </div>
+          }
+        </section>
+      </div>
+    }
+  }
+</div>

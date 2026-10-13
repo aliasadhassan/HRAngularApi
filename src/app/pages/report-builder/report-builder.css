@@ -1,0 +1,162 @@
+.lib-bar {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.lib-bar .tabs { flex: 1 1 auto; }
+.lib-bar .search { flex: 0 1 300px; min-width: 200px; margin-bottom: 6px; }
+
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+  gap: 16px;
+}
+.card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 220px;
+  padding: 18px 18px 16px;
+  background: var(--sheet);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-panel);
+  border-top: 3px solid var(--moss);
+}
+.card.is-doc { border-top-color: var(--brass); }
+.card.is-archived { opacity: 0.7; }
+.card.skeleton { border-top-color: var(--rule); }
+
+.card-top { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.kind {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--fs-12);
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--moss);
+}
+.is-doc .kind { color: #7d6327; }
+.kind .material-icons-outlined { font-size: 18px; }
+.lang-tag {
+  font: 500 var(--fs-12) var(--font-serial);
+  color: var(--text-muted);
+  padding: 1px 6px;
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+}
+.dot-draft {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--amber);
+}
+.menu-wrap { position: relative; margin-inline-start: auto; }
+.menu {
+  position: absolute;
+  top: 100%;
+  inset-inline-end: 0;
+  z-index: 5;
+  min-width: 200px;
+  padding: 6px;
+  background: var(--sheet);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-control);
+  box-shadow: var(--shadow-pop);
+  display: flex;
+  flex-direction: column;
+}
+.menu button {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border: none;
+  border-radius: 6px;
+  background: none;
+  font-size: var(--fs-14);
+  text-align: start;
+  cursor: pointer;
+  color: var(--text);
+}
+.menu button:hover:not(:disabled) { background: var(--vellum); }
+.menu button.danger { color: var(--oxblood); }
+.menu .material-icons-outlined { font-size: 18px; }
+
+.card-body h2 {
+  margin: 0 0 6px;
+  font: 600 var(--fs-20)/1.25 var(--font-display);
+}
+.card-body p {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: var(--fs-14);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.card-meta {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 4px 14px;
+  margin: auto 0 0;
+  padding-top: 12px;
+  border-top: 1px dashed var(--rule);
+  font-size: var(--fs-13);
+}
+.card-meta dt { color: var(--text-faint); }
+.card-meta dd { margin: 0; }
+.card-actions { display: flex; gap: 8px; align-items: center; }
+
+.ledger-table .chip { margin-inline-start: 8px; }
+
+/* Naya template: shuruaati namoone */
+.starters {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 18px;
+}
+.starter {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 6px;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-control);
+  background: var(--sheet);
+  font-size: var(--fs-12);
+  font-weight: 500;
+  text-align: center;
+  cursor: pointer;
+}
+.starter:hover { border-color: var(--rule-strong); }
+.starter.is-on { border-color: var(--brass); box-shadow: var(--focus); }
+.starter-sheet {
+  width: 54px;
+  height: 70px;
+  padding: 10px 8px;
+  background: #fff;
+  border: 1px solid var(--rule);
+  box-shadow: 0 2px 6px -2px rgba(19, 33, 26, 0.2);
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  align-items: stretch;
+  justify-content: flex-start;
+  color: var(--text-faint);
+}
+.starter-sheet i { display: block; height: 3px; border-radius: 2px; background: var(--rule-strong); }
+.starter-sheet i:first-child { background: var(--brass); width: 60%; align-self: center; margin-bottom: 3px; }
+.starter-sheet i.short { width: 55%; }
+.starter-sheet .material-icons-outlined { margin: auto; }
+
+@media (max-width: 720px) {
+  .starters { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}

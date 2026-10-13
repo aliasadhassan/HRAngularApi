@@ -1,0 +1,64 @@
+<div class="page">
+  @if (error(); as err) {
+    <div class="notice notice-error" role="alert">
+      <span class="material-icons-outlined" aria-hidden="true">error</span><span>{{ err }}</span>
+    </div>
+  } @else if (letter(); as l) {
+    <div class="bar no-print">
+      <div class="bar-title">
+        <a class="back" routerLink="/app/reports/builder" [queryParams]="{ tab: 'letters' }" [attr.aria-label]="'rb.backToLibrary' | translate">
+          <span class="material-icons-outlined flip-rtl" aria-hidden="true">arrow_back</span>
+        </a>
+        <div class="title-block">
+          <h1 class="mono">{{ l.info.ref }}</h1>
+          <span class="dim small">{{ l.info.templateName }} · v{{ l.info.templateVersion }} · {{ l.info.language === 'ar' ? 'العربية' : 'English' }}</span>
+        </div>
+        @if (l.info.isVoid) { <span class="chip chip-oxblood">{{ 'rb.void' | translate }}</span> }
+      </div>
+      <div class="bar-actions">
+        @if (canVoid && !l.info.isVoid) {
+          <button type="button" class="btn btn-quiet btn-small danger-text" (click)="voiding = true">
+            <span class="material-icons-outlined" aria-hidden="true">block</span>{{ 'rb.voidLetter' | translate }}
+          </button>
+        }
+        <button type="button" class="btn btn-ink btn-small" (click)="print()">
+          <span class="material-icons-outlined" aria-hidden="true">print</span>{{ 'rb.reprint' | translate }}
+        </button>
+      </div>
+    </div>
+
+    <dl class="facts panel no-print">
+      <div><dt>{{ 'rb.employee' | translate }}</dt><dd>{{ l.info.employeeName }} <span class="dim mono">{{ l.info.employeeCode }}</span></dd></div>
+      <div><dt>{{ 'rb.issued' | translate }}</dt><dd>{{ utc(l.info.issuedAt) | date: 'd MMM y, HH:mm' : undefined : lang() }}@if (l.info.issuedByName) { · {{ l.info.issuedByName }} }</dd></div>
+      <div><dt>{{ 'rb.purpose' | translate }}</dt><dd>{{ l.info.purpose || '—' }}</dd></div>
+      @if (l.info.isVoid) {
+        <div><dt>{{ 'rb.voidReason' | translate }}</dt><dd>{{ l.info.voidReason }}@if (l.voidedAt) { · {{ utc(l.voidedAt) | date: 'd MMM y' : undefined : lang() }} }</dd></div>
+      }
+    </dl>
+
+    <section class="canvas print-area">
+      <div class="rb-sheets" [class.is-void]="l.info.isVoid" [innerHTML]="html()"></div>
+    </section>
+  } @else {
+    <p class="loading-line">{{ 'common.loading' | translate }}</p>
+  }
+</div>
+
+@if (voiding) {
+  <div class="overlay" (click)="voiding = false">
+    <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="vd-title" (click)="$event.stopPropagation()">
+      <h3 id="vd-title">{{ 'rb.voidLetter' | translate }}</h3>
+      <p>{{ 'rb.voidHelp' | translate }}</p>
+      <div class="form-grid">
+        <div class="field span-all">
+          <label for="vd-reason">{{ 'rb.voidReason' | translate }}</label>
+          <textarea id="vd-reason" rows="3" maxlength="500" [(ngModel)]="voidReason"></textarea>
+        </div>
+      </div>
+      <div class="dialog-actions">
+        <button type="button" class="btn btn-quiet" (click)="voiding = false">{{ 'common.cancel' | translate }}</button>
+        <button type="button" class="btn btn-danger" [disabled]="busy || !voidReason.trim()" (click)="doVoid()">{{ 'rb.voidLetter' | translate }}</button>
+      </div>
+    </div>
+  </div>
+}
