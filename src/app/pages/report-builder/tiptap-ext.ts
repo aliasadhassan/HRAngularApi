@@ -6,8 +6,12 @@
  *  pageBreak <div data-type="page-break"></div>
  * Yahi HTML server par save hota hai (LetterHtml.Clean in data-* ko rehne deta hai) aur letter-render.ts isi ko bharta hai.
  */
-import { Node, mergeAttributes } from '@tiptap/core';
+import { Node, mergeAttributes, type CommandProps } from '@tiptap/core';
 import { TableRow } from '@tiptap/extension-table';
+import type { Node as PmNode } from '@tiptap/pm/model';
+
+// Types khud likhe hain: kuch installs par TipTap ke generics infer nahi hote (TS7006/TS7031 aate the).
+type Attrs = Record<string, any>;
 
 declare module '@tiptap/core' {
   interface Commands<ReturnType> {
@@ -26,16 +30,16 @@ export const FieldNode = Node.create({
 
   addAttributes() {
     return {
-      field: { default: '', parseHTML: el => el.getAttribute('data-field'), renderHTML: a => ({ 'data-field': a['field'] }) },
+      field: { default: '', parseHTML: (el: HTMLElement) => el.getAttribute('data-field'), renderHTML: (a: Attrs) => ({ 'data-field': a['field'] }) },
       format: {
         default: null,
-        parseHTML: el => el.getAttribute('data-format') || null,
-        renderHTML: a => (a['format'] ? { 'data-format': a['format'] } : {})
+        parseHTML: (el: HTMLElement) => el.getAttribute('data-format') || null,
+        renderHTML: (a: Attrs) => (a['format'] ? { 'data-format': a['format'] } : {})
       },
       label: {
         default: null,
-        parseHTML: el => el.getAttribute('data-label') || el.textContent?.replace(/[«»]/g, '').split(' | ')[0] || null,
-        renderHTML: a => (a['label'] ? { 'data-label': a['label'] } : {})
+        parseHTML: (el: HTMLElement) => el.getAttribute('data-label') || el.textContent?.replace(/[«»]/g, '').split(' | ')[0] || null,
+        renderHTML: (a: Attrs) => (a['label'] ? { 'data-label': a['label'] } : {})
       }
     };
   },
@@ -44,18 +48,18 @@ export const FieldNode = Node.create({
     return [{ tag: 'span[data-field]' }];
   },
 
-  renderHTML({ node, HTMLAttributes }) {
+  renderHTML({ node, HTMLAttributes }: { node: PmNode; HTMLAttributes: Attrs }) {
     const a = node.attrs;
     return ['span', mergeAttributes(HTMLAttributes, { class: 'rb-field' }), `«${a['label'] || a['field']}${a['format'] ? ' | ' + a['format'] : ''}»`];
   },
 
-  renderText({ node }) {
+  renderText({ node }: { node: PmNode }) {
     return `«${node.attrs['label'] || node.attrs['field']}»`;
   },
 
   addCommands() {
     return {
-      insertField: attrs => ({ commands }) => commands.insertContent({ type: this.name, attrs })
+      insertField: (attrs: { field: string; format?: string | null; label: string }) => ({ commands }: CommandProps) => commands.insertContent({ type: this.name, attrs })
     };
   }
 });
@@ -68,14 +72,14 @@ export const IfBlock = Node.create({
 
   addAttributes() {
     return {
-      field: { default: '', parseHTML: el => el.getAttribute('data-if'), renderHTML: a => ({ 'data-if': a['field'] }) },
-      op: { default: 'notempty', parseHTML: el => el.getAttribute('data-op') || 'notempty', renderHTML: a => ({ 'data-op': a['op'] }) },
+      field: { default: '', parseHTML: (el: HTMLElement) => el.getAttribute('data-if'), renderHTML: (a: Attrs) => ({ 'data-if': a['field'] }) },
+      op: { default: 'notempty', parseHTML: (el: HTMLElement) => el.getAttribute('data-op') || 'notempty', renderHTML: (a: Attrs) => ({ 'data-op': a['op'] }) },
       value: {
         default: null,
-        parseHTML: el => el.getAttribute('data-value'),
-        renderHTML: a => (a['value'] ? { 'data-value': a['value'] } : {})
+        parseHTML: (el: HTMLElement) => el.getAttribute('data-value'),
+        renderHTML: (a: Attrs) => (a['value'] ? { 'data-value': a['value'] } : {})
       },
-      label: { default: '', parseHTML: el => el.getAttribute('data-label') ?? '', renderHTML: a => ({ 'data-label': a['label'] }) }
+      label: { default: '', parseHTML: (el: HTMLElement) => el.getAttribute('data-label') ?? '', renderHTML: (a: Attrs) => ({ 'data-label': a['label'] }) }
     };
   },
 
@@ -83,14 +87,14 @@ export const IfBlock = Node.create({
     return [{ tag: 'section[data-if]' }];
   },
 
-  renderHTML({ HTMLAttributes }) {
+  renderHTML({ HTMLAttributes }: { HTMLAttributes: Attrs }) {
     return ['section', mergeAttributes(HTMLAttributes, { class: 'rb-if' }), 0];
   },
 
   addCommands() {
     return {
-      wrapInIf: attrs => ({ commands }) => commands.wrapIn(this.name, attrs),
-      unwrapIf: () => ({ commands }) => commands.lift(this.name)
+      wrapInIf: (attrs: { field: string; op: string; value: string | null; label: string }) => ({ commands }: CommandProps) => commands.wrapIn(this.name, attrs),
+      unwrapIf: () => ({ commands }: CommandProps) => commands.lift(this.name)
     };
   }
 });
@@ -103,12 +107,12 @@ export const RepeatRow = TableRow.extend({
       repeat: {
         default: null,
         parseHTML: (el: HTMLElement) => el.getAttribute('data-repeat'),
-        renderHTML: (a: Record<string, unknown>) => (a['repeat'] ? { 'data-repeat': a['repeat'], class: 'rb-repeat' } : {})
+        renderHTML: (a: Attrs) => (a['repeat'] ? { 'data-repeat': a['repeat'], class: 'rb-repeat' } : {})
       },
       repeatLabel: {
         default: null,
         parseHTML: (el: HTMLElement) => (el.getAttribute('data-repeat') ? el.getAttribute('data-label') : null),
-        renderHTML: (a: Record<string, unknown>) => (a['repeat'] && a['repeatLabel'] ? { 'data-label': a['repeatLabel'] } : {})
+        renderHTML: (a: Attrs) => (a['repeat'] && a['repeatLabel'] ? { 'data-label': a['repeatLabel'] } : {})
       }
     };
   }
@@ -130,7 +134,7 @@ export const PageBreak = Node.create({
 
   addCommands() {
     return {
-      insertPageBreak: () => ({ commands }) => commands.insertContent({ type: this.name })
+      insertPageBreak: () => ({ commands }: CommandProps) => commands.insertContent({ type: this.name })
     };
   }
 });
