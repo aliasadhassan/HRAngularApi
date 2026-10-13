@@ -18,7 +18,9 @@ export const P = {
   usersManage: 'users.manage',
   rolesManage: 'roles.manage',
   relationsManage: 'relations.manage',
-  safetyManage: 'safety.manage'
+  safetyManage: 'safety.manage',
+  reportsBuild: 'reports.build',
+  lettersIssue: 'letters.issue'
 } as const;
 
 /**

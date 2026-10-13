@@ -1,0 +1,267 @@
+<div class="page" (click)="closeMenu()">
+  <header class="page-intro">
+    <p>{{ 'rb.intro' | translate }}</p>
+    @if (canBuild()) {
+      <div class="intro-actions">
+        <a class="btn btn-quiet" routerLink="/app/reports/builder/report/new">
+          <span class="material-icons-outlined" aria-hidden="true">table_view</span>{{ 'rb.newReport' | translate }}
+        </a>
+        <button type="button" class="btn btn-ink" (click)="startTemplate()">
+          <span class="material-icons-outlined" aria-hidden="true">post_add</span>{{ 'rb.newTemplate' | translate }}
+        </button>
+      </div>
+    }
+  </header>
+
+  @if (error(); as err) {
+    <div class="notice notice-error" role="alert">
+      <span class="material-icons-outlined" aria-hidden="true">error</span>
+      <span class="grow">{{ err }}</span>
+      <button type="button" class="btn btn-quiet btn-small" (click)="load()">{{ 'common.retry' | translate }}</button>
+    </div>
+  }
+
+  <div class="lib-bar">
+    <nav class="tabs" [attr.aria-label]="'rb.types' | translate">
+      @for (t of tabs; track t) {
+        @if (t !== 'letters' || canLetters()) {
+          <button type="button" class="tab" [class.is-active]="tab() === t" (click)="show(t)">
+            {{ 'rb.tab.' + t | translate }}
+            @switch (t) {
+              @case ('all') { <span class="tab-count">{{ counts().reports + counts().templates }}</span> }
+              @case ('reports') { <span class="tab-count">{{ counts().reports }}</span> }
+              @case ('templates') { <span class="tab-count">{{ counts().templates }}</span> }
+            }
+          </button>
+        }
+      }
+    </nav>
+    @if (tab() === 'letters') {
+      <label class="search">
+        <span class="material-icons-outlined" aria-hidden="true">search</span>
+        <span class="sr-only">{{ 'rb.searchLetters' | translate }}</span>
+        <input [(ngModel)]="lettersSearch" (ngModelChange)="onLettersSearch()" [placeholder]="'rb.searchLetters' | translate">
+      </label>
+    } @else {
+      <label class="search">
+        <span class="material-icons-outlined" aria-hidden="true">search</span>
+        <span class="sr-only">{{ 'rb.search' | translate }}</span>
+        <input [ngModel]="search()" (ngModelChange)="search.set($event)" [placeholder]="'rb.search' | translate">
+      </label>
+    }
+  </div>
+
+  @if (loading()) {
+    <div class="cards">
+      @for (i of [1, 2, 3, 4, 5, 6]; track i) { <div class="card skeleton"></div> }
+    </div>
+  } @else if (tab() === 'letters') {
+    <!-- ── Issued letters ── -->
+    <section class="panel panel-flush">
+      @if (letters(); as list) {
+        @if (list.length) {
+          <div class="table-wrap">
+            <table class="ledger-table">
+              <thead>
+                <tr>
+                  <th>{{ 'rb.ref' | translate }}</th>
+                  <th>{{ 'rb.employee' | translate }}</th>
+                  <th>{{ 'rb.template' | translate }}</th>
+                  <th>{{ 'rb.language' | translate }}</th>
+                  <th>{{ 'rb.issued' | translate }}</th>
+                  <th><span class="sr-only">{{ 'common.open' | translate }}</span></th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (l of list; track l.id) {
+                  <tr class="is-link" tabindex="0" [routerLink]="['/app/reports/builder/letter', l.id]">
+                    <td>
+                      <span class="mono">{{ l.ref }}</span>
+                      @if (l.isVoid) { <span class="chip chip-oxblood">{{ 'rb.void' | translate }}</span> }
+                    </td>
+                    <td>
+                      <span class="cell-main">{{ l.employeeName }}</span>
+                      <span class="cell-sub mono">{{ l.employeeCode }}</span>
+                    </td>
+                    <td>
+                      <span class="cell-main">{{ l.templateName }}</span>
+                      <span class="cell-sub">v{{ l.templateVersion }}@if (l.purpose) { · {{ l.purpose }} }</span>
+                    </td>
+                    <td>{{ l.language === 'ar' ? 'العربية' : 'English' }}</td>
+                    <td>
+                      <span class="cell-main">{{ utc(l.issuedAt) | date: 'd MMM y, HH:mm' : undefined : lang() }}</span>
+                      <span class="cell-sub">{{ l.issuedByName }}</span>
+                    </td>
+                    <td class="go"><span class="material-icons-outlined flip-rtl" aria-hidden="true">chevron_right</span></td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        } @else {
+          <div class="empty-state">
+            <span class="material-icons-outlined" aria-hidden="true">mark_email_read</span>
+            <h3>{{ 'rb.noLetters' | translate }}</h3>
+            <p>{{ 'rb.noLettersHelp' | translate }}</p>
+          </div>
+        }
+      } @else {
+        <p class="loading-line">{{ 'common.loading' | translate }}</p>
+      }
+    </section>
+  } @else {
+    @if (cards().length) {
+      <div class="cards">
+        @for (c of cards(); track c.kind + c.id) {
+          <article class="card" [class.is-doc]="c.kind === 'template'" [class.is-archived]="c.template?.status === 'Archived'">
+            <div class="card-top">
+              <span class="kind">
+                <span class="material-icons-outlined" aria-hidden="true">{{ c.kind === 'report' ? 'table_view' : categoryIcon[c.template!.category] }}</span>
+                {{ (c.kind === 'report' ? 'rb.kindReport' : 'rb.kindDoc') | translate }}
+              </span>
+              @if (c.template; as t) {
+                <span class="chip" [class]="'chip ' + templateChip[t.status]">
+                  {{ 'rb.status.' + t.status | translate }}@if (t.publishedVersion) { · v{{ t.publishedVersion }} }
+                </span>
+                @if (t.hasUnpublishedChanges && t.status !== 'Archived' && canBuild()) {
+                  <span class="dot-draft" [title]="'rb.unpublished' | translate"></span>
+                }
+              }
+              @if (canBuild()) {
+                <div class="menu-wrap">
+                  <button type="button" class="icon-btn-sm" [attr.aria-label]="'common.actions' | translate" [attr.aria-expanded]="menu() === c.id"
+                    (click)="toggleMenu(c.id, $event)">
+                    <span class="material-icons-outlined" aria-hidden="true">more_vert</span>
+                  </button>
+                  @if (menu() === c.id) {
+                    <div class="menu" role="menu" (click)="$event.stopPropagation()">
+                      @if (c.kind === 'report') {
+                        <button type="button" role="menuitem" class="danger" [disabled]="busy" (click)="deleteReport(c)">
+                          <span class="material-icons-outlined" aria-hidden="true">delete</span>
+                          {{ (confirm === 'del:' + c.id ? 'rb.confirmDelete' : 'common.delete') | translate }}
+                        </button>
+                      } @else {
+                        <button type="button" role="menuitem" [disabled]="busy" (click)="duplicate(c)">
+                          <span class="material-icons-outlined" aria-hidden="true">content_copy</span>{{ 'rb.duplicate' | translate }}
+                        </button>
+                        @if (c.template!.status === 'Archived') {
+                          <button type="button" role="menuitem" [disabled]="busy" (click)="archive(c, false)">
+                            <span class="material-icons-outlined" aria-hidden="true">unarchive</span>{{ 'rb.restore' | translate }}
+                          </button>
+                        } @else {
+                          <button type="button" role="menuitem" [disabled]="busy" (click)="archive(c, true)">
+                            <span class="material-icons-outlined" aria-hidden="true">archive</span>{{ 'rb.archive' | translate }}
+                          </button>
+                        }
+                        @if (!c.template!.issuedCount) {
+                          <button type="button" role="menuitem" class="danger" [disabled]="busy" (click)="deleteTemplate(c)">
+                            <span class="material-icons-outlined" aria-hidden="true">delete</span>
+                            {{ (confirm === 'del:' + c.id ? 'rb.confirmDelete' : 'common.delete') | translate }}
+                          </button>
+                        }
+                      }
+                    </div>
+                  }
+                </div>
+              }
+            </div>
+            <div class="card-body">
+              <h2>{{ c.name }}</h2>
+              @if (c.description) { <p>{{ c.description }}</p> }
+            </div>
+            <dl class="card-meta">
+              <dt>{{ (c.kind === 'report' ? 'rb.data' : 'rb.category') | translate }}</dt>
+              <dd>{{ c.data }}</dd>
+              @if (c.kind === 'report') {
+                <dt>{{ 'rb.lastRun' | translate }}</dt>
+                <dd>{{ c.last ? (utc(c.last) | date: 'd MMM y, HH:mm' : undefined : lang()) : '—' }}</dd>
+              } @else {
+                <dt>{{ 'rb.languages' | translate }}</dt>
+                <dd><span class="lang-tag">{{ c.lang }}</span></dd>
+                <dt>{{ 'rb.issuedCount' | translate }}</dt>
+                <dd>
+                  <span class="num">{{ c.template!.issuedCount }}</span>
+                  @if (c.last) { <span class="dim"> · {{ utc(c.last) | date: 'd MMM y' : undefined : lang() }}</span> }
+                </dd>
+              }
+            </dl>
+            <div class="card-actions">
+              @if (c.kind === 'report') {
+                @if (c.report!.canRun) {
+                  <button type="button" class="btn btn-ink btn-small" (click)="openReport(c)">
+                    <span class="material-icons-outlined" aria-hidden="true">play_arrow</span>{{ 'rb.run' | translate }}
+                  </button>
+                } @else {
+                  <span class="dim small">{{ 'rb.cantRun' | translate }}</span>
+                }
+                @if (canBuild()) {
+                  <button type="button" class="btn btn-quiet btn-small" (click)="openReport(c)">{{ 'common.edit' | translate }}</button>
+                }
+              } @else {
+                @if (canIssue() && c.template!.status === 'Published') {
+                  <a class="btn btn-ink btn-small" [routerLink]="['/app/reports/builder/template', c.id, 'generate']">
+                    <span class="material-icons-outlined" aria-hidden="true">print</span>{{ 'rb.generate' | translate }}
+                  </a>
+                }
+                @if (canBuild()) {
+                  <a class="btn btn-quiet btn-small" [routerLink]="['/app/reports/builder/template', c.id]">{{ 'common.edit' | translate }}</a>
+                }
+              }
+            </div>
+          </article>
+        }
+      </div>
+    } @else {
+      <div class="panel empty-state">
+        <span class="material-icons-outlined" aria-hidden="true">{{ search() ? 'search_off' : 'design_services' }}</span>
+        <h3>{{ (search() ? 'rb.noMatch' : 'rb.empty') | translate }}</h3>
+        @if (!search()) { <p>{{ (canBuild() ? 'rb.emptyHelp' : 'rb.emptyHelpViewer') | translate }}</p> }
+      </div>
+    }
+  }
+</div>
+
+<!-- ── New template ── -->
+@if (newTemplate; as n) {
+  <div class="overlay" (click)="newTemplate = null">
+    <div class="dialog dialog-wide" role="dialog" aria-modal="true" aria-labelledby="nt-title" (click)="$event.stopPropagation()">
+      <h3 id="nt-title">{{ 'rb.newTemplate' | translate }}</h3>
+      <p>{{ 'rb.newTemplateHelp' | translate }}</p>
+      <div class="starters" role="radiogroup" [attr.aria-label]="'rb.startFrom' | translate">
+        @for (s of starters; track s) {
+          <button type="button" class="starter" role="radio" [attr.aria-checked]="n.starter === s" [class.is-on]="n.starter === s" (click)="pickStarter(s)">
+            <span class="starter-sheet" aria-hidden="true">
+              @if (s === 'blank') { <span class="material-icons-outlined">add</span> }
+              @else { <i></i><i></i><i class="short"></i><i></i><i class="short"></i> }
+            </span>
+            <span>{{ 'rb.starter.' + s | translate }}</span>
+          </button>
+        }
+      </div>
+      <div class="form-grid">
+        <div class="field span-all">
+          <label for="nt-name">{{ 'rb.name' | translate }}</label>
+          <input id="nt-name" maxlength="120" [(ngModel)]="n.name" (keydown.enter)="createTemplate()">
+        </div>
+        <div class="field">
+          <label for="nt-cat">{{ 'rb.category' | translate }}</label>
+          <select id="nt-cat" [(ngModel)]="n.category">
+            @for (c of categories; track c) { <option [value]="c">{{ 'rb.cat.' + c | translate }}</option> }
+          </select>
+        </div>
+        <div class="field">
+          <label for="nt-lang">{{ 'rb.languages' | translate }}</label>
+          <select id="nt-lang" [(ngModel)]="n.languages">
+            @for (l of languageModes; track l) { <option [value]="l">{{ 'rb.langMode.' + l | translate }}</option> }
+          </select>
+        </div>
+      </div>
+      <div class="dialog-actions">
+        <button type="button" class="btn btn-quiet" (click)="newTemplate = null">{{ 'common.cancel' | translate }}</button>
+        <button type="button" class="btn btn-ink" [disabled]="busy || !n.name.trim()" (click)="createTemplate()">
+          {{ (busy ? 'common.saving' : 'rb.createOpen') | translate }}
+        </button>
+      </div>
+    </div>
+  </div>
+}

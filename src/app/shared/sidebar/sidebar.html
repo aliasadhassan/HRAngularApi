@@ -44,6 +44,7 @@
                 class="nav-link"
                 [routerLink]="item.route"
                 routerLinkActive="is-active"
+                [routerLinkActiveOptions]="{ paths: item.exact ? 'exact' : 'subset', queryParams: 'ignored', matrixParams: 'ignored', fragment: 'ignored' }"
                 [attr.title]="layout.collapsed() ? (item.label | translate) : null"
                 (click)="onNavigate()"
               >

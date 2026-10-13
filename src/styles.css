@@ -16,6 +16,7 @@
 @import "@fontsource/ibm-plex-mono/latin-ext-500.css";
 @import "./styles/tokens.css";
 @import "./styles/ledger.css";
+@import "./styles/letter.css";
 
 @font-face {
   font-family: 'Inter';

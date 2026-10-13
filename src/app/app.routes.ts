@@ -49,9 +49,6 @@ const soon = (
  * Consolidation: ek kaam ke chhote pages ek page ke tabs hain (56 → 19 planned pages).
  */
 const PLANNED: Route[] = [
-  // Reporting
-  soon('reports/builder', 'nav.reportBuilder', undefined, ['builder', 'savedReports', 'scheduled']),
-
   // AI
   soon('ai', 'nav.aiAssistant', undefined, ['chat', 'insights', 'aiRecruitment'])
 ];
@@ -91,6 +88,18 @@ export const routes: Routes = [
       { path: 'compliance/health-safety', loadComponent: () => import('./pages/safety/safety').then(m => m.SafetyComponent), data: { titleKey: 'nav.healthSafety' } },
       { path: 'compliance/relations', loadComponent: () => import('./pages/relations/relations').then(m => m.RelationsComponent), data: { titleKey: 'nav.employeeRelations' } },
       { path: 'compliance/audit', loadComponent: () => import('./pages/audit/audit').then(m => m.AuditComponent), canActivate: [permissionGuard], data: { titleKey: 'nav.audit', permission: P.settingsView } },
+      {
+        path: 'reports/builder',
+        canActivate: [permissionGuard],
+        data: { titleKey: 'nav.reportBuilder', permission: [P.reportsBuild, P.lettersIssue, P.employeesView, P.leavesViewAll, P.payrollViewAll, P.payrollApprove] },
+        children: [
+          { path: '', loadComponent: () => import('./pages/report-builder/report-builder').then(m => m.ReportBuilderComponent) },
+          { path: 'report/:id', loadComponent: () => import('./pages/report-builder/table-report').then(m => m.TableReportComponent) },
+          { path: 'template/:id', loadComponent: () => import('./pages/report-builder/letter-editor').then(m => m.LetterEditorComponent), canActivate: [permissionGuard], data: { permission: P.reportsBuild } },
+          { path: 'template/:id/generate', loadComponent: () => import('./pages/report-builder/letter-generate').then(m => m.LetterGenerateComponent), canActivate: [permissionGuard], data: { permission: P.lettersIssue } },
+          { path: 'letter/:id', loadComponent: () => import('./pages/report-builder/letter-view').then(m => m.LetterViewComponent), canActivate: [permissionGuard], data: { permission: [P.lettersIssue, P.reportsBuild] } }
+        ]
+      },
       { path: 'reports', loadComponent: () => import('./pages/reports/reports').then(m => m.ReportsComponent), canActivate: [permissionGuard], data: { titleKey: 'nav.reports', permission: [P.employeesView, P.payrollViewAll, P.payrollApprove] } },
       { path: 'me/payslips', component: MyPayslipsComponent, data: { titleKey: 'nav.myPayslips' } },
       { path: 'me/payslips/:id', component: PayslipComponent, data: { titleKey: 'payroll.payslip.title', self: true } },

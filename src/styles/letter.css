@@ -1,0 +1,314 @@
+/*
+ * Report builder: letter ka kaghaz (editor, preview, issued letter, print — sab ek hi shakal).
+ * Global hai kyun ke letter HTML [innerHTML] se aata hai (component styles uss tak nahi pohnchte)
+ * aur TipTap ka ProseMirror bhi apna DOM banata hai.
+ */
+
+/* ───── Sheet ───── */
+.rb-sheets {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+}
+
+.rb-page {
+  box-sizing: border-box;
+  width: 210mm;
+  max-width: 100%;
+  min-height: 297mm;
+  padding: 18mm 20mm 20mm;
+  background: #fff;
+  color: #1d221e;
+  box-shadow: 0 1px 2px rgba(19, 33, 26, 0.08), 0 12px 32px -14px rgba(19, 33, 26, 0.25);
+  font-family: 'Inter', 'Segoe UI', sans-serif;
+  font-size: 11pt;
+  line-height: 1.6;
+  position: relative;
+}
+.rb-page.rb-letter {
+  width: 216mm;
+  min-height: 279mm;
+}
+.rb-page[lang='ar'] {
+  font-family: 'IBM Plex Sans Arabic', 'Inter', Tahoma, sans-serif;
+  line-height: 1.85;
+}
+
+/* Letterhead */
+.rb-lh {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding-bottom: 12px;
+  margin-bottom: 26px;
+  border-bottom: 1.5px solid #b08d3e;
+}
+.rb-lh-logo {
+  height: 46px;
+  max-width: 140px;
+  object-fit: contain;
+}
+.rb-lh-mark {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: #13211a;
+  color: #e9dfc4;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font: 600 20px 'Fraunces', serif;
+  flex: none;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+.rb-lh-name {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.rb-lh-name strong {
+  font: 600 15pt/1.2 'Fraunces', 'Amiri', serif;
+  color: #13211a;
+}
+.rb-lh-contact {
+  font-size: 8.5pt;
+  color: #6b716a;
+  letter-spacing: 0.02em;
+}
+
+/* ───── Letter body (editor + preview dono) ───── */
+.rb-body,
+.rb-editor .ProseMirror {
+  outline: none;
+}
+.rb-body > :first-child,
+.rb-editor .ProseMirror > :first-child {
+  margin-top: 0;
+}
+.rb-body p,
+.rb-editor .ProseMirror p {
+  margin: 0 0 0.8em;
+}
+.rb-body h1,
+.rb-body h2,
+.rb-body h3,
+.rb-editor .ProseMirror h1,
+.rb-editor .ProseMirror h2,
+.rb-editor .ProseMirror h3 {
+  font-family: 'Fraunces', 'Amiri', serif;
+  font-weight: 600;
+  color: #13211a;
+  line-height: 1.3;
+  margin: 1.1em 0 0.6em;
+}
+.rb-body h1, .rb-editor .ProseMirror h1 { font-size: 18pt; }
+.rb-body h2, .rb-editor .ProseMirror h2 { font-size: 14pt; letter-spacing: 0.04em; }
+.rb-body h3, .rb-editor .ProseMirror h3 { font-size: 12pt; }
+[lang='ar'] .rb-body h1, [lang='ar'] .rb-body h2, [lang='ar'] .rb-body h3,
+.rb-editor[dir='rtl'] .ProseMirror h1, .rb-editor[dir='rtl'] .ProseMirror h2, .rb-editor[dir='rtl'] .ProseMirror h3 {
+  font-family: 'Amiri', 'Fraunces', serif;
+  letter-spacing: 0;
+}
+.rb-body ul, .rb-body ol,
+.rb-editor .ProseMirror ul, .rb-editor .ProseMirror ol {
+  margin: 0 0 0.8em;
+  padding-inline-start: 1.4em;
+}
+.rb-body blockquote,
+.rb-editor .ProseMirror blockquote {
+  margin: 0 0 0.8em;
+  padding-inline-start: 12px;
+  border-inline-start: 3px solid #e9dfc4;
+  color: #4b524b;
+}
+.rb-body hr,
+.rb-editor .ProseMirror hr {
+  border: none;
+  border-top: 1px solid #c3c9bc;
+  margin: 1.2em 0;
+}
+.rb-body img,
+.rb-editor .ProseMirror img {
+  max-width: 100%;
+  height: auto;
+}
+.rb-body table,
+.rb-editor .ProseMirror table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 0.4em 0 1em;
+  table-layout: fixed;
+}
+.rb-body th, .rb-body td,
+.rb-editor .ProseMirror th, .rb-editor .ProseMirror td {
+  border: 1px solid #c9cec3;
+  padding: 5px 9px;
+  text-align: start;
+  vertical-align: top;
+  position: relative;
+}
+.rb-body th,
+.rb-editor .ProseMirror th {
+  background: #f1f2ec;
+  font-weight: 600;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+.rb-body td p, .rb-body th p,
+.rb-editor .ProseMirror td p, .rb-editor .ProseMirror th p {
+  margin: 0;
+}
+
+/* ───── Editor ───── */
+.rb-editor .ProseMirror {
+  min-height: 160mm;
+}
+.rb-editor .ProseMirror p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  color: #a0a59d;
+  float: inline-start;
+  height: 0;
+  pointer-events: none;
+}
+.rb-field {
+  display: inline-block;
+  padding: 0 5px;
+  margin: 0 1px;
+  border-radius: 4px;
+  background: #f4ecd6;
+  border: 1px solid #e0cf9f;
+  color: #6b5320;
+  font: 500 0.86em/1.5 'IBM Plex Mono', ui-monospace, monospace;
+  white-space: nowrap;
+  cursor: pointer;
+  unicode-bidi: isolate;
+}
+.rb-field.ProseMirror-selectednode {
+  outline: 2px solid #b08d3e;
+  outline-offset: 1px;
+}
+.rb-if {
+  position: relative;
+  margin: 1.6em 0 0.8em;
+  padding: 10px 12px 2px;
+  border: 1.5px dashed #a46a17;
+  border-radius: 6px;
+  background: #fdf9f0;
+}
+.rb-if::before {
+  content: '⎇ ' attr(data-label);
+  position: absolute;
+  top: -0.95em;
+  inset-inline-start: 10px;
+  padding: 0 6px;
+  background: #fff;
+  color: #a46a17;
+  font: 600 8pt/1.8 'Inter', sans-serif;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.rb-repeat td {
+  background: #eef4ef;
+  box-shadow: inset 0 0 0 1px #9bb4a2;
+}
+.rb-repeat td:first-child {
+  padding-inline-start: 22px;
+}
+.rb-repeat td:first-child::before {
+  content: '↻';
+  position: absolute;
+  top: 5px;
+  inset-inline-start: 6px;
+  color: #3f5e48;
+  font: 700 11px/1.4 'Inter', sans-serif;
+}
+.rb-break {
+  margin: 1.4em 0;
+  border-top: 2px dashed #c3c9bc;
+  position: relative;
+  height: 0;
+}
+.rb-editor .rb-break::after {
+  content: '⤓';
+  position: absolute;
+  top: -0.8em;
+  inset-inline-start: 50%;
+  padding: 0 8px;
+  background: #fff;
+  color: #8d938b;
+}
+.rb-editor .rb-break.ProseMirror-selectednode {
+  border-top-color: #b08d3e;
+}
+.rb-editor .selectedCell::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(176, 141, 62, 0.14);
+  pointer-events: none;
+}
+.rb-editor .column-resize-handle {
+  position: absolute;
+  inset-inline-end: -2px;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: #b08d3e;
+  pointer-events: none;
+}
+.rb-editor .tableWrapper {
+  overflow-x: auto;
+}
+.rb-editor.resize-cursor {
+  cursor: col-resize;
+}
+.rb-editor pre.rb-source {
+  margin: 0;
+}
+
+@media (max-width: 900px) {
+  .rb-page {
+    width: 100%;
+    min-height: 0;
+    padding: 24px 20px;
+  }
+}
+
+@media print {
+  .rb-sheets {
+    display: block;
+  }
+  .rb-page,
+  .rb-page.rb-letter {
+    width: auto;
+    min-height: 0;
+    padding: 0 18mm;
+    box-shadow: none;
+    break-after: page;
+  }
+  .rb-page:last-child {
+    break-after: auto;
+  }
+  .rb-break {
+    border: none;
+    margin: 0;
+    break-after: page;
+  }
+  .rb-body table,
+  .rb-body tr {
+    break-inside: avoid;
+  }
+}
+
+.rb-editor .ProseMirror:focus,
+.rb-editor .ProseMirror:focus-visible {
+  outline: none;
+  box-shadow: none;
+}
+/* Plex Mono mein Arabic nahi — Arabic label mono mein toot jaate hain */
+.rb-field:lang(ar),
+.rb-editor[dir='rtl'] .rb-field {
+  font-family: 'IBM Plex Sans Arabic', 'IBM Plex Mono', sans-serif;
+}
