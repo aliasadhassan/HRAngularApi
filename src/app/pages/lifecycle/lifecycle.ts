@@ -393,8 +393,8 @@ export class LifecycleComponent {
 
   private ensureStaff(): void {
     if (this.staff().length) return;
-    this.people.getEmployees({ page: 1, pageSize: 200 }).subscribe({
-      next: r => this.staff.set(r.items.map(e => ({ id: e.id, name: e.fullName, code: e.employeeCode }))),
+    this.people.getAllEmployees().subscribe({
+      next: list => this.staff.set(list.map(e => ({ id: e.id, name: e.fullName, code: e.employeeCode }))),
       error: () => undefined
     });
   }

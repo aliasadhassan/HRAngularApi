@@ -105,6 +105,7 @@ export class AssetsComponent {
   readonly drawer = signal<Drawer | null>(null);
   readonly detail = signal<Asset | null>(null);
   readonly staff = signal<{ id: string; name: string; code: string }[]>([]);
+  readonly staffFailed = signal(false);
   readonly locations = signal<{ id: string; name: string }[]>([]);
   assetForm: AssetForm | null = null;
   categoryForm: CategoryForm | null = null;
@@ -534,9 +535,10 @@ export class AssetsComponent {
 
   private ensureStaff(): void {
     if (this.staff().length) return;
-    this.people.getEmployees({ page: 1, pageSize: 200 }).subscribe({
-      next: r => this.staff.set(r.items.filter(e => e.employmentStatus !== 'Exited').map(e => ({ id: e.id, name: e.fullName, code: e.employeeCode }))),
-      error: () => undefined
+    this.staffFailed.set(false);
+    this.people.getAllEmployees().subscribe({
+      next: list => this.staff.set(list.filter(e => e.employmentStatus !== 'Exited').map(e => ({ id: e.id, name: e.fullName, code: e.employeeCode }))),
+      error: () => this.staffFailed.set(true)
     });
   }
 

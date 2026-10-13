@@ -2191,6 +2191,7 @@
     "assignHint": "{{cond}} durumda verilir. Çalışandan teslim onayı istenecek.",
     "findEmployee": "Çalışan bul",
     "noEmployeeMatch": "Eşleşen çalışan yok.",
+    "staffLoadFailed": "Çalışanlar yüklenemedi.",
     "conditionIn": "İadedeki durum",
     "afterReturn": "Sonra varlık",
     "noteRequired": "Not (zorunlu)",
