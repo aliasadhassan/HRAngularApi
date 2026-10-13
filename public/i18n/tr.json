@@ -18,6 +18,14 @@
     "remove": "Kaldır",
     "reset": "Sıfırla"
   },
+  "pagination": {
+    "perPage": "Sayfa başına satır",
+    "range": "{{from}}–{{to}} / {{total}}",
+    "nav": "Sayfalar",
+    "prev": "Önceki sayfa",
+    "next": "Sonraki sayfa",
+    "page": "Sayfa {{n}}"
+  },
   "nav": {
     "dashboard": "Gösterge Paneli",
     "overview": "Genel Bakış",

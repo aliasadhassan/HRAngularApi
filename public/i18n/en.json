@@ -18,6 +18,14 @@
     "remove": "Remove",
     "reset": "Reset"
   },
+  "pagination": {
+    "perPage": "Rows per page",
+    "range": "{{from}}–{{to}} of {{total}}",
+    "nav": "Pages",
+    "prev": "Previous page",
+    "next": "Next page",
+    "page": "Page {{n}}"
+  },
   "nav": {
     "dashboard": "Dashboard",
     "overview": "Overview",

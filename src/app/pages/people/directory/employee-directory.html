@@ -87,14 +87,9 @@
       </div>
     }
 
-    @if (total() > pageSize) {
-      <footer class="pager">
-        <span class="num">{{ 'admin.users.range' | translate: { from: (page() - 1) * pageSize + 1, to: (page() * pageSize > total() ? total() : page() * pageSize), total: total() } }}</span>
-        <div class="pager-buttons">
-          <button type="button" class="btn btn-quiet btn-small" [disabled]="page() === 1" (click)="goTo(page() - 1)">{{ 'admin.users.prev' | translate }}</button>
-          <button type="button" class="btn btn-quiet btn-small" [disabled]="page() === pages()" (click)="goTo(page() + 1)">{{ 'admin.users.next' | translate }}</button>
-        </div>
-      </footer>
+    @if (total() > 0) {
+      <app-pagination [page]="page()" [pageSize]="pageSize()" [total]="total()" [disabled]="loading()"
+                      (pageChange)="goTo($event)" (pageSizeChange)="setPageSize($event)" />
     }
   </section>
 </div>
