@@ -1,0 +1,32 @@
+<footer class="pagination">
+  <label class="pg-size">
+    <span>{{ 'pagination.perPage' | translate }}</span>
+    <select class="pg-select" [value]="pageSize()" [disabled]="disabled()" (change)="setSize($any($event.target).value)">
+      @for (n of pageSizeOptions(); track n) {
+        <option [value]="n" [selected]="n === pageSize()">{{ n }}</option>
+      }
+    </select>
+  </label>
+
+  <span class="pg-range num">{{ 'pagination.range' | translate: { from: from(), to: to(), total: total() } }}</span>
+
+  <nav class="pg-pages" [attr.aria-label]="'pagination.nav' | translate">
+    <button type="button" class="pg-btn pg-arrow" [disabled]="disabled() || page() <= 1" (click)="go(page() - 1)"
+            [attr.aria-label]="'pagination.prev' | translate">
+      <span class="material-icons-outlined" aria-hidden="true">chevron_left</span>
+    </button>
+    @for (item of items(); track item) {
+      @if (isPage(item)) {
+        <button type="button" class="pg-btn num" [class.is-current]="item === page()" [disabled]="disabled()"
+                [attr.aria-current]="item === page() ? 'page' : null"
+                [attr.aria-label]="'pagination.page' | translate: { n: item }" (click)="go(item)">{{ item }}</button>
+      } @else {
+        <span class="pg-gap" aria-hidden="true">…</span>
+      }
+    }
+    <button type="button" class="pg-btn pg-arrow" [disabled]="disabled() || page() >= pages()" (click)="go(page() + 1)"
+            [attr.aria-label]="'pagination.next' | translate">
+      <span class="material-icons-outlined" aria-hidden="true">chevron_right</span>
+    </button>
+  </nav>
+</footer>

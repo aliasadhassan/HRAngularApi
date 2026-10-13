@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -9,6 +9,7 @@ import { LanguageService } from '../../../core/i18n/language.service';
 import { P, PermissionService } from '../../../core/auth/permissions';
 import { AlertService } from '../../../services/alert/alert';
 import { PayrollService } from '../../payroll/payroll.service';
+import { DEFAULT_PAGE_SIZE, PaginationComponent } from '../../../shared/pagination/pagination';
 import { PeopleService } from '../people.service';
 import {
   CreateEmployee, Department, Designation, EmployeeListItem, EmploymentStatus, EmploymentType, Location,
@@ -19,7 +20,7 @@ type Tab = '' | 'Active' | 'Probation' | 'OnNotice' | 'Exited';
 
 @Component({
   selector: 'app-employee-directory',
-  imports: [DatePipe, FormsModule, TranslatePipe],
+  imports: [DatePipe, FormsModule, TranslatePipe, PaginationComponent],
   templateUrl: './employee-directory.html',
   styleUrl: './employee-directory.css'
 })
@@ -42,7 +43,7 @@ export class EmployeeDirectoryComponent {
   readonly loading = signal(true);
   readonly tab = signal<Tab>('');
   readonly page = signal(1);
-  readonly pageSize = 25;
+  readonly pageSize = signal(DEFAULT_PAGE_SIZE);
   search = '';
   departmentId = '';
   locationId = '';
@@ -57,8 +58,6 @@ export class EmployeeDirectoryComponent {
   readonly saving = signal(false);
   form: CreateEmployee = this.emptyForm();
 
-  readonly pages = computed(() => Math.max(1, Math.ceil(this.total() / this.pageSize)));
-
   constructor() {
     this.searchChanged.pipe(debounceTime(300), takeUntilDestroyed()).subscribe(() => this.reload());
     this.api.getDepartments().subscribe({ next: d => this.departments.set(d.filter(x => x.isActive)) });
@@ -72,7 +71,7 @@ export class EmployeeDirectoryComponent {
     this.loading.set(true);
     const t = this.tab();
     this.api.getEmployees({
-      page: this.page(), pageSize: this.pageSize, search: this.search,
+      page: this.page(), pageSize: this.pageSize(), search: this.search,
       departmentId: this.departmentId || undefined, locationId: this.locationId || undefined,
       status: t as EmploymentStatus | '', includeExited: t === 'Exited'
     }).subscribe({
@@ -98,9 +97,13 @@ export class EmployeeDirectoryComponent {
   }
 
   goTo(p: number): void {
-    if (p < 1 || p > this.pages()) return;
     this.page.set(p);
     this.reload(false);
+  }
+
+  setPageSize(size: number): void {
+    this.pageSize.set(size);
+    this.reload();
   }
 
   open(e: EmployeeListItem): void {
