@@ -20,7 +20,11 @@ export const P = {
   relationsManage: 'relations.manage',
   safetyManage: 'safety.manage',
   reportsBuild: 'reports.build',
-  lettersIssue: 'letters.issue'
+  lettersIssue: 'letters.issue',
+  aiUse: 'ai.use',
+  aiInsights: 'ai.insights',
+  aiScreening: 'ai.screening',
+  aiManage: 'ai.manage'
 } as const;
 
 /**

@@ -1,0 +1,492 @@
+<div class="page">
+  <header class="page-intro">
+    <p>{{ 'ai.intro' | translate }}</p>
+    <div class="intro-actions">
+      @if (tab() === 'chat' && home()?.canChat) {
+        <button type="button" class="btn btn-ink" (click)="newChat()" [disabled]="!!pending()">
+          <span class="material-icons-outlined" aria-hidden="true">add</span>{{ 'ai.newChat' | translate }}
+        </button>
+      } @else if (tab() === 'insights' && home()?.canInsights) {
+        <button type="button" class="btn btn-ink" (click)="runInsights()" [disabled]="running() || !canCall()">
+          <span class="material-icons-outlined" aria-hidden="true">{{ running() ? 'hourglass_top' : 'auto_awesome' }}</span>
+          {{ (running() ? 'ai.insight.running' : 'ai.insight.runNow') | translate }}
+        </button>
+      }
+    </div>
+  </header>
+
+  @if (home(); as h) {
+    @if (!h.configured) {
+      <div class="notice notice-info off-notice">
+        <span class="material-icons-outlined" aria-hidden="true">power_off</span>
+        <span class="grow">
+          <strong>{{ 'ai.off.title' | translate }}</strong>
+          {{ (h.canManage ? 'ai.off.admin' : 'ai.off.user') | translate }}
+        </span>
+      </div>
+    } @else if (limitReached()) {
+      <div class="notice notice-error">
+        <span class="material-icons-outlined" aria-hidden="true">block</span>
+        <span class="grow">{{ 'ai.limitReached' | translate: { n: h.usage.limit } }}</span>
+      </div>
+    }
+
+    @if (tabs().length) {
+      <nav class="tabs">
+        @for (t of tabs(); track t) {
+          <button type="button" class="tab" [class.is-active]="tab() === t" (click)="setTab(t)">{{ 'ai.tabs.' + t | translate }}</button>
+        }
+      </nav>
+    } @else {
+      <div class="panel empty-state">
+        <span class="material-icons-outlined" aria-hidden="true">lock</span>
+        <h3>{{ 'ai.noAccess.title' | translate }}</h3>
+        <p>{{ 'ai.noAccess.body' | translate }}</p>
+      </div>
+    }
+  } @else if (!failed()) {
+    <p class="loading-line">{{ 'common.loading' | translate }}</p>
+  }
+
+  <!-- ═══ Chat ═══ -->
+  @if (tab() === 'chat' && home(); as h) {
+    <div class="chat-layout">
+      <aside class="chat-side">
+        <div class="panel history">
+          @if (conversations() === null) {
+            <p class="loading-line">{{ 'common.loading' | translate }}</p>
+          } @else if (!conversations()!.length) {
+            <p class="history-empty">{{ 'ai.history.empty' | translate }}</p>
+          } @else {
+            @for (c of conversations()!; track c.id; let i = $index) {
+              @if (i === 0 || dayKey(c.lastMessageAt) !== dayKey(conversations()![i - 1]!.lastMessageAt)) {
+                <span class="history-day">{{ 'ai.history.' + dayKey(c.lastMessageAt) | translate }}</span>
+              }
+              <div class="history-row" [class.is-active]="activeId() === c.id">
+                @if (confirmDelete === c.id) {
+                  <span class="grow confirm-text">{{ 'ai.history.confirmDelete' | translate }}</span>
+                  <button type="button" class="btn btn-danger btn-small" (click)="deleteChat(c.id)">{{ 'common.delete' | translate }}</button>
+                  <button type="button" class="icon-btn-sm" (click)="confirmDelete = null" [attr.aria-label]="'common.cancel' | translate">
+                    <span class="material-icons-outlined" aria-hidden="true">close</span>
+                  </button>
+                } @else {
+                  <button type="button" class="history-item" (click)="openChat(c.id)">
+                    <span class="history-title">{{ c.title }}</span>
+                    <span class="history-when num">{{ utc(c.lastMessageAt) | date: (dayKey(c.lastMessageAt) === 'earlier' ? 'd MMM' : 'HH:mm') : undefined : lang() }}</span>
+                  </button>
+                  <button type="button" class="icon-btn-sm history-del" (click)="confirmDelete = c.id" [attr.aria-label]="'ai.history.delete' | translate">
+                    <span class="material-icons-outlined" aria-hidden="true">delete_outline</span>
+                  </button>
+                }
+              </div>
+            }
+          }
+        </div>
+
+        <div class="sees">
+          <strong>{{ 'ai.sees.title' | translate }}</strong>
+          <span>
+            @for (a of visibleAreas(); track a.key; let last = $last) {
+              {{ 'ai.area.' + a.key + '.name' | translate }}{{ last ? '.' : ', ' }}
+            } @empty {
+              {{ 'ai.sees.nothing' | translate }}
+            }
+            {{ 'ai.sees.same' | translate }}
+          </span>
+          <span class="sees-usage num">{{ 'ai.usageLine' | translate: { used: (h.usage.used | number), limit: (h.usage.limit | number) } }}</span>
+        </div>
+      </aside>
+
+      <section class="panel conversation" [attr.aria-label]="'ai.tabs.chat' | translate">
+        <div class="thread" #thread (click)="onAnswerClick($event)">
+          @if (loadingChat()) {
+            <p class="loading-line">{{ 'common.loading' | translate }}</p>
+          } @else if (!messages().length && !pending()) {
+            <div class="welcome">
+              <span class="avatar big" aria-hidden="true">A</span>
+              <h3>{{ 'ai.welcome.title' | translate }}</h3>
+              <p>{{ 'ai.welcome.body' | translate }}</p>
+            </div>
+          }
+          @for (m of messages(); track m.id) {
+            @if (m.role === 'User') {
+              <div class="q-bubble" dir="auto">{{ m.text }}</div>
+            } @else {
+              <div class="answer">
+                <span class="avatar" aria-hidden="true">A</span>
+                <div class="answer-body">
+                  @if (m.tools.length) {
+                    <div class="tool-chips">
+                      @for (t of m.tools; track $index) { <span class="tool-chip">✓ {{ t }}</span> }
+                    </div>
+                  }
+                  @if (m.failed) {
+                    <div class="answer-failed">
+                      <span class="material-icons-outlined" aria-hidden="true">error_outline</span>
+                      <span>{{ m.text }}</span>
+                    </div>
+                  } @else {
+                    <div class="md" dir="auto" [innerHTML]="html(m)"></div>
+                    <div class="answer-actions">
+                      <button type="button" class="btn btn-quiet btn-small" (click)="copy(m)">
+                        <span class="material-icons-outlined" aria-hidden="true">content_copy</span>{{ 'ai.copy' | translate }}
+                      </button>
+                      <span class="answer-note">{{ 'ai.readOnlyNote' | translate }}</span>
+                    </div>
+                  }
+                </div>
+              </div>
+            }
+          }
+          @if (pending(); as p) {
+            <div class="q-bubble" dir="auto">{{ p.question }}</div>
+            <div class="answer">
+              <span class="avatar" aria-hidden="true">A</span>
+              <div class="answer-body">
+                <div class="thinking">
+                  <span class="dots" aria-hidden="true"><i></i><i></i><i></i></span>
+                  {{ 'ai.thinking' | translate }}
+                </div>
+              </div>
+            </div>
+          }
+        </div>
+
+        <div class="composer">
+          @if (!canContinue()) {
+            <p class="composer-note">{{ 'ai.chatFull' | translate }}</p>
+          } @else {
+            @if (!messages().length && !pending() && canCall()) {
+              <div class="suggestions">
+                @for (s of suggestions; track s) {
+                  <button type="button" class="suggestion" (click)="useSuggestion(s)">{{ s | translate }}</button>
+                }
+              </div>
+            }
+            <div class="composer-row">
+              <label class="grow">
+                <span class="sr-only">{{ 'ai.askLabel' | translate }}</span>
+                <textarea #composer rows="2" dir="auto" [(ngModel)]="question" [maxlength]="maxQuestion" (keydown)="onComposerKey($event)"
+                  [disabled]="!canCall() || !!pending()"
+                  [placeholder]="(canCall() ? 'ai.askPlaceholder' : (h.configured ? 'ai.askLimit' : 'ai.askOff')) | translate"></textarea>
+              </label>
+              <button type="button" class="send" (click)="send()" [disabled]="!question.trim() || !canCall() || !!pending()"
+                [attr.aria-label]="'ai.send' | translate">
+                <span class="material-icons-outlined flip-rtl" aria-hidden="true">arrow_forward</span>
+              </button>
+            </div>
+          }
+        </div>
+      </section>
+    </div>
+  }
+
+  <!-- ═══ Insights ═══ -->
+  @if (tab() === 'insights' && home()) {
+    <div class="insight-bar">
+      <nav class="filter-pills" [attr.aria-label]="'ai.insight.filter' | translate">
+        <button type="button" class="pill" [class.is-active]="!showDismissed() && !areaFilter()" (click)="showDismissed() ? setInsightView(false) : areaFilter.set('')">
+          {{ 'ai.insight.open' | translate }}
+          @if (!showDismissed() && insights()) { <span class="num">· {{ insights()!.items.length }}</span> }
+        </button>
+        @if (!showDismissed()) {
+          @for (a of insightAreas(); track a.area) {
+            <button type="button" class="pill" [class.is-active]="areaFilter() === a.area" (click)="areaFilter.set(a.area)">
+              {{ a.area }} <span class="num">· {{ a.n }}</span>
+            </button>
+          }
+        }
+        <button type="button" class="pill" [class.is-active]="showDismissed()" (click)="setInsightView(true)">{{ 'ai.insight.dismissed' | translate }}</button>
+      </nav>
+      @if (insights()?.lastRunAt) {
+        <span class="last-run num">
+          {{ 'ai.insight.lastRun' | translate: { when: (utc(insights()!.lastRunAt) | date: 'd MMM, HH:mm' : undefined : lang()), by: insights()!.lastRunBy ?? '—' } }}
+        </span>
+      }
+    </div>
+
+    @if (insights() === null || running()) {
+      <div class="insight-grid">
+        @for (k of [1, 2, 3]; track k) { <div class="panel insight-card skeleton-card"><div class="skeleton"></div><div class="skeleton short"></div></div> }
+      </div>
+      @if (running()) { <p class="loading-line">{{ 'ai.insight.runningHelp' | translate }}</p> }
+    } @else if (!shownInsights().length) {
+      <div class="panel empty-state">
+        <span class="material-icons-outlined" aria-hidden="true">{{ showDismissed() ? 'inventory_2' : 'insights' }}</span>
+        <h3>{{ (showDismissed() ? 'ai.insight.noneDismissed' : 'ai.insight.noneTitle') | translate }}</h3>
+        @if (!showDismissed()) { <p>{{ (canCall() ? 'ai.insight.noneBody' : 'ai.insight.noneOff') | translate }}</p> }
+      </div>
+    } @else {
+      <div class="insight-grid">
+        @for (i of shownInsights(); track i.id) {
+          <article class="panel insight-card" [ngClass]="'lvl-' + i.level">
+            <div class="insight-tags">
+              <span class="chip" [ngClass]="levelChip[i.level]">{{ 'ai.level.' + i.level | translate }}</span>
+              <span class="insight-area">{{ i.area }}</span>
+            </div>
+            <h3 dir="auto">{{ i.title }}</h3>
+            <p dir="auto">{{ i.body }}</p>
+            @if (i.metric) {
+              <div class="metric">
+                <span class="metric-figure num">{{ i.metric }}</span>
+                <span class="metric-label">{{ i.metricLabel }}</span>
+              </div>
+            }
+            @if (i.source) { <span class="insight-source">{{ 'ai.insight.basedOn' | translate: { source: i.source } }}</span> }
+            <div class="insight-actions">
+              @if (i.link) {
+                <button type="button" class="btn btn-ink btn-small" (click)="openLink(i.link)">{{ 'ai.insight.open_page' | translate }}</button>
+              }
+              @if (home()!.canChat) {
+                <button type="button" class="btn btn-quiet btn-small" (click)="askAbout(i)">{{ 'ai.insight.ask' | translate }}</button>
+              }
+              <button type="button" class="btn btn-link" (click)="toggleInsight(i)">
+                {{ (i.status === 'Open' ? 'ai.insight.dismiss' : 'ai.insight.restore') | translate }}
+              </button>
+            </div>
+          </article>
+        }
+      </div>
+    }
+  }
+
+  <!-- ═══ Screening ═══ -->
+  @if (tab() === 'screening' && home()) {
+    @if (board(); as b) {
+      @if (!b.jobs.length) {
+        <div class="panel empty-state">
+          <span class="material-icons-outlined" aria-hidden="true">work_outline</span>
+          <h3>{{ 'ai.screen.noJobs' | translate }}</h3>
+          <p>{{ 'ai.screen.noJobsBody' | translate }}</p>
+        </div>
+      } @else {
+        <div class="screen-bar">
+          <label class="field job-field">
+            <span>{{ 'ai.screen.job' | translate }}</span>
+            <select [ngModel]="b.jobId" (ngModelChange)="loadBoard($event)">
+              @for (j of b.jobs; track j.id) {
+                <option [ngValue]="j.id">{{ j.title }} · {{ j.department ?? j.code }} · {{ 'ai.screen.applicants' | translate: { n: j.applicants } }}</option>
+              }
+            </select>
+          </label>
+          <button type="button" class="btn btn-quiet" (click)="openPipeline()">
+            <span class="material-icons-outlined" aria-hidden="true">view_kanban</span>{{ 'ai.screen.openPipeline' | translate }}
+          </button>
+        </div>
+        @if (currentJob() && !currentJob()!.hasRequirements) {
+          <div class="notice notice-info">
+            <span class="material-icons-outlined" aria-hidden="true">info</span>
+            <span class="grow">{{ 'ai.screen.noRequirements' | translate }}</span>
+          </div>
+        }
+
+        <div class="screen-layout">
+          <section class="panel panel-flush ranked" [attr.aria-label]="'ai.screen.ranked' | translate">
+            <header class="ranked-head">
+              <strong>{{ 'ai.screen.screened' | translate: { n: screenedCount(), total: b.rows.length } }}</strong>
+              <span>{{ 'ai.screen.sorted' | translate }}</span>
+            </header>
+            @for (r of ranked(); track r.applicationId) {
+              <button type="button" class="cand" [class.is-active]="selected()?.applicationId === r.applicationId" (click)="select(r)">
+                <span class="score-ring num" [ngClass]="r.fit ? 'fit-' + r.fit : 'fit-none'">{{ r.score ?? '–' }}</span>
+                <span class="stack grow">
+                  <span class="cand-name">{{ r.candidateName }}</span>
+                  <span class="cand-line">{{ candidateLine(r) || ('ai.screen.stage.' + r.stage | translate) }}</span>
+                </span>
+                @if (r.fit) {
+                  <span class="chip" [ngClass]="fitChip[r.fit]">{{ 'ai.fit.' + r.fit | translate }}</span>
+                } @else {
+                  <span class="chip chip-neutral">{{ 'ai.screen.notYet' | translate }}</span>
+                }
+              </button>
+            } @empty {
+              <p class="history-empty pad">{{ 'ai.screen.noApplicants' | translate }}</p>
+            }
+          </section>
+
+          <section class="panel detail" [attr.aria-label]="'ai.screen.detail' | translate">
+            @if (selected(); as r) {
+              <div class="detail-head">
+                <div class="stack">
+                  <h3 class="detail-name">{{ r.candidateName }}</h3>
+                  <span class="cand-line">
+                    {{ candidateLine(r) }}{{ candidateLine(r) ? ' · ' : '' }}{{ 'ai.screen.applied' | translate: { date: (utc(r.appliedAt) | date: 'd MMM' : undefined : lang()) } }}
+                    · {{ 'ai.screen.stage.' + r.stage | translate }}
+                  </span>
+                </div>
+                @if (screening(); as s) {
+                  <div class="big-score">
+                    <span class="num" [ngClass]="'fit-text-' + s.fit">{{ s.score }}</span>
+                    <span>{{ 'ai.screen.outOf' | translate }}</span>
+                  </div>
+                }
+              </div>
+
+              @if (loadingScreening()) {
+                <p class="loading-line">{{ 'common.loading' | translate }}</p>
+              } @else if (screening() && !rescreen) {
+                @let s = screening()!;
+                <p class="summary" dir="auto">{{ s.summary }}</p>
+                @if (s.requirements.length) {
+                  <div class="table-wrap req-table">
+                    <table class="ledger-table">
+                      <thead>
+                        <tr>
+                          <th>{{ 'ai.screen.requirement' | translate }}</th>
+                          <th>{{ 'ai.screen.met' | translate }}</th>
+                          <th>{{ 'ai.screen.evidence' | translate }}</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        @for (q of s.requirements; track $index) {
+                          <tr>
+                            <td dir="auto">{{ q.requirement }}</td>
+                            <td class="met" [ngClass]="'met-' + q.met">{{ 'ai.met.' + q.met | translate }}</td>
+                            <td class="evidence" dir="auto">{{ q.evidence }}</td>
+                          </tr>
+                        }
+                      </tbody>
+                    </table>
+                  </div>
+                }
+                @if (s.questions.length) {
+                  <div class="questions">
+                    <strong>{{ 'ai.screen.questions' | translate }}</strong>
+                    <ol>
+                      @for (q of s.questions; track $index) { <li dir="auto">{{ q }}</li> }
+                    </ol>
+                  </div>
+                }
+                <div class="detail-actions">
+                  @if (r.stage === 'Applied' || r.stage === 'Screening') {
+                    <button type="button" class="btn btn-ink" (click)="moveToInterview(r)" [disabled]="saving()">{{ 'ai.screen.moveInterview' | translate }}</button>
+                  }
+                  <button type="button" class="btn btn-quiet" (click)="rescreen = true" [disabled]="!canCall()">{{ 'ai.screen.again' | translate }}</button>
+                  <span class="detail-meta">{{ 'ai.screen.by' | translate: { by: s.byName ?? '—', when: (utc(s.at) | date: 'd MMM, HH:mm' : undefined : lang()) } }}</span>
+                </div>
+              } @else {
+                <div class="cv-form">
+                  <p class="cv-help">{{ 'ai.screen.cvHelp' | translate }}</p>
+                  @if (cvFile; as f) {
+                    <div class="cv-file">
+                      <span class="material-icons-outlined" aria-hidden="true">picture_as_pdf</span>
+                      <span class="grow">{{ f.name }}</span>
+                      <button type="button" class="icon-btn-sm" (click)="cvFile = null" [attr.aria-label]="'common.remove' | translate">
+                        <span class="material-icons-outlined" aria-hidden="true">close</span>
+                      </button>
+                    </div>
+                  } @else {
+                    <textarea class="cv-text" rows="9" dir="auto" [(ngModel)]="cvText" [placeholder]="'ai.screen.cvPlaceholder' | translate"></textarea>
+                  }
+                  <div class="detail-actions">
+                    <label class="btn btn-quiet file-btn">
+                      <span class="material-icons-outlined" aria-hidden="true">upload_file</span>{{ 'ai.screen.uploadPdf' | translate }}
+                      <input #cvInput type="file" accept="application/pdf,.pdf" class="sr-only" (change)="onCvFile(cvInput)">
+                    </label>
+                    <button type="button" class="btn btn-brass" (click)="screen()" [disabled]="!canScreenNow()">
+                      <span class="material-icons-outlined" aria-hidden="true">{{ screeningBusy() ? 'hourglass_top' : 'auto_awesome' }}</span>
+                      {{ (screeningBusy() ? 'ai.screen.screening' : 'ai.screen.screen') | translate }}
+                    </button>
+                    @if (rescreen) {
+                      <button type="button" class="btn btn-link" (click)="resetCv()">{{ 'common.cancel' | translate }}</button>
+                    }
+                  </div>
+                </div>
+              }
+              <p class="fair-note">
+                <span class="material-icons-outlined inline-icon" aria-hidden="true">balance</span>{{ 'ai.screen.fairNote' | translate }}
+              </p>
+            } @else {
+              <div class="empty-state">
+                <span class="material-icons-outlined" aria-hidden="true">person_search</span>
+                <p>{{ 'ai.screen.pick' | translate }}</p>
+              </div>
+            }
+          </section>
+        </div>
+      }
+    } @else {
+      <p class="loading-line">{{ 'common.loading' | translate }}</p>
+    }
+  }
+
+  <!-- ═══ Settings ═══ -->
+  @if (tab() === 'settings' && home(); as h) {
+    @if (settingsForm; as f) {
+      <div class="settings-layout">
+        <section class="panel" [attr.aria-label]="'ai.settings.areasTitle' | translate">
+          <h3 class="section-title">{{ 'ai.settings.areasTitle' | translate }}</h3>
+          <div class="area-list">
+            @for (a of areas; track a.key) {
+              <label class="area-row">
+                <input type="checkbox" [checked]="f.areas.has(a.key)" (change)="toggleArea(a.key)">
+                <span class="material-icons-outlined area-icon" aria-hidden="true">{{ a.icon }}</span>
+                <span class="stack grow">
+                  <span class="area-name">{{ 'ai.area.' + a.key + '.name' | translate }}</span>
+                  <span class="area-desc">{{ 'ai.area.' + a.key + '.desc' | translate }}</span>
+                </span>
+                <span class="chip" [ngClass]="a.offByDefault ? 'chip-oxblood' : a.sensitive ? 'chip-amber' : 'chip-moss'">
+                  {{ (a.offByDefault ? 'ai.settings.offDefault' : a.sensitive ? 'ai.settings.sensitive' : 'ai.settings.standard') | translate }}
+                </span>
+              </label>
+            }
+          </div>
+          <p class="section-help">{{ 'ai.settings.areasHelp' | translate }}</p>
+        </section>
+
+        <aside class="settings-side">
+          <section class="panel">
+            <h3 class="section-title">{{ 'ai.settings.connection' | translate }}</h3>
+            @if (h.configured) {
+              <p class="conn conn-on"><span class="material-icons-outlined" aria-hidden="true">check_circle</span>{{ 'ai.settings.connected' | translate: { model: h.model } }}</p>
+            } @else {
+              <p class="conn conn-off"><span class="material-icons-outlined" aria-hidden="true">power_off</span>{{ 'ai.settings.notConnected' | translate }}</p>
+              <p class="section-help">{{ 'ai.settings.keyHelp' | translate }} <code class="mono">AnthropicApiKey</code></p>
+            }
+          </section>
+
+          <section class="panel">
+            <h3 class="section-title">{{ 'ai.settings.usageTitle' | translate: { month: (today | date: 'MMMM' : undefined : lang()) } }}</h3>
+            <div class="usage-figure">
+              <span class="num">{{ h.usage.used | number }}</span>
+              <span>{{ 'ai.settings.ofLimit' | translate: { n: (h.usage.limit | number) } }}</span>
+            </div>
+            <div class="usage-bar" role="img" [attr.aria-label]="'ai.settings.usagePct' | translate: { n: usagePct() }">
+              <div [style.width.%]="usagePct()" [class.is-full]="usagePct() >= 90"></div>
+            </div>
+            <div class="usage-grid">
+              <div><span>{{ 'ai.settings.chat' | translate }}</span><strong class="num">{{ h.usage.chat | number }}</strong></div>
+              <div><span>{{ 'ai.settings.screens' | translate }}</span><strong class="num">{{ h.usage.screens | number }}</strong></div>
+              <div><span>{{ 'ai.settings.runs' | translate }}</span><strong class="num">{{ h.usage.insightRuns | number }}</strong></div>
+              <div><span>{{ 'ai.settings.tokens' | translate }}</span><strong class="num">{{ (h.usage.inputTokens + h.usage.outputTokens) | number }}</strong></div>
+            </div>
+            <p class="section-help">{{ 'ai.settings.usageHelp' | translate }}</p>
+          </section>
+
+          <section class="panel options">
+            <h3 class="section-title">{{ 'ai.settings.options' | translate }}</h3>
+            <label class="field">
+              <span>{{ 'ai.settings.limit' | translate }}</span>
+              <input type="number" min="0" max="100000" step="10" [(ngModel)]="f.monthlyLimit">
+              <span class="field-hint">{{ 'ai.settings.limitHint' | translate }}</span>
+            </label>
+            <label class="field">
+              <span>{{ 'ai.settings.history' | translate }}</span>
+              <select [(ngModel)]="f.historyDays">
+                @for (d of historyOptions; track d) { <option [ngValue]="d">{{ 'ai.settings.days' | translate: { n: d } }}</option> }
+              </select>
+            </label>
+            <label class="check">
+              <input type="checkbox" [(ngModel)]="f.selfService">
+              <span>{{ 'ai.settings.selfService' | translate }}</span>
+            </label>
+            <div class="options-actions">
+              <button type="button" class="btn btn-ink" (click)="saveSettings()" [disabled]="saving()">{{ 'ai.settings.save' | translate }}</button>
+              <button type="button" class="btn btn-link" (click)="resetSettings()">{{ 'common.reset' | translate }}</button>
+            </div>
+          </section>
+        </aside>
+      </div>
+    }
+  }
+</div>
