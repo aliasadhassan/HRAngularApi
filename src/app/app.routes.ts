@@ -52,9 +52,6 @@ const PLANNED: Route[] = [
   // Reporting
   soon('reports/builder', 'nav.reportBuilder', undefined, ['builder', 'savedReports', 'scheduled']),
 
-  // Compliance
-  soon('compliance/health-safety', 'nav.healthSafety', undefined, ['incidents', 'inspections']),
-
   // AI
   soon('ai', 'nav.aiAssistant', undefined, ['chat', 'insights', 'aiRecruitment'])
 ];
@@ -91,6 +88,7 @@ export const routes: Routes = [
       { path: 'engagement', loadComponent: () => import('./pages/engagement/engagement').then(m => m.EngagementComponent), data: { titleKey: 'nav.engagement' } },
       { path: 'talent/lifecycle', loadComponent: () => import('./pages/lifecycle/lifecycle').then(m => m.LifecycleComponent), data: { titleKey: 'nav.onboardingExit' } },
       { path: 'compliance/policies', loadComponent: () => import('./pages/policies/policies').then(m => m.PoliciesComponent), data: { titleKey: 'nav.policiesCompliance' } },
+      { path: 'compliance/health-safety', loadComponent: () => import('./pages/safety/safety').then(m => m.SafetyComponent), data: { titleKey: 'nav.healthSafety' } },
       { path: 'compliance/relations', loadComponent: () => import('./pages/relations/relations').then(m => m.RelationsComponent), data: { titleKey: 'nav.employeeRelations' } },
       { path: 'compliance/audit', loadComponent: () => import('./pages/audit/audit').then(m => m.AuditComponent), canActivate: [permissionGuard], data: { titleKey: 'nav.audit', permission: P.settingsView } },
       { path: 'reports', loadComponent: () => import('./pages/reports/reports').then(m => m.ReportsComponent), canActivate: [permissionGuard], data: { titleKey: 'nav.reports', permission: [P.employeesView, P.payrollViewAll, P.payrollApprove] } },

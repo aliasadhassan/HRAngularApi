@@ -1,0 +1,1486 @@
+<div class="page">
+  <header class="page-intro">
+    <p>{{ 'safety.intro' | translate }}</p>
+    <div class="intro-actions">
+      @if (linked()) {
+        <button type="button" class="btn btn-quiet" (click)="newReport()">
+          <span class="material-icons-outlined" aria-hidden="true">campaign</span>{{ 'safety.reportIncident' | translate }}
+        </button>
+      }
+      @if (canManage()) {
+        @switch (tab()) {
+          @case ('actions') {
+            <button type="button" class="btn btn-ink" (click)="newAction()">
+              <span class="material-icons-outlined" aria-hidden="true">add</span>{{ 'safety.newAction' | translate }}
+            </button>
+          }
+          @case ('inspections') {
+            <button type="button" class="btn btn-ink" [disabled]="!activeChecklists().length" (click)="newInspection()">
+              <span class="material-icons-outlined" aria-hidden="true">event_available</span>{{ 'safety.schedule' | translate }}
+            </button>
+          }
+          @case ('checklists') {
+            <button type="button" class="btn btn-ink" (click)="newChecklist()">
+              <span class="material-icons-outlined" aria-hidden="true">add</span>{{ 'safety.newChecklist' | translate }}
+            </button>
+          }
+          @case ('reports') {}
+          @default {
+            <button type="button" class="btn btn-ink" (click)="newIncident()">
+              <span class="material-icons-outlined" aria-hidden="true">add</span>{{ 'safety.newIncident' | translate }}
+            </button>
+          }
+        }
+      }
+    </div>
+  </header>
+
+  @if (summary(); as s) {
+    <!-- Notice board: sab ko dikhta hai -->
+    <section class="board" [class]="'board ' + boardTone(s.daysSinceLostTime)">
+      <div class="board-figure">
+        <span class="num board-n">{{ s.daysSinceLostTime ?? '—' }}</span>
+        <span class="board-label">{{ (s.daysSinceLostTime === null ? 'safety.board.none' : 'safety.board.days') | translate }}</span>
+      </div>
+      <div class="board-text">
+        <strong>{{ 'safety.board.title' | translate }}</strong>
+        @if (s.lastLostTimeAt) {
+          <span class="dim">{{ 'safety.board.last' | translate: { date: (utc(s.lastLostTimeAt) | date: 'd MMM y' : undefined : lang()) } }}</span>
+        } @else {
+          <span class="dim">{{ 'safety.board.noneSub' | translate }}</span>
+        }
+      </div>
+      @if (linked()) {
+        <div class="board-mine">
+          <button type="button" class="mine-pill" [class.is-bad]="s.myOverdueActions > 0" (click)="show('actions', 'mine')">
+            <span class="num">{{ s.myOpenActions }}</span>{{ 'safety.board.myActions' | translate }}
+          </button>
+          <button type="button" class="mine-pill" (click)="show('inspections', 'mine')">
+            <span class="num">{{ s.myInspectionsDue }}</span>{{ 'safety.board.myInspections' | translate }}
+          </button>
+          <button type="button" class="mine-pill" (click)="setTab('reports')">
+            <span class="num">{{ s.myReportsOpen }}</span>{{ 'safety.board.myReports' | translate }}
+          </button>
+          @if (s.myInvestigations) {
+            <button type="button" class="mine-pill" (click)="show('incidents', 'mine')">
+              <span class="num">{{ s.myInvestigations }}</span>{{ 'safety.board.myInvestigations' | translate }}
+            </button>
+          }
+        </div>
+      }
+    </section>
+
+    <nav class="tabs">
+      @for (t of visibleTabs(); track t) {
+        <button type="button" class="tab" [class.is-active]="tab() === t" (click)="setTab(t)">
+          {{ 'safety.tabs.' + t | translate }}
+          @switch (t) {
+            @case ('incidents') {
+              @if (s.canManage && s.openIncidents) { <span class="tab-count num">{{ s.openIncidents }}</span> }
+            }
+            @case ('actions') {
+              @if (s.canManage ? s.overdueActions : s.myOverdueActions) {
+                <span class="tab-count num alert-count">{{ s.canManage ? s.overdueActions : s.myOverdueActions }}</span>
+              } @else if (s.canManage ? s.openActions : s.myOpenActions) {
+                <span class="tab-count num">{{ s.canManage ? s.openActions : s.myOpenActions }}</span>
+              }
+            }
+            @case ('inspections') {
+              @if (s.canManage ? s.inspectionsDue : s.myInspectionsDue) {
+                <span class="tab-count num">{{ s.canManage ? s.inspectionsDue : s.myInspectionsDue }}</span>
+              }
+            }
+            @case ('reports') {
+              @if (s.myReportsOpen) { <span class="tab-count num">{{ s.myReportsOpen }}</span> }
+            }
+          }
+        </button>
+      }
+    </nav>
+  } @else {
+    <p class="loading-line">{{ 'common.loading' | translate }}</p>
+  }
+
+  <!-- ═══ Overview ═══ -->
+  @if (tab() === 'overview' && summary(); as s) {
+    @if (!s.hasChecklists) {
+      <div class="notice notice-warn">
+        <span class="material-icons-outlined" aria-hidden="true">checklist</span>
+        <span class="grow">{{ 'safety.noChecklists' | translate }}</span>
+        <button type="button" class="btn btn-ink btn-small" [disabled]="saving()" (click)="addSamples()">{{ 'safety.addSamples' | translate }}</button>
+      </div>
+    }
+
+    <section class="tallies">
+      <button type="button" class="tally" [class.is-warn]="s.openIncidents > 0" (click)="show('incidents', 'open')">
+        <span class="t-label">{{ 'safety.sum.open' | translate }}</span>
+        <span class="t-figure num">{{ s.openIncidents }}</span>
+        <span class="t-sub">{{ 'safety.sum.last30' | translate: { n: s.reportedLast30 } }}</span>
+      </button>
+      <button type="button" class="tally" [class.is-bad]="s.lostTimeYtd > 0" (click)="show('incidents', 'all')">
+        <span class="t-label">{{ 'safety.sum.lti' | translate }}</span>
+        <span class="t-figure num">{{ s.lostTimeYtd }}</span>
+        <span class="t-sub">{{ 'safety.sum.lostDays' | translate: { n: s.lostDaysYtd } }}</span>
+      </button>
+      <article class="tally static">
+        <span class="t-label">{{ 'safety.sum.recordable' | translate }}</span>
+        <span class="t-figure num">{{ s.recordableYtd }}</span>
+        <span class="t-sub">{{ 'safety.sum.nearMiss' | translate: { n: s.nearMissYtd } }}</span>
+      </article>
+      <button type="button" class="tally" [class.is-bad]="s.overdueActions > 0" (click)="show('actions', s.overdueActions ? 'overdue' : 'open')">
+        <span class="t-label">{{ 'safety.sum.actions' | translate }}</span>
+        <span class="t-figure num">{{ s.openActions }}</span>
+        <span class="t-sub">{{ 'safety.sum.actionsSub' | translate: { n: s.overdueActions, soon: s.actionsDueSoon } }}</span>
+      </button>
+      <button type="button" class="tally" [class.is-warn]="s.overdueInspections > 0" (click)="show('inspections', 'upcoming')">
+        <span class="t-label">{{ 'safety.sum.inspections' | translate }}</span>
+        <span class="t-figure num">{{ s.inspectionsDue }}</span>
+        <span class="t-sub">{{ 'safety.sum.inspectionsSub' | translate: { n: s.overdueInspections } }}</span>
+      </button>
+      <button type="button" class="tally" (click)="show('inspections', 'completed')">
+        <span class="t-label">{{ 'safety.sum.score' | translate }}</span>
+        <span class="t-figure num" [class]="'t-figure num ' + scoreTone(s.averageScore90)">
+          @if (s.averageScore90 !== null) { {{ s.averageScore90 | number: '1.0-1' : lang() }}% } @else { — }
+        </span>
+        <span class="t-sub">{{ 'safety.sum.scoreSub' | translate }}</span>
+      </button>
+    </section>
+
+    <div class="overview">
+      <section class="panel chart-panel">
+        <header class="panel-head">
+          <h3>{{ 'safety.chart.title' | translate }}</h3>
+          <div class="legend">
+            <span><i class="key k-incident"></i>{{ 'safety.chart.incidents' | translate }}</span>
+            <span><i class="key k-near"></i>{{ 'safety.chart.near' | translate }}</span>
+          </div>
+        </header>
+        <div class="bars" role="img" [attr.aria-label]="'safety.chart.title' | translate">
+          @for (m of s.byMonth; track m.month) {
+            <div class="bar-col" [title]="(monthDate(m.month) | date: 'MMM y' : 'UTC' : lang()) + ' · ' + m.incidents + ' / ' + m.nearMisses">
+              @if (m.incidents + m.nearMisses) { <span class="bar-n num">{{ m.incidents + m.nearMisses }}</span> }
+              <div class="bar" [style.height]="barHeight(m.incidents + m.nearMisses)">
+                <span class="seg-near" [style.flex-grow]="m.nearMisses"></span>
+                <span class="seg-incident" [style.flex-grow]="m.incidents"></span>
+              </div>
+            </div>
+          }
+        </div>
+        <div class="bar-axis num">
+          @for (m of s.byMonth; track m.month) { <span>{{ monthDate(m.month) | date: 'MMM' : 'UTC' : lang() }}</span> }
+        </div>
+      </section>
+
+      <div class="side-stack">
+        <section class="panel side-panel">
+          <header class="panel-head"><h3>{{ 'safety.attention' | translate }}</h3></header>
+          <ul class="reminders">
+            @if (s.reportablePending) {
+              <li><button type="button" class="reminder is-late" (click)="showReportable()">
+                <span class="material-icons-outlined" aria-hidden="true">account_balance</span>
+                <span class="grow">{{ 'safety.remind.reportable' | translate: { n: s.reportablePending } }}</span>
+              </button></li>
+            }
+            @if (s.overdueActions) {
+              <li><button type="button" class="reminder is-late" (click)="show('actions', 'overdue')">
+                <span class="material-icons-outlined" aria-hidden="true">assignment_late</span>
+                <span class="grow">{{ 'safety.remind.overdue' | translate: { n: s.overdueActions } }}</span>
+              </button></li>
+            }
+            @if (s.actionsToVerify) {
+              <li><button type="button" class="reminder" (click)="show('actions', 'verify')">
+                <span class="material-icons-outlined" aria-hidden="true">fact_check</span>
+                <span class="grow">{{ 'safety.remind.verify' | translate: { n: s.actionsToVerify } }}</span>
+              </button></li>
+            }
+            @if (s.overdueInspections) {
+              <li><button type="button" class="reminder is-late" (click)="show('inspections', 'overdue')">
+                <span class="material-icons-outlined" aria-hidden="true">event_busy</span>
+                <span class="grow">{{ 'safety.remind.inspections' | translate: { n: s.overdueInspections } }}</span>
+              </button></li>
+            }
+            @if (!s.reportablePending && !s.overdueActions && !s.actionsToVerify && !s.overdueInspections) {
+              <li class="safe-panel small">
+                <span class="material-icons-outlined" aria-hidden="true">verified</span>
+                <span>{{ 'safety.remind.clear' | translate }}</span>
+              </li>
+            }
+          </ul>
+        </section>
+
+        <section class="panel side-panel">
+          <header class="panel-head"><h3>{{ 'safety.byType' | translate }}</h3></header>
+          @for (t of s.byType; track t.key) {
+            <div class="type-row">
+              <span class="material-icons-outlined type-icon" aria-hidden="true">{{ typeIcon[typeOf(t.key)] }}</span>
+              <span class="type-name">{{ 'safety.types.' + typeOf(t.key) | translate }}</span>
+              <span class="type-track"><span class="type-fill" [style.width.%]="(t.count / typeMax()) * 100"></span></span>
+              <span class="num type-n">{{ t.count }}</span>
+            </div>
+          } @empty {
+            <p class="small dim">{{ 'safety.nothingYet' | translate }}</p>
+          }
+        </section>
+      </div>
+    </div>
+  }
+
+  <!-- ═══ Incidents ═══ -->
+  @if (tab() === 'incidents' && summary(); as s) {
+    <section class="panel panel-flush">
+      @if (s.canManage) {
+        <div class="toolbar">
+          <div class="seg-row">
+            @for (sc of incidentScopes; track sc) {
+              <button type="button" class="seg" [class.is-active]="incidentScope() === sc" (click)="setIncidentScope(sc)">{{ 'safety.iscope.' + sc | translate }}</button>
+            }
+          </div>
+        </div>
+      }
+      <div class="toolbar">
+        <label class="search">
+          <span class="material-icons-outlined" aria-hidden="true">search</span>
+          <input type="search" [ngModel]="search()" (ngModelChange)="onSearch($event)" [placeholder]="'safety.searchPh' | translate" [attr.aria-label]="'safety.searchPh' | translate" />
+        </label>
+        <select class="select-sm" [ngModel]="status()" (ngModelChange)="setFilter('status', $event)" [attr.aria-label]="'safety.status' | translate">
+          <option value="">{{ 'safety.anyStatus' | translate }}</option>
+          @for (v of statuses; track v) { <option [value]="v">{{ 'safety.st.' + v | translate }}</option> }
+        </select>
+        <select class="select-sm" [ngModel]="type()" (ngModelChange)="setFilter('type', $event)" [attr.aria-label]="'safety.type' | translate">
+          <option value="">{{ 'safety.anyType' | translate }}</option>
+          @for (t of types; track t) { <option [value]="t">{{ 'safety.types.' + t | translate }}</option> }
+        </select>
+        <select class="select-sm" [ngModel]="severity()" (ngModelChange)="setFilter('severity', $event)" [attr.aria-label]="'safety.severity' | translate">
+          <option value="">{{ 'safety.anySeverity' | translate }}</option>
+          @for (v of severities; track v) { <option [value]="v">{{ 'safety.sev.' + v | translate }}</option> }
+        </select>
+      </div>
+
+      @if (incidents() === null) {
+        <p class="loading-line pad">{{ 'common.loading' | translate }}</p>
+      } @else if (!incidents()!.length) {
+        <div class="empty-state">
+          <span class="material-icons-outlined" aria-hidden="true">health_and_safety</span>
+          <p>{{ 'safety.noIncidents' | translate }}</p>
+        </div>
+      } @else {
+        <div class="table-wrap">
+          <table class="ledger-table">
+            <thead>
+              <tr>
+                <th>{{ 'safety.incident' | translate }}</th>
+                <th>{{ 'safety.occurred' | translate }}</th>
+                <th>{{ 'safety.status' | translate }}</th>
+                <th class="col-wide">{{ 'safety.investigator' | translate }}</th>
+                <th class="col-wide">{{ 'safety.actionsCol' | translate }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (i of incidents(); track i.id) {
+                <tr class="row-link" tabindex="0" (click)="openIncident(i.id)" (keydown.enter)="openIncident(i.id)">
+                  <td>
+                    <div class="case-cell">
+                      <span class="cat-icon sm" [class.is-hurt]="i.type === 'Injury' || i.type === 'Illness'" aria-hidden="true"><span class="material-icons-outlined">{{ typeIcon[i.type] }}</span></span>
+                      <span class="stack">
+                        <span class="cell-main wrap"><span class="num code">{{ i.code }}</span>{{ i.title }}</span>
+                        <span class="cell-sub">
+                          {{ 'safety.types.' + i.type | translate }}@if (i.locationName || i.area) { · {{ i.locationName }}{{ i.locationName && i.area ? ', ' : '' }}{{ i.area }} }
+                        </span>
+                        <span class="mini-chips">
+                          <span [class]="severityChip[i.severity]">{{ 'safety.sev.' + i.severity | translate }}</span>
+                          @if (i.lostDays > 0 || i.treatment === 'Fatal') { <span class="chip chip-oxblood">{{ 'safety.ltiShort' | translate }}</span> }
+                          @if (i.isReportable) {
+                            <span class="chip" [class]="i.authorityNotifiedOn ? 'chip chip-moss' : 'chip chip-amber'">
+                              <span class="material-icons-outlined chip-icon" aria-hidden="true">account_balance</span>{{ (i.authorityNotifiedOn ? 'safety.notified' : 'safety.reportable') | translate }}
+                            </span>
+                          }
+                        </span>
+                      </span>
+                    </div>
+                  </td>
+                  <td class="num nowrap">{{ utc(i.occurredAt) | date: 'd MMM, HH:mm' : undefined : lang() }}</td>
+                  <td><span [class]="statusChip[i.status]">{{ 'safety.st.' + i.status | translate }}</span></td>
+                  <td class="col-wide">
+                    @if (i.investigatorName) { {{ i.investigatorName }} } @else { <span class="dim">{{ 'safety.noInvestigator' | translate }}</span> }
+                  </td>
+                  <td class="col-wide num">
+                    @if (i.openActions) {
+                      <span [class.warn]="i.overdueActions > 0">{{ 'safety.openN' | translate: { n: i.openActions } }}</span>
+                    } @else { <span class="dim">—</span> }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </section>
+  }
+
+  <!-- ═══ Actions ═══ -->
+  @if (tab() === 'actions' && summary(); as s) {
+    <section class="panel panel-flush">
+      <div class="toolbar">
+        @if (s.canManage) {
+          <div class="seg-row">
+            @for (sc of actionScopes; track sc) {
+              <button type="button" class="seg" [class.is-active]="actionScope() === sc" (click)="setActionScope(sc)">{{ 'safety.ascope.' + sc | translate }}</button>
+            }
+          </div>
+        } @else {
+          <div class="seg-row">
+            @for (sc of ['mine', 'all']; track sc) {
+              <button type="button" class="seg" [class.is-active]="actionScope() === sc" (click)="setActionScope($any(sc))">{{ 'safety.ascope.' + (sc === 'all' ? 'history' : sc) | translate }}</button>
+            }
+          </div>
+        }
+        <label class="search push">
+          <span class="material-icons-outlined" aria-hidden="true">search</span>
+          <input type="search" [ngModel]="actionSearch()" (ngModelChange)="onActionSearch($event)" [placeholder]="'safety.actionSearchPh' | translate" [attr.aria-label]="'safety.actionSearchPh' | translate" />
+        </label>
+      </div>
+
+      @if (actions() === null) {
+        <p class="loading-line pad">{{ 'common.loading' | translate }}</p>
+      } @else if (!actions()!.length) {
+        <div class="empty-state">
+          <span class="material-icons-outlined" aria-hidden="true">task_alt</span>
+          <p>{{ 'safety.noActions' | translate }}</p>
+        </div>
+      } @else {
+        <ul class="action-list">
+          @for (a of actions(); track a.id) {
+            <li class="action-row" [class.is-late]="a.isOverdue">
+              <button type="button" class="action-main" (click)="openAction(a)">
+                <span class="prio" [class]="'prio p-' + a.priority" [title]="'safety.sev.' + a.priority | translate"></span>
+                <span class="stack">
+                  <span class="cell-main wrap">{{ a.title }}</span>
+                  <span class="cell-sub">
+                    @if (a.incidentCode) { <span class="num code">{{ a.incidentCode }}</span> }
+                    @if (a.inspectionCode) { <span class="num code">{{ a.inspectionCode }}</span> }
+                    {{ a.assigneeName }}@if (a.isMine) { ({{ 'safety.you' | translate }}) }
+                  </span>
+                </span>
+              </button>
+              <span class="action-meta">
+                <span [class]="actionChip[a.status]">{{ 'safety.as.' + a.status | translate }}</span>
+                @if (a.status === 'Open' || a.status === 'InProgress') {
+                  @let due = dueKey(a.daysLeft);
+                  <span class="due-tag" [class.late]="a.isOverdue">{{ due.key | translate: { n: due.n } }}</span>
+                } @else if (a.completedAt) {
+                  <span class="cell-sub num">{{ utc(a.completedAt) | date: 'd MMM' : undefined : lang() }}</span>
+                }
+              </span>
+              <span class="action-btns">
+                @if (a.canProgress && a.status === 'Open') {
+                  <button type="button" class="btn btn-quiet btn-small" [disabled]="saving()" (click)="progress(a, 'start')">{{ 'safety.start' | translate }}</button>
+                }
+                @if (a.canProgress) {
+                  <button type="button" class="btn btn-ink btn-small" (click)="openAction(a); startActionAct('complete')">{{ 'safety.markDone' | translate }}</button>
+                }
+                @if (a.canVerify) {
+                  <button type="button" class="btn btn-ink btn-small" [disabled]="saving()" (click)="progress(a, 'verify')">{{ 'safety.verify' | translate }}</button>
+                }
+              </span>
+            </li>
+          }
+        </ul>
+      }
+    </section>
+  }
+
+  <!-- ═══ Inspections ═══ -->
+  @if (tab() === 'inspections' && summary(); as s) {
+    @if (s.canManage && !s.hasChecklists) {
+      <div class="notice notice-warn">
+        <span class="material-icons-outlined" aria-hidden="true">checklist</span>
+        <span class="grow">{{ 'safety.noChecklists' | translate }}</span>
+        <button type="button" class="btn btn-ink btn-small" [disabled]="saving()" (click)="addSamples()">{{ 'safety.addSamples' | translate }}</button>
+      </div>
+    }
+    <section class="panel panel-flush">
+      <div class="toolbar">
+        <div class="seg-row">
+          @for (sc of inspectionScopes; track sc) {
+            @if (s.canManage || sc === 'mine' || sc === 'completed') {
+              <button type="button" class="seg" [class.is-active]="inspectionScope() === sc" (click)="setInspectionScope(sc)">{{ 'safety.nscope.' + sc | translate }}</button>
+            }
+          }
+        </div>
+      </div>
+      @if (inspections() === null) {
+        <p class="loading-line pad">{{ 'common.loading' | translate }}</p>
+      } @else if (!inspections()!.length) {
+        <div class="empty-state">
+          <span class="material-icons-outlined" aria-hidden="true">fact_check</span>
+          <p>{{ 'safety.noInspections' | translate }}</p>
+        </div>
+      } @else {
+        <div class="table-wrap">
+          <table class="ledger-table">
+            <thead>
+              <tr>
+                <th>{{ 'safety.inspection' | translate }}</th>
+                <th class="col-wide">{{ 'safety.inspector' | translate }}</th>
+                <th>{{ 'safety.due' | translate }}</th>
+                <th>{{ 'safety.result' | translate }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (i of inspections(); track i.id) {
+                <tr class="row-link" tabindex="0" (click)="openInspection(i.id)" (keydown.enter)="openInspection(i.id)">
+                  <td>
+                    <span class="stack">
+                      <span class="cell-main wrap"><span class="num code">{{ i.code }}</span>{{ i.title }}</span>
+                      <span class="cell-sub">
+                        {{ 'safety.itemsN' | translate: { n: i.itemCount } }}@if (i.locationName || i.area) { · {{ i.locationName }}{{ i.locationName && i.area ? ', ' : '' }}{{ i.area }} }
+                        @if (i.repeatDays) { · <span class="material-icons-outlined inline-icon" aria-hidden="true">autorenew</span>{{ 'safety.everyN' | translate: { n: i.repeatDays } }} }
+                      </span>
+                    </span>
+                  </td>
+                  <td class="col-wide">{{ i.inspectorName }}@if (i.isMine) { <span class="dim"> ({{ 'safety.you' | translate }})</span> }</td>
+                  <td class="nowrap">
+                    <span class="num">{{ i.dueOn | date: 'd MMM y' : 'UTC' : lang() }}</span>
+                    @if (i.status === 'Scheduled') {
+                      @let due = dueKey(i.daysLeft);
+                      <span class="cell-sub" [class.warn]="i.isOverdue">{{ due.key | translate: { n: due.n } }}</span>
+                    }
+                  </td>
+                  <td>
+                    @if (i.status === 'Completed') {
+                      <span class="score" [class]="'score ' + scoreTone(i.scorePercent)">{{ i.scorePercent === null ? '—' : (i.scorePercent | number: '1.0-1' : lang()) + '%' }}</span>
+                      @if (i.failed) { <span class="cell-sub warn">{{ 'safety.failedN' | translate: { n: i.failed } }}</span> }
+                    } @else {
+                      <span [class]="inspectionChip[i.status]">{{ 'safety.ns.' + i.status | translate }}</span>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </section>
+  }
+
+  <!-- ═══ Checklists ═══ -->
+  @if (tab() === 'checklists') {
+    @if (checklists() === null) {
+      <p class="loading-line">{{ 'common.loading' | translate }}</p>
+    } @else {
+      <div class="notice">
+        <span class="material-icons-outlined" aria-hidden="true">info</span>
+        <span class="grow">{{ 'safety.checklistNote' | translate }}</span>
+        <button type="button" class="btn btn-quiet btn-small" [disabled]="saving()" (click)="addSamples()">{{ 'safety.addSamples' | translate }}</button>
+      </div>
+      @if (!checklists()!.length) {
+        <div class="panel empty-state">
+          <span class="material-icons-outlined" aria-hidden="true">checklist</span>
+          <p>{{ 'safety.noChecklistsYet' | translate }}</p>
+        </div>
+      } @else {
+        <div class="card-grid">
+          @for (c of checklists(); track c.id) {
+            <button type="button" class="list-card" [class.is-off]="!c.isActive" (click)="editChecklist(c)">
+              <span class="head-row">
+                <span class="cat-icon sm" aria-hidden="true"><span class="material-icons-outlined">checklist</span></span>
+                <span class="stack grow">
+                  <span class="cell-main wrap">{{ c.name }}</span>
+                  <span class="cell-sub">{{ 'safety.itemsN' | translate: { n: c.items.length } }} · {{ 'safety.usedN' | translate: { n: c.inspections } }}</span>
+                </span>
+                @if (!c.isActive) { <span class="chip chip-plain">{{ 'safety.off' | translate }}</span> }
+              </span>
+              @if (c.description) { <span class="small dim wrap-line">{{ c.description }}</span> }
+              <ol class="item-peek">
+                @for (it of c.items.slice(0, 4); track $index) { <li>{{ it }}</li> }
+                @if (c.items.length > 4) { <li class="dim">{{ 'safety.moreN' | translate: { n: c.items.length - 4 } }}</li> }
+              </ol>
+            </button>
+          }
+        </div>
+      }
+    }
+  }
+
+  <!-- ═══ My reports ═══ -->
+  @if (tab() === 'reports') {
+    <div class="safe-panel">
+      <span class="material-icons-outlined" aria-hidden="true">shield</span>
+      <span class="grow">{{ 'safety.reportsNote' | translate }}</span>
+      @if (linked()) {
+        <button type="button" class="btn btn-ink btn-small" (click)="newReport()">{{ 'safety.reportIncident' | translate }}</button>
+      }
+    </div>
+    <section class="panel panel-flush">
+      <header class="list-head">
+        <h3 class="panel-title">{{ 'safety.myReports' | translate }}</h3>
+        <p class="panel-sub">{{ 'safety.myReportsSub' | translate }}</p>
+      </header>
+      @if (reports() === null) {
+        <p class="loading-line pad">{{ 'common.loading' | translate }}</p>
+      } @else if (!reports()!.length) {
+        <div class="empty-state">
+          <span class="material-icons-outlined" aria-hidden="true">campaign</span>
+          <p>{{ (linked() ? 'safety.noReports' : 'safety.notLinked') | translate }}</p>
+        </div>
+      } @else {
+        <ul class="my-list">
+          @for (r of reports(); track r.id) {
+            <li>
+              <button type="button" class="my-row" (click)="openMyReport(r.id)">
+                <span class="cat-icon sm" aria-hidden="true"><span class="material-icons-outlined">{{ typeIcon[r.type] }}</span></span>
+                <span class="stack grow">
+                  <span class="cell-main wrap"><span class="num code">{{ r.code }}</span>{{ r.title }}</span>
+                  <span class="cell-sub">
+                    {{ 'safety.types.' + r.type | translate }} · {{ utc(r.occurredAt) | date: 'd MMM y, HH:mm' : undefined : lang() }}
+                    @if (r.anonymous) { · <span class="material-icons-outlined inline-icon" aria-hidden="true">visibility_off</span>{{ 'safety.anonymous' | translate }} }
+                  </span>
+                </span>
+                <span class="my-due">
+                  <span [class]="statusChip[r.status]">{{ 'safety.st.' + r.status | translate }}</span>
+                  <span class="cell-sub num">{{ 'safety.updatedOn' | translate: { date: (utc(r.lastActivityAt) | date: 'd MMM' : undefined : lang()) } }}</span>
+                </span>
+              </button>
+            </li>
+          }
+        </ul>
+      }
+    </section>
+  }
+</div>
+
+@if (drawer(); as d) {
+  <div class="overlay" (click)="closeDrawer()">
+    <aside class="drawer" [class.drawer-wide]="d !== 'action'" role="dialog" aria-modal="true" (click)="$event.stopPropagation()">
+      <header class="drawer-head">
+        <h3>
+          @switch (d) {
+            @case ('incident') {
+              @if (detail(); as cd) { <span class="num code">{{ cd.incident.code }}</span>{{ cd.incident.title }} } @else { {{ 'common.loading' | translate }} }
+            }
+            @case ('incidentForm') { {{ (incidentForm?.id ? 'safety.editIncident' : 'safety.newIncident') | translate }} }
+            @case ('report') { {{ 'safety.reportIncident' | translate }} }
+            @case ('myReport') {
+              @if (myReport(); as r) { <span class="num code">{{ r.report.code }}</span>{{ r.report.title }} } @else { {{ 'common.loading' | translate }} }
+            }
+            @case ('action') { {{ action()?.title }} }
+            @case ('actionForm') { {{ (actionForm?.id ? 'safety.editAction' : 'safety.newAction') | translate }} }
+            @case ('inspection') {
+              @if (inspection(); as id) { <span class="num code">{{ id.inspection.code }}</span>{{ id.inspection.title }} } @else { {{ 'common.loading' | translate }} }
+            }
+            @case ('inspectionForm') { {{ (inspectionForm?.id ? 'safety.reschedule' : 'safety.schedule') | translate }} }
+            @case ('checklist') { {{ (checklistForm?.id ? 'safety.editChecklist' : 'safety.newChecklist') | translate }} }
+          }
+        </h3>
+        <button type="button" class="btn-link" (click)="closeDrawer()" [attr.aria-label]="'common.close' | translate">
+          <span class="material-icons-outlined" aria-hidden="true">close</span>
+        </button>
+      </header>
+
+      <div class="drawer-body">
+        @switch (d) {
+          <!-- ── Incident ── -->
+          @case ('incident') {
+            @if (detail(); as cd) {
+              @let i = cd.incident;
+              <div class="doc-head">
+                <div class="chips">
+                  <span [class]="statusChip[i.status]">{{ 'safety.st.' + i.status | translate }}</span>
+                  <span [class]="severityChip[i.severity]">{{ 'safety.sev.' + i.severity | translate }}</span>
+                  <span class="chip chip-plain"><span class="material-icons-outlined chip-icon" aria-hidden="true">{{ typeIcon[i.type] }}</span>{{ 'safety.types.' + i.type | translate }}</span>
+                  @if (i.lostDays > 0 || i.treatment === 'Fatal') { <span class="chip chip-oxblood">{{ 'safety.ltiShort' | translate }}</span> }
+                  @if (i.isReportable) {
+                    <span [class]="i.authorityNotifiedOn ? 'chip chip-moss' : 'chip chip-amber'">
+                      <span class="material-icons-outlined chip-icon" aria-hidden="true">account_balance</span>{{ (i.authorityNotifiedOn ? 'safety.notified' : 'safety.reportable') | translate }}
+                    </span>
+                  }
+                </div>
+                @if (cd.canEdit) {
+                  <button type="button" class="btn btn-quiet btn-small" (click)="editIncident(cd)">
+                    <span class="material-icons-outlined" aria-hidden="true">edit</span>{{ 'common.edit' | translate }}
+                  </button>
+                }
+              </div>
+
+              <ol class="stepper four">
+                @for (st of statuses; track st; let n = $index) {
+                  <li [class.done]="n < stepIndex(i.status) || i.status === 'Closed'" [class.now]="n === stepIndex(i.status) && i.status !== 'Closed'">
+                    <span class="dot">
+                      @if (n < stepIndex(i.status) || i.status === 'Closed') { <span class="material-icons-outlined" aria-hidden="true">check</span> } @else { {{ n + 1 }} }
+                    </span>
+                    <span class="st-label">{{ 'safety.st.' + st | translate }}</span>
+                  </li>
+                }
+              </ol>
+
+              <div class="seg-row">
+                @for (sec of sections; track sec) {
+                  <button type="button" class="seg" [class.is-active]="section() === sec" (click)="setSection(sec)">
+                    {{ 'safety.sec.' + sec | translate }}
+                    @if (sec === 'timeline') { <span class="seg-n num">{{ cd.entries.length }}</span> }
+                    @if (sec === 'actions') { <span class="seg-n num">{{ cd.actions.length }}</span> }
+                  </button>
+                }
+              </div>
+
+              @switch (section()) {
+                @case ('overview') {
+                  @if (cd.description) { <p class="desc pre">{{ cd.description }}</p> }
+                  <dl class="facts">
+                    <div><dt>{{ 'safety.occurred' | translate }}</dt><dd class="num">{{ utc(i.occurredAt) | date: 'd MMM y, HH:mm' : undefined : lang() }}</dd></div>
+                    <div><dt>{{ 'safety.where' | translate }}</dt><dd>{{ i.locationName ?? '—' }}@if (i.area) { <span class="cell-sub">{{ i.area }}</span> }</dd></div>
+                    <div><dt>{{ 'safety.department' | translate }}</dt><dd>{{ i.departmentName ?? '—' }}</dd></div>
+                    <div><dt>{{ 'safety.reportedBy' | translate }}</dt><dd>
+                      @if (i.anonymous) { <span class="dim"><span class="material-icons-outlined inline-icon" aria-hidden="true">visibility_off</span>{{ 'safety.anonymous' | translate }}</span> }
+                      @else { {{ i.reporterName ?? ('safety.team' | translate) }} }
+                      <span class="cell-sub num">{{ utc(cd.reportedAt) | date: 'd MMM y' : undefined : lang() }}</span>
+                    </dd></div>
+                    <div><dt>{{ 'safety.investigator' | translate }}</dt><dd>{{ i.investigatorName ?? ('safety.noInvestigator' | translate) }}</dd></div>
+                  </dl>
+
+                  @if (i.affectedName) {
+                    <div class="sub-box">
+                      <h4 class="sub-title">{{ 'safety.personAffected' | translate }}</h4>
+                      <dl class="facts">
+                        <div><dt>{{ 'safety.person' | translate }}</dt><dd>{{ i.affectedName }}@if (!cd.affectedEmployeeId) { <span class="cell-sub">{{ 'safety.notEmployee' | translate }}</span> }</dd></div>
+                        <div><dt>{{ 'safety.treatment' | translate }}</dt><dd>{{ i.treatment ? ('safety.tr.' + i.treatment | translate) : '—' }}</dd></div>
+                        <div><dt>{{ 'safety.lostDays' | translate }}</dt><dd class="num" [class.warn]="i.lostDays > 0">{{ i.lostDays }}</dd></div>
+                        @if (cd.injuryNature) { <div><dt>{{ 'safety.injuryNature' | translate }}</dt><dd>{{ cd.injuryNature }}</dd></div> }
+                        @if (cd.bodyPart) { <div><dt>{{ 'safety.bodyPart' | translate }}</dt><dd>{{ cd.bodyPart }}</dd></div> }
+                      </dl>
+                    </div>
+                  }
+                  @if (cd.immediateAction || cd.witnesses) {
+                    <dl class="facts">
+                      @if (cd.immediateAction) { <div class="span-all"><dt>{{ 'safety.immediateAction' | translate }}</dt><dd class="pre normal">{{ cd.immediateAction }}</dd></div> }
+                      @if (cd.witnesses) { <div class="span-all"><dt>{{ 'safety.witnesses' | translate }}</dt><dd class="pre normal">{{ cd.witnesses }}</dd></div> }
+                    </dl>
+                  }
+
+                  <!-- Root cause -->
+                  <div class="sub-box" [class.is-missing]="!cd.rootCauseCategory">
+                    <div class="head-row">
+                      <h4 class="sub-title">{{ 'safety.rootCause' | translate }}</h4>
+                      @if (cd.canWork && acting !== 'rootCause') {
+                        <button type="button" class="btn btn-quiet btn-small" (click)="startAct('rootCause', cd)">{{ (cd.rootCauseCategory ? 'common.edit' : 'safety.record') | translate }}</button>
+                      }
+                    </div>
+                    @if (acting === 'rootCause' && act; as f) {
+                      <div class="field">
+                        <label for="rc-cat">{{ 'safety.rootCategory' | translate }}</label>
+                        <select id="rc-cat" [(ngModel)]="f.category">
+                          <option value="">{{ 'safety.pick' | translate }}</option>
+                          @for (r of rootCauses; track r) { <option [value]="r">{{ 'safety.rc.' + r | translate }}</option> }
+                        </select>
+                      </div>
+                      <div class="field">
+                        <label for="rc-text">{{ 'safety.whyHappened' | translate }}</label>
+                        <textarea id="rc-text" rows="3" maxlength="4000" [(ngModel)]="f.text" [placeholder]="'safety.whyPh' | translate"></textarea>
+                      </div>
+                      <div class="inline-actions">
+                        <button type="button" class="btn btn-quiet btn-small" (click)="cancelAct()">{{ 'common.cancel' | translate }}</button>
+                        <button type="button" class="btn btn-ink btn-small" [disabled]="saving() || !canSubmitAct()" (click)="submitIncidentAct(cd)">{{ 'common.save' | translate }}</button>
+                      </div>
+                    } @else if (cd.rootCauseCategory) {
+                      <p class="small"><strong>{{ 'safety.rc.' + cd.rootCauseCategory | translate }}</strong></p>
+                      @if (cd.rootCause) { <p class="small pre">{{ cd.rootCause }}</p> }
+                    } @else {
+                      <p class="small dim">{{ 'safety.noRootCause' | translate }}</p>
+                    }
+                  </div>
+
+                  <!-- Authority -->
+                  @if (i.isReportable || acting === 'authority') {
+                    <div class="sub-box" [class.is-missing]="!i.authorityNotifiedOn">
+                      <div class="head-row">
+                        <h4 class="sub-title">{{ 'safety.authority' | translate }}</h4>
+                        @if (cd.canWork && acting !== 'authority') {
+                          <button type="button" class="btn btn-quiet btn-small" (click)="startAct('authority', cd)">{{ (i.authorityNotifiedOn ? 'common.edit' : 'safety.record') | translate }}</button>
+                        }
+                      </div>
+                      @if (acting === 'authority' && act; as f) {
+                        <div class="form-grid two">
+                          <div class="field">
+                            <label for="au-date">{{ 'safety.toldOn' | translate }}</label>
+                            <input id="au-date" type="date" [max]="today" [(ngModel)]="f.date" />
+                          </div>
+                          <div class="field">
+                            <label for="au-ref">{{ 'safety.reference' | translate }}</label>
+                            <input id="au-ref" maxlength="100" [(ngModel)]="f.reference" />
+                          </div>
+                        </div>
+                        <div class="inline-actions">
+                          <button type="button" class="btn btn-quiet btn-small" (click)="cancelAct()">{{ 'common.cancel' | translate }}</button>
+                          <button type="button" class="btn btn-ink btn-small" [disabled]="saving() || !canSubmitAct()" (click)="submitIncidentAct(cd)">{{ 'common.save' | translate }}</button>
+                        </div>
+                      } @else if (i.authorityNotifiedOn) {
+                        <p class="small">{{ 'safety.toldOnText' | translate: { date: (i.authorityNotifiedOn | date: 'd MMM y' : 'UTC' : lang()) } }}@if (cd.authorityReference) { · <span class="num">{{ cd.authorityReference }}</span> }</p>
+                      } @else {
+                        <p class="small warn">{{ 'safety.mustReport' | translate }}</p>
+                      }
+                    </div>
+                  }
+
+                  @if (i.status === 'Closed' && cd.closureNote) {
+                    <div class="outcome-box">
+                      <strong>{{ 'safety.closedOn' | translate: { date: (utc(i.closedAt) | date: 'd MMM y' : undefined : lang()) } }}</strong>
+                      <p class="pre">{{ cd.closureNote }}</p>
+                    </div>
+                  }
+
+                  <!-- Workflow buttons -->
+                  @if (acting && acting !== 'rootCause' && acting !== 'authority' && act; as f) {
+                    <div class="settings-box">
+                      @switch (acting) {
+                        @case ('status') {
+                          <div class="field">
+                            <label for="mv-st">{{ 'safety.moveTo' | translate }}</label>
+                            <select id="mv-st" [(ngModel)]="f.status">
+                              @for (st of workStatuses; track st) { @if (st !== i.status) { <option [value]="st">{{ 'safety.st.' + st | translate }}</option> } }
+                            </select>
+                          </div>
+                          <div class="field">
+                            <label for="mv-note">{{ 'safety.noteOptional' | translate }}</label>
+                            <input id="mv-note" maxlength="1000" [(ngModel)]="f.text" />
+                          </div>
+                        }
+                        @case ('investigator') {
+                          <div class="field">
+                            <label for="inv">{{ 'safety.investigator' | translate }}</label>
+                            <select id="inv" [(ngModel)]="f.employeeId">
+                              <option value="">{{ 'safety.noInvestigator' | translate }}</option>
+                              @for (p of lookups().people; track p.id) { <option [value]="p.id">{{ p.name }}</option> }
+                            </select>
+                            <p class="field-hint small dim">{{ 'safety.investigatorHint' | translate }}</p>
+                          </div>
+                        }
+                        @case ('close') {
+                          <p class="small">{{ 'safety.closeNote' | translate }}</p>
+                          <div class="field">
+                            <label for="cl-note">{{ 'safety.closingNote' | translate }}</label>
+                            <textarea id="cl-note" rows="3" maxlength="2000" [(ngModel)]="f.text" [placeholder]="'safety.closingPh' | translate"></textarea>
+                          </div>
+                        }
+                        @case ('reopen') {
+                          <div class="field">
+                            <label for="ro-note">{{ 'safety.reason' | translate }}</label>
+                            <textarea id="ro-note" rows="2" maxlength="500" [(ngModel)]="f.text"></textarea>
+                          </div>
+                        }
+                      }
+                      <div class="inline-actions">
+                        <button type="button" class="btn btn-quiet btn-small" (click)="cancelAct()">{{ 'common.cancel' | translate }}</button>
+                        <button type="button" class="btn btn-ink btn-small" [disabled]="saving() || !canSubmitAct()" (click)="submitIncidentAct(cd)">{{ 'safety.do.' + acting | translate }}</button>
+                      </div>
+                    </div>
+                  } @else if (!acting) {
+                    <div class="inline-actions wrap">
+                      @if (cd.canWork && i.status !== 'Reported') {
+                        <button type="button" class="btn btn-quiet btn-small" (click)="startAct('status', cd)">
+                          <span class="material-icons-outlined" aria-hidden="true">double_arrow</span>{{ 'safety.do.status' | translate }}
+                        </button>
+                      }
+                      @if (cd.canEdit) {
+                        <button type="button" class="btn btn-quiet btn-small" (click)="startAct('investigator', cd)">
+                          <span class="material-icons-outlined" aria-hidden="true">badge</span>{{ 'safety.do.investigator' | translate }}
+                        </button>
+                        @if (!i.isReportable) {
+                          <button type="button" class="btn btn-quiet btn-small" (click)="startAct('authority', cd)">
+                            <span class="material-icons-outlined" aria-hidden="true">account_balance</span>{{ 'safety.do.authority' | translate }}
+                          </button>
+                        }
+                      }
+                      @if (cd.canClose) {
+                        <button type="button" class="btn btn-ink btn-small push-start" (click)="startAct('close', cd)">
+                          <span class="material-icons-outlined" aria-hidden="true">task_alt</span>{{ 'safety.do.close' | translate }}
+                        </button>
+                      }
+                      @if (cd.canReopen) {
+                        <button type="button" class="btn btn-quiet btn-small" (click)="startAct('reopen', cd)">
+                          <span class="material-icons-outlined" aria-hidden="true">restart_alt</span>{{ 'safety.do.reopen' | translate }}
+                        </button>
+                      }
+                    </div>
+                  }
+                }
+
+                @case ('timeline') {
+                  @if (cd.canWork) {
+                    <div class="reply-box">
+                      <textarea rows="2" maxlength="4000" [(ngModel)]="noteText" [placeholder]="'safety.notePh' | translate" [attr.aria-label]="'safety.notePh' | translate"></textarea>
+                      <div class="inline-actions">
+                        <button type="button" class="btn btn-ink btn-small" [disabled]="saving() || !noteText.trim()" (click)="addNote(cd)">{{ 'safety.addNote' | translate }}</button>
+                      </div>
+                    </div>
+                  }
+                  <ol class="convo">
+                    @for (e of cd.entries.slice().reverse(); track e.id) {
+                      @if (e.kind === 'Note') {
+                        <li class="bubble is-shared" [class.is-me]="e.byMe">
+                          <span class="b-head"><strong>{{ byLabel(e) }}</strong><span class="dim num">{{ utc(e.at) | date: 'd MMM, HH:mm' : undefined : lang() }}</span></span>
+                          <span class="pre">{{ e.text }}</span>
+                        </li>
+                      } @else {
+                        <li class="event" [class.is-alert]="e.kind === 'Reopened'">
+                          <span class="material-icons-outlined" aria-hidden="true">{{ entryIcon[e.kind] ?? 'circle' }}</span>
+                          <span class="grow">
+                            {{ 'safety.entry.' + e.kind | translate: { by: byLabel(e) } }}
+                            @if (e.text) { <span class="reason">{{ e.text }}</span> }
+                          </span>
+                          <span class="num">{{ utc(e.at) | date: 'd MMM, HH:mm' : undefined : lang() }}</span>
+                        </li>
+                      }
+                    }
+                  </ol>
+                }
+
+                @case ('actions') {
+                  @if (cd.canWork) {
+                    <div class="inline-actions">
+                      <button type="button" class="btn btn-ink btn-small" (click)="newAction({ incident: cd })">
+                        <span class="material-icons-outlined" aria-hidden="true">add</span>{{ 'safety.newAction' | translate }}
+                      </button>
+                    </div>
+                  }
+                  <ng-container *ngTemplateOutlet="actionCards; context: { $implicit: cd.actions }"></ng-container>
+                }
+              }
+            } @else {
+              <p class="loading-line">{{ 'common.loading' | translate }}</p>
+            }
+          }
+
+          <!-- ── Incident form (team) ── -->
+          @case ('incidentForm') {
+            @if (incidentForm; as f) {
+              <div class="form-grid">
+                <div class="field span-all">
+                  <label for="i-title">{{ 'safety.whatHappened' | translate }}</label>
+                  <input id="i-title" maxlength="200" [(ngModel)]="f.title" [placeholder]="'safety.titlePh' | translate" />
+                </div>
+                <div class="field">
+                  <label for="i-type">{{ 'safety.type' | translate }}</label>
+                  <select id="i-type" [(ngModel)]="f.type">
+                    @for (t of types; track t) { <option [value]="t">{{ 'safety.types.' + t | translate }}</option> }
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="i-sev">{{ 'safety.severity' | translate }}</label>
+                  <select id="i-sev" [(ngModel)]="f.severity" [disabled]="f.treatment === 'Fatal'">
+                    @for (v of severities; track v) { <option [value]="v">{{ 'safety.sev.' + v | translate }}</option> }
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="i-at">{{ 'safety.occurred' | translate }}</label>
+                  <input id="i-at" type="datetime-local" [max]="nowLocal" [(ngModel)]="f.occurredAt" />
+                </div>
+                <div class="field">
+                  <label for="i-loc">{{ 'safety.location' | translate }}</label>
+                  <select id="i-loc" [(ngModel)]="f.locationId">
+                    <option value="">—</option>
+                    @for (l of lookups().locations; track l.id) { <option [value]="l.id">{{ l.name }}</option> }
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="i-area">{{ 'safety.area' | translate }}</label>
+                  <input id="i-area" maxlength="150" [(ngModel)]="f.area" [placeholder]="'safety.areaPh' | translate" />
+                </div>
+                <div class="field">
+                  <label for="i-dep">{{ 'safety.department' | translate }}</label>
+                  <select id="i-dep" [(ngModel)]="f.departmentId">
+                    <option value="">—</option>
+                    @for (dp of lookups().departments; track dp.id) { <option [value]="dp.id">{{ dp.name }}</option> }
+                  </select>
+                </div>
+                <div class="field span-all">
+                  <label for="i-desc">{{ 'safety.description' | translate }}</label>
+                  <textarea id="i-desc" rows="3" maxlength="4000" [(ngModel)]="f.description"></textarea>
+                </div>
+              </div>
+
+              <div class="sub-box">
+                <div class="head-row">
+                  <h4 class="sub-title">{{ 'safety.personAffected' | translate }}@if (needsPerson(f.type)) { <span class="req">*</span> }</h4>
+                  <label class="check-inline"><input type="checkbox" [(ngModel)]="f.external" />{{ 'safety.notEmployee' | translate }}</label>
+                </div>
+                <div class="form-grid">
+                  <div class="field">
+                    <label for="i-who">{{ 'safety.person' | translate }}</label>
+                    @if (f.external) {
+                      <input id="i-who" maxlength="120" [(ngModel)]="f.affectedName" [placeholder]="'safety.externalPh' | translate" />
+                    } @else {
+                      <select id="i-who" [(ngModel)]="f.affectedEmployeeId">
+                        <option value="">{{ 'safety.nobody' | translate }}</option>
+                        @for (p of lookups().people; track p.id) { <option [value]="p.id">{{ p.name }}</option> }
+                      </select>
+                    }
+                  </div>
+                  <div class="field">
+                    <label for="i-tr">{{ 'safety.treatment' | translate }}</label>
+                    <select id="i-tr" [(ngModel)]="f.treatment" [disabled]="!hasPerson(f)">
+                      <option value="">—</option>
+                      @for (t of treatments; track t) { <option [value]="t">{{ 'safety.tr.' + t | translate }}</option> }
+                    </select>
+                  </div>
+                  <div class="field">
+                    <label for="i-lost">{{ 'safety.lostDays' | translate }}</label>
+                    <input id="i-lost" type="number" min="0" [max]="maxLostDays" [(ngModel)]="f.lostDays" [disabled]="!hasPerson(f)" />
+                  </div>
+                  <div class="field">
+                    <label for="i-nat">{{ 'safety.injuryNature' | translate }}</label>
+                    <input id="i-nat" maxlength="120" [(ngModel)]="f.injuryNature" [placeholder]="'safety.naturePh' | translate" />
+                  </div>
+                  <div class="field">
+                    <label for="i-body">{{ 'safety.bodyPart' | translate }}</label>
+                    <input id="i-body" maxlength="120" [(ngModel)]="f.bodyPart" />
+                  </div>
+                </div>
+              </div>
+
+              <div class="form-grid two">
+                <div class="field">
+                  <label for="i-imm">{{ 'safety.immediateAction' | translate }}</label>
+                  <textarea id="i-imm" rows="2" maxlength="2000" [(ngModel)]="f.immediateAction"></textarea>
+                </div>
+                <div class="field">
+                  <label for="i-wit">{{ 'safety.witnesses' | translate }}</label>
+                  <textarea id="i-wit" rows="2" maxlength="500" [(ngModel)]="f.witnesses"></textarea>
+                </div>
+                @if (!f.id) {
+                  <div class="field">
+                    <label for="i-rep">{{ 'safety.reportedBy' | translate }}</label>
+                    <select id="i-rep" [(ngModel)]="f.reporterEmployeeId">
+                      <option value="">{{ 'safety.team' | translate }}</option>
+                      @for (p of lookups().people; track p.id) { <option [value]="p.id">{{ p.name }}</option> }
+                    </select>
+                  </div>
+                  <div class="field">
+                    <label for="i-inv">{{ 'safety.investigator' | translate }}</label>
+                    <select id="i-inv" [(ngModel)]="f.investigatorEmployeeId">
+                      <option value="">{{ 'safety.assignLater' | translate }}</option>
+                      @for (p of lookups().people; track p.id) { <option [value]="p.id">{{ p.name }}</option> }
+                    </select>
+                  </div>
+                }
+              </div>
+              <label class="check-inline wrap-text">
+                <input type="checkbox" [ngModel]="f.isReportable || forcedReportable(f)" (ngModelChange)="f.isReportable = $event" [disabled]="forcedReportable(f)" />
+                <span>{{ 'safety.isReportable' | translate }}<span class="cell-sub">{{ (forcedReportable(f) ? 'safety.forcedReportable' : 'safety.reportableHint') | translate }}</span></span>
+              </label>
+              @if (needsPerson(f.type) && !hasPerson(f)) { <p class="small warn">{{ 'safety.needPerson' | translate }}</p> }
+            }
+          }
+
+          <!-- ── Self report ── -->
+          @case ('report') {
+            @if (reportForm; as f) {
+              <p class="small dim">{{ 'safety.reportIntro' | translate }}</p>
+              <div class="type-pick">
+                @for (t of types; track t) {
+                  <button type="button" class="value-pick" [class.on]="f.type === t" (click)="pickReportType(t)">
+                    <span class="material-icons-outlined" aria-hidden="true">{{ typeIcon[t] }}</span>
+                    <span class="stack">
+                      <strong>{{ 'safety.types.' + t | translate }}</strong>
+                      <span class="cell-sub">{{ 'safety.typeHint.' + t | translate }}</span>
+                    </span>
+                  </button>
+                }
+              </div>
+              @if (f.type) {
+                <div class="form-grid">
+                  <div class="field span-all">
+                    <label for="r-title">{{ 'safety.whatHappened' | translate }}</label>
+                    <input id="r-title" maxlength="200" [(ngModel)]="f.title" [placeholder]="'safety.titlePh' | translate" />
+                  </div>
+                  <div class="field">
+                    <label for="r-at">{{ 'safety.when' | translate }}</label>
+                    <input id="r-at" type="datetime-local" [max]="nowLocal" [(ngModel)]="f.occurredAt" />
+                  </div>
+                  <div class="field">
+                    <label for="r-loc">{{ 'safety.location' | translate }}</label>
+                    <select id="r-loc" [(ngModel)]="f.locationId">
+                      <option value="">—</option>
+                      @for (l of lookups().locations; track l.id) { <option [value]="l.id">{{ l.name }}</option> }
+                    </select>
+                  </div>
+                  <div class="field">
+                    <label for="r-area">{{ 'safety.area' | translate }}</label>
+                    <input id="r-area" maxlength="150" [(ngModel)]="f.area" [placeholder]="'safety.areaPh' | translate" />
+                  </div>
+                  <div class="field span-all">
+                    <label for="r-desc">{{ 'safety.description' | translate }}</label>
+                    <textarea id="r-desc" rows="3" maxlength="4000" [(ngModel)]="f.description" [placeholder]="'safety.describePh' | translate"></textarea>
+                  </div>
+                  <div class="field">
+                    <label for="r-sev">{{ 'safety.howSerious' | translate }}</label>
+                    <select id="r-sev" [(ngModel)]="f.severity">
+                      @for (v of severities; track v) { <option [value]="v">{{ 'safety.sev.' + v | translate }}</option> }
+                    </select>
+                  </div>
+                  <div class="field span-2">
+                    <span class="label">{{ 'safety.wasHurt' | translate }}</span>
+                    <div class="seg-row">
+                      @for (w of ['none', 'me', 'employee', 'other']; track w) {
+                        @if (w !== 'none' || !needsPerson(f.type)) {
+                          <button type="button" class="seg" [class.is-active]="f.who === w" (click)="f.who = $any(w)">{{ 'safety.who.' + w | translate }}</button>
+                        }
+                      }
+                    </div>
+                  </div>
+                  @if (f.who === 'employee') {
+                    <div class="field">
+                      <label for="r-emp">{{ 'safety.person' | translate }}</label>
+                      <select id="r-emp" [(ngModel)]="f.affectedEmployeeId">
+                        <option value="">{{ 'safety.pick' | translate }}</option>
+                        @for (p of lookups().people; track p.id) { <option [value]="p.id">{{ p.name }}</option> }
+                      </select>
+                    </div>
+                  }
+                  @if (f.who === 'other') {
+                    <div class="field">
+                      <label for="r-ext">{{ 'safety.person' | translate }}</label>
+                      <input id="r-ext" maxlength="120" [(ngModel)]="f.affectedName" [placeholder]="'safety.externalPh' | translate" />
+                    </div>
+                  }
+                  @if (f.who !== 'none') {
+                    <div class="field">
+                      <label for="r-nat">{{ 'safety.injuryNature' | translate }}</label>
+                      <input id="r-nat" maxlength="120" [(ngModel)]="f.injuryNature" [placeholder]="'safety.naturePh' | translate" />
+                    </div>
+                    <div class="field">
+                      <label for="r-body">{{ 'safety.bodyPart' | translate }}</label>
+                      <input id="r-body" maxlength="120" [(ngModel)]="f.bodyPart" />
+                    </div>
+                  }
+                  <div class="field span-all">
+                    <label for="r-imm">{{ 'safety.whatDidYouDo' | translate }}</label>
+                    <input id="r-imm" maxlength="2000" [(ngModel)]="f.immediateAction" [placeholder]="'safety.immediatePh' | translate" />
+                  </div>
+                  <div class="field span-all">
+                    <label for="r-wit">{{ 'safety.witnesses' | translate }}</label>
+                    <input id="r-wit" maxlength="500" [(ngModel)]="f.witnesses" />
+                  </div>
+                </div>
+                <label class="check-inline wrap-text anon-box" [class.on]="f.anonymous">
+                  <input type="checkbox" [(ngModel)]="f.anonymous" />
+                  <span><strong>{{ 'safety.stayAnonymous' | translate }}</strong><span class="cell-sub">{{ 'safety.anonymousHint' | translate }}</span></span>
+                </label>
+              }
+            }
+          }
+
+          <!-- ── My report ── -->
+          @case ('myReport') {
+            @if (myReport(); as r) {
+              <div class="doc-head">
+                <div class="chips">
+                  <span [class]="statusChip[r.report.status]">{{ 'safety.st.' + r.report.status | translate }}</span>
+                  <span class="chip chip-plain"><span class="material-icons-outlined chip-icon" aria-hidden="true">{{ typeIcon[r.report.type] }}</span>{{ 'safety.types.' + r.report.type | translate }}</span>
+                  @if (r.report.anonymous) { <span class="chip chip-ink"><span class="material-icons-outlined chip-icon" aria-hidden="true">visibility_off</span>{{ 'safety.anonymous' | translate }}</span> }
+                </div>
+              </div>
+              <ol class="stepper four">
+                @for (st of statuses; track st; let n = $index) {
+                  <li [class.done]="n < stepIndex(r.report.status) || r.report.status === 'Closed'" [class.now]="n === stepIndex(r.report.status) && r.report.status !== 'Closed'">
+                    <span class="dot">@if (n < stepIndex(r.report.status) || r.report.status === 'Closed') { <span class="material-icons-outlined" aria-hidden="true">check</span> } @else { {{ n + 1 }} }</span>
+                    <span class="st-label">{{ 'safety.st.' + st | translate }}</span>
+                  </li>
+                }
+              </ol>
+              @if (r.description) { <p class="desc pre">{{ r.description }}</p> }
+              <dl class="facts">
+                <div><dt>{{ 'safety.occurred' | translate }}</dt><dd class="num">{{ utc(r.report.occurredAt) | date: 'd MMM y, HH:mm' : undefined : lang() }}</dd></div>
+                <div><dt>{{ 'safety.where' | translate }}</dt><dd>{{ r.locationName ?? '—' }}@if (r.area) { <span class="cell-sub">{{ r.area }}</span> }</dd></div>
+                <div><dt>{{ 'safety.reportedOn' | translate }}</dt><dd class="num">{{ utc(r.report.reportedAt) | date: 'd MMM y' : undefined : lang() }}</dd></div>
+              </dl>
+              @if (r.closureNote) {
+                <div class="outcome-box">
+                  <strong>{{ 'safety.whatWasDone' | translate }}</strong>
+                  <p class="pre">{{ r.closureNote }}</p>
+                </div>
+              }
+              <h4 class="sub-title">{{ 'safety.updates' | translate }}</h4>
+              <ol class="convo">
+                @for (u of r.updates.slice().reverse(); track u.id) {
+                  <li class="event">
+                    <span class="material-icons-outlined" aria-hidden="true">{{ entryIcon[u.kind] ?? 'circle' }}</span>
+                    <span class="grow">
+                      {{ 'safety.myEntry.' + u.kind | translate }}
+                      @if (u.kind === 'StatusChanged' && u.text) { <span class="reason">{{ 'safety.st.' + u.text | translate }}</span> }
+                    </span>
+                    <span class="num">{{ utc(u.at) | date: 'd MMM, HH:mm' : undefined : lang() }}</span>
+                  </li>
+                }
+              </ol>
+              <p class="conf-note">
+                <span class="material-icons-outlined" aria-hidden="true">lock</span>
+                <span>{{ (r.report.anonymous ? 'safety.anonymousNote' : 'safety.namedNote') | translate }}</span>
+              </p>
+            } @else {
+              <p class="loading-line">{{ 'common.loading' | translate }}</p>
+            }
+          }
+
+          <!-- ── Action view ── -->
+          @case ('action') {
+            @if (action(); as a) {
+              <div class="doc-head">
+                <div class="chips">
+                  <span [class]="actionChip[a.status]">{{ 'safety.as.' + a.status | translate }}</span>
+                  <span [class]="severityChip[a.priority]">{{ 'safety.priorityN' | translate: { p: ('safety.sev.' + a.priority | translate) } }}</span>
+                  @if (a.isOverdue) { <span class="chip chip-oxblood">{{ 'safety.overdue' | translate }}</span> }
+                </div>
+              </div>
+              @if (a.description) { <p class="desc pre">{{ a.description }}</p> }
+              <dl class="facts">
+                <div><dt>{{ 'safety.assignee' | translate }}</dt><dd>{{ a.assigneeName }}</dd></div>
+                <div><dt>{{ 'safety.due' | translate }}</dt><dd class="num" [class.warn]="a.isOverdue">{{ a.dueOn | date: 'd MMM y' : 'UTC' : lang() }}</dd></div>
+                <div><dt>{{ 'safety.from' | translate }}</dt><dd>
+                  @if (a.incidentId && a.incidentCode) { <button type="button" class="btn-link num" (click)="openIncident(a.incidentId, 'actions')">{{ a.incidentCode }}</button> }
+                  @else if (a.inspectionId && a.inspectionCode) { <button type="button" class="btn-link num" (click)="openInspection(a.inspectionId)">{{ a.inspectionCode }}</button> }
+                  @else { {{ 'safety.standalone' | translate }} }
+                </dd></div>
+              </dl>
+              @if (a.completionNote) {
+                <div class="outcome-box">
+                  <strong>{{ (a.status === 'Cancelled' ? 'safety.cancelReason' : 'safety.whatWasDone') | translate }}</strong>
+                  <p class="pre">{{ a.completionNote }}</p>
+                  @if (a.verifiedAt) { <span class="cell-sub">{{ 'safety.verifiedOn' | translate: { date: (utc(a.verifiedAt) | date: 'd MMM y' : undefined : lang()) } }}</span> }
+                </div>
+              }
+              @if (acting && act; as f) {
+                <div class="settings-box">
+                  <div class="field">
+                    <label for="a-text">{{ ('safety.actText.' + acting) | translate }}</label>
+                    <textarea id="a-text" rows="3" maxlength="2000" [(ngModel)]="f.text"></textarea>
+                  </div>
+                  <div class="inline-actions">
+                    <button type="button" class="btn btn-quiet btn-small" (click)="cancelAct()">{{ 'common.cancel' | translate }}</button>
+                    <button type="button" class="btn btn-small" [class]="acting === 'cancel' ? 'btn btn-small btn-danger' : 'btn btn-small btn-ink'"
+                      [disabled]="saving() || (acting === 'complete' && !f.text.trim())" (click)="progress(a, $any(acting))">{{ 'safety.do.' + acting | translate }}</button>
+                  </div>
+                </div>
+              } @else {
+                <div class="inline-actions wrap">
+                  @if (a.canUpdate) {
+                    <button type="button" class="btn btn-quiet btn-small push-end danger-link" (click)="startActionAct('cancel')">{{ 'safety.do.cancel' | translate }}</button>
+                    <button type="button" class="btn btn-quiet btn-small" (click)="editAction(a)">{{ 'common.edit' | translate }}</button>
+                  }
+                  @if (a.canProgress && a.status === 'Open') {
+                    <button type="button" class="btn btn-quiet btn-small" [disabled]="saving()" (click)="progress(a, 'start')">{{ 'safety.start' | translate }}</button>
+                  }
+                  @if (a.canProgress) {
+                    <button type="button" class="btn btn-ink btn-small" (click)="startActionAct('complete')">{{ 'safety.markDone' | translate }}</button>
+                  }
+                  @if (a.canVerify) {
+                    <button type="button" class="btn btn-quiet btn-small" (click)="startActionAct('reject')">{{ 'safety.do.reject' | translate }}</button>
+                    <button type="button" class="btn btn-ink btn-small" [disabled]="saving()" (click)="progress(a, 'verify')">{{ 'safety.verify' | translate }}</button>
+                  }
+                </div>
+              }
+            }
+          }
+
+          <!-- ── Action form ── -->
+          @case ('actionForm') {
+            @if (actionForm; as f) {
+              @if (f.source) { <p class="small dim">{{ 'safety.forSource' | translate: { code: f.source } }}</p> }
+              <div class="form-grid">
+                <div class="field span-all">
+                  <label for="ac-title">{{ 'safety.actionTitle' | translate }}</label>
+                  <input id="ac-title" maxlength="200" [(ngModel)]="f.title" [placeholder]="'safety.actionPh' | translate" />
+                </div>
+                <div class="field span-all">
+                  <label for="ac-desc">{{ 'safety.description' | translate }}</label>
+                  <textarea id="ac-desc" rows="3" maxlength="2000" [(ngModel)]="f.description"></textarea>
+                </div>
+                <div class="field">
+                  <label for="ac-who">{{ 'safety.assignee' | translate }}</label>
+                  <select id="ac-who" [(ngModel)]="f.assigneeEmployeeId">
+                    <option value="">{{ 'safety.pick' | translate }}</option>
+                    @for (p of lookups().people; track p.id) { <option [value]="p.id">{{ p.name }}</option> }
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="ac-pr">{{ 'safety.priority' | translate }}</label>
+                  <select id="ac-pr" [(ngModel)]="f.priority">
+                    @for (v of severities; track v) { <option [value]="v">{{ 'safety.sev.' + v | translate }}</option> }
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="ac-due">{{ 'safety.due' | translate }}</label>
+                  <input id="ac-due" type="date" [min]="f.id ? '' : today" [(ngModel)]="f.dueOn" />
+                </div>
+              </div>
+            }
+          }
+
+          <!-- ── Inspection ── -->
+          @case ('inspection') {
+            @if (inspection(); as dd) {
+              @let n = dd.inspection;
+              <div class="doc-head">
+                <div class="chips">
+                  <span [class]="inspectionChip[n.status]">{{ 'safety.ns.' + n.status | translate }}</span>
+                  @if (n.isOverdue) { <span class="chip chip-oxblood">{{ 'safety.overdue' | translate }}</span> }
+                  @if (n.repeatDays) { <span class="chip chip-plain"><span class="material-icons-outlined chip-icon" aria-hidden="true">autorenew</span>{{ 'safety.everyN' | translate: { n: n.repeatDays } }}</span> }
+                </div>
+                @if (dd.canEdit && !answers) {
+                  <button type="button" class="btn btn-quiet btn-small" (click)="editInspection(dd)">
+                    <span class="material-icons-outlined" aria-hidden="true">edit_calendar</span>{{ 'safety.reschedule' | translate }}
+                  </button>
+                }
+              </div>
+              <dl class="facts">
+                <div><dt>{{ 'safety.checklist' | translate }}</dt><dd>{{ n.checklistName ?? '—' }}</dd></div>
+                <div><dt>{{ 'safety.inspector' | translate }}</dt><dd>{{ n.inspectorName }}</dd></div>
+                <div><dt>{{ 'safety.due' | translate }}</dt><dd class="num" [class.warn]="n.isOverdue">{{ n.dueOn | date: 'd MMM y' : 'UTC' : lang() }}</dd></div>
+                <div><dt>{{ 'safety.where' | translate }}</dt><dd>{{ n.locationName ?? '—' }}@if (n.area) { <span class="cell-sub">{{ n.area }}</span> }</dd></div>
+              </dl>
+
+              @if (n.status === 'Completed') {
+                <div class="score-box" [class]="'score-box ' + scoreTone(n.scorePercent)">
+                  <span class="num score-big">{{ n.scorePercent === null ? '—' : (n.scorePercent | number: '1.0-1' : lang()) + '%' }}</span>
+                  <span class="stack">
+                    <strong>{{ 'safety.scoreLabel' | translate }}</strong>
+                    <span class="cell-sub">{{ 'safety.completedOn' | translate: { date: (utc(n.completedAt) | date: 'd MMM y' : undefined : lang()), n: n.failed } }}</span>
+                  </span>
+                </div>
+                @if (dd.notes) { <p class="desc pre">{{ dd.notes }}</p> }
+              } @else if (n.status === 'Cancelled' && dd.notes) {
+                <p class="desc pre">{{ dd.notes }}</p>
+              }
+
+              @if (answers; as rows) {
+                <!-- Fill in -->
+                <div class="fill-head">
+                  <span class="small">{{ 'safety.answeredN' | translate: { n: answered(), total: rows.length } }}</span>
+                  @if (liveScore() !== null) { <span class="score" [class]="'score ' + scoreTone(liveScore())">{{ liveScore() | number: '1.0-1' : lang() }}%</span> }
+                  <button type="button" class="btn btn-quiet btn-small push" (click)="setAll('Pass')">{{ 'safety.restPass' | translate }}</button>
+                </div>
+                <ol class="check-lines">
+                  @for (a of rows; track a.lineId; let k = $index) {
+                    <li class="check-line" [class.is-fail]="a.result === 'Fail'">
+                      <div class="line-top">
+                        <span class="num line-n">{{ k + 1 }}</span>
+                        <span class="grow">{{ a.text }}</span>
+                        <span class="result-pick" role="radiogroup" [attr.aria-label]="a.text">
+                          @for (r of results; track r) {
+                            <button type="button" class="rp" [class]="'rp rp-' + r" [class.on]="a.result === r" role="radio" [attr.aria-checked]="a.result === r"
+                              [title]="'safety.res.' + r | translate" (click)="a.result = r">
+                              <span class="material-icons-outlined" aria-hidden="true">{{ resultIcon[r] }}</span>
+                              <span class="rp-label">{{ 'safety.resShort.' + r | translate }}</span>
+                            </button>
+                          }
+                        </span>
+                      </div>
+                      @if (a.result === 'Fail' || a.note) {
+                        <input class="line-note" maxlength="500" [(ngModel)]="a.note" [placeholder]="(a.result === 'Fail' ? 'safety.failPh' : 'safety.notePhShort') | translate" [attr.aria-label]="'safety.itemNote' | translate" />
+                      }
+                      @if (a.result === 'Fail') {
+                        <label class="check-inline"><input type="checkbox" [(ngModel)]="a.raise" />{{ 'safety.raiseAction' | translate }}</label>
+                        @if (a.raise) {
+                          <div class="raise-row">
+                            <select class="select-sm grow" [(ngModel)]="a.assigneeEmployeeId" [attr.aria-label]="'safety.assignee' | translate">
+                              <option value="">{{ 'safety.assignee' | translate }}…</option>
+                              @for (p of lookups().people; track p.id) { <option [value]="p.id">{{ p.name }}</option> }
+                            </select>
+                            <select class="select-sm" [(ngModel)]="a.priority" [attr.aria-label]="'safety.priority' | translate">
+                              @for (v of severities; track v) { <option [value]="v">{{ 'safety.sev.' + v | translate }}</option> }
+                            </select>
+                            <input type="date" class="select-sm" [min]="today" [(ngModel)]="a.dueOn" [attr.aria-label]="'safety.due' | translate" />
+                          </div>
+                        }
+                      }
+                    </li>
+                  }
+                </ol>
+                <div class="field">
+                  <label for="in-notes">{{ 'safety.overallNotes' | translate }}</label>
+                  <textarea id="in-notes" rows="2" maxlength="2000" [(ngModel)]="answerNotes"></textarea>
+                </div>
+                <div class="inline-actions">
+                  <button type="button" class="btn btn-quiet" (click)="answers = null">{{ 'common.cancel' | translate }}</button>
+                  <button type="button" class="btn btn-ink" [disabled]="saving() || !canFinish()" (click)="finishInspection(dd)">{{ 'safety.finish' | translate }}</button>
+                </div>
+              } @else {
+                <ol class="check-lines">
+                  @for (l of dd.lines; track l.id) {
+                    <li class="check-line" [class.is-fail]="l.result === 'Fail'">
+                      <div class="line-top">
+                        <span class="num line-n">{{ l.sortOrder }}</span>
+                        <span class="grow">{{ l.text }}@if (l.note) { <span class="cell-sub wrap">{{ l.note }}</span> }</span>
+                        @if (l.result) {
+                          <span class="res-tag" [class]="'res-tag rt-' + l.result">
+                            <span class="material-icons-outlined" aria-hidden="true">{{ resultIcon[l.result] }}</span>{{ 'safety.resShort.' + l.result | translate }}
+                          </span>
+                        }
+                      </div>
+                    </li>
+                  }
+                </ol>
+                @if (dd.actions.length) {
+                  <h4 class="sub-title">{{ 'safety.tabs.actions' | translate }}</h4>
+                  <ng-container *ngTemplateOutlet="actionCards; context: { $implicit: dd.actions }"></ng-container>
+                }
+                <div class="inline-actions wrap">
+                  @if (dd.canEdit) {
+                    <button type="button" class="btn btn-quiet btn-small push-end danger-link" (click)="cancelInspection(dd)">
+                      {{ (confirm === 'cancelInspection' ? 'safety.confirmCancel' : 'safety.cancelInspection') | translate }}
+                    </button>
+                  }
+                  @if (n.status === 'Completed' && (canManage() || n.isMine)) {
+                    <button type="button" class="btn btn-quiet btn-small" (click)="newAction({ inspection: dd })">
+                      <span class="material-icons-outlined" aria-hidden="true">add</span>{{ 'safety.newAction' | translate }}
+                    </button>
+                  }
+                  @if (dd.canComplete) {
+                    <button type="button" class="btn btn-ink btn-small" (click)="startInspection(dd)">
+                      <span class="material-icons-outlined" aria-hidden="true">fact_check</span>{{ 'safety.startInspection' | translate }}
+                    </button>
+                  }
+                </div>
+              }
+            } @else {
+              <p class="loading-line">{{ 'common.loading' | translate }}</p>
+            }
+          }
+
+          <!-- ── Inspection form ── -->
+          @case ('inspectionForm') {
+            @if (inspectionForm; as f) {
+              <div class="form-grid two">
+                @if (!f.id) {
+                  <div class="field span-all">
+                    <label for="n-cl">{{ 'safety.checklist' | translate }}</label>
+                    <select id="n-cl" [ngModel]="f.checklistId" (ngModelChange)="pickChecklist($event)">
+                      @for (c of activeChecklists(); track c.id) { <option [value]="c.id">{{ c.name }} ({{ 'safety.itemsN' | translate: { n: c.itemCount } }})</option> }
+                    </select>
+                  </div>
+                }
+                <div class="field span-all">
+                  <label for="n-title">{{ 'safety.inspectionTitle' | translate }}</label>
+                  <input id="n-title" maxlength="200" [(ngModel)]="f.title" />
+                </div>
+                <div class="field">
+                  <label for="n-who">{{ 'safety.inspector' | translate }}</label>
+                  <select id="n-who" [(ngModel)]="f.inspectorEmployeeId">
+                    <option value="">{{ 'safety.pick' | translate }}</option>
+                    @for (p of lookups().people; track p.id) { <option [value]="p.id">{{ p.name }}</option> }
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="n-due">{{ 'safety.due' | translate }}</label>
+                  <input id="n-due" type="date" [min]="today" [(ngModel)]="f.dueOn" />
+                </div>
+                <div class="field">
+                  <label for="n-loc">{{ 'safety.location' | translate }}</label>
+                  <select id="n-loc" [(ngModel)]="f.locationId">
+                    <option value="">—</option>
+                    @for (l of lookups().locations; track l.id) { <option [value]="l.id">{{ l.name }}</option> }
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="n-area">{{ 'safety.area' | translate }}</label>
+                  <input id="n-area" maxlength="150" [(ngModel)]="f.area" [placeholder]="'safety.areaPh' | translate" />
+                </div>
+              </div>
+              <div class="settings-box">
+                <label class="check-inline"><input type="checkbox" [(ngModel)]="f.repeat" />{{ 'safety.repeat' | translate }}</label>
+                @if (f.repeat) {
+                  <div class="repeat-row">
+                    <span>{{ 'safety.every' | translate }}</span>
+                    <input type="number" min="7" max="365" [(ngModel)]="f.repeatDays" [attr.aria-label]="'safety.days' | translate" />
+                    <span>{{ 'safety.days' | translate }}</span>
+                    <span class="seg-row">
+                      @for (n of [7, 30, 90, 180]; track n) { <button type="button" class="seg" [class.is-active]="f.repeatDays === n" (click)="f.repeatDays = n">{{ 'safety.preset.' + n | translate }}</button> }
+                    </span>
+                  </div>
+                  <p class="small dim">{{ 'safety.repeatHint' | translate }}</p>
+                }
+              </div>
+            }
+          }
+
+          <!-- ── Checklist form ── -->
+          @case ('checklist') {
+            @if (checklistForm; as f) {
+              <div class="form-grid two">
+                <div class="field">
+                  <label for="ck-name">{{ 'safety.name' | translate }}</label>
+                  <input id="ck-name" maxlength="120" [(ngModel)]="f.name" />
+                </div>
+                <div class="field">
+                  <span class="label">{{ 'safety.status' | translate }}</span>
+                  <label class="check-inline"><input type="checkbox" [(ngModel)]="f.isActive" />{{ 'safety.inUse' | translate }}</label>
+                </div>
+                <div class="field span-all">
+                  <label for="ck-desc">{{ 'safety.description' | translate }}</label>
+                  <input id="ck-desc" maxlength="500" [(ngModel)]="f.description" />
+                </div>
+              </div>
+              <div class="head-row">
+                <h4 class="sub-title">{{ 'safety.items' | translate }} <span class="dim num">{{ checklistItems().length }}/{{ maxItems }}</span></h4>
+              </div>
+              <ol class="item-edit">
+                @for (it of f.items; track it.key; let k = $index; let first = $first; let last = $last) {
+                  <li>
+                    <span class="num line-n">{{ k + 1 }}</span>
+                    <input class="grow" maxlength="300" [(ngModel)]="it.text" [placeholder]="'safety.itemPh' | translate" [attr.aria-label]="'safety.itemN' | translate: { n: k + 1 }" />
+                    <button type="button" class="icon-btn" [disabled]="first" (click)="moveItem(k, -1)" [attr.aria-label]="'safety.moveUp' | translate"><span class="material-icons-outlined" aria-hidden="true">arrow_upward</span></button>
+                    <button type="button" class="icon-btn" [disabled]="last" (click)="moveItem(k, 1)" [attr.aria-label]="'safety.moveDown' | translate"><span class="material-icons-outlined" aria-hidden="true">arrow_downward</span></button>
+                    <button type="button" class="icon-btn danger" [disabled]="f.items.length === 1" (click)="removeItem(k)" [attr.aria-label]="'common.delete' | translate"><span class="material-icons-outlined" aria-hidden="true">close</span></button>
+                  </li>
+                }
+              </ol>
+              <div class="inline-actions">
+                @if (hasDuplicateItems()) { <span class="small warn push-end">{{ 'safety.duplicateItems' | translate }}</span> }
+                <button type="button" class="btn btn-quiet btn-small" [disabled]="f.items.length >= maxItems" (click)="addItem()">
+                  <span class="material-icons-outlined" aria-hidden="true">add</span>{{ 'safety.addItem' | translate }}
+                </button>
+              </div>
+              <p class="small dim">{{ 'safety.checklistEditNote' | translate }}</p>
+            }
+          }
+        }
+      </div>
+
+      @if (d === 'incidentForm' || d === 'report' || d === 'actionForm' || d === 'inspectionForm' || d === 'checklist') {
+        <footer class="drawer-foot">
+          @if (d === 'checklist' && checklistForm?.id) {
+            <button type="button" class="btn btn-quiet danger-link push-end" [disabled]="saving()" (click)="deleteChecklist()">
+              {{ (confirm === 'deleteChecklist' ? 'safety.confirmDelete' : 'common.delete') | translate }}
+            </button>
+          }
+          <button type="button" class="btn btn-quiet" (click)="closeDrawer()">{{ 'common.cancel' | translate }}</button>
+          @switch (d) {
+            @case ('incidentForm') { <button type="button" class="btn btn-ink" [disabled]="!canSaveIncident() || saving()" (click)="saveIncident()">{{ 'common.save' | translate }}</button> }
+            @case ('report') { <button type="button" class="btn btn-ink" [disabled]="!canSendReport() || saving()" (click)="sendReport()">{{ 'safety.sendReport' | translate }}</button> }
+            @case ('actionForm') { <button type="button" class="btn btn-ink" [disabled]="!canSaveAction() || saving()" (click)="saveAction()">{{ 'common.save' | translate }}</button> }
+            @case ('inspectionForm') { <button type="button" class="btn btn-ink" [disabled]="!canSaveInspection() || saving()" (click)="saveInspection()">{{ (inspectionForm?.id ? 'common.save' : 'safety.schedule') | translate }}</button> }
+            @case ('checklist') { <button type="button" class="btn btn-ink" [disabled]="!canSaveChecklist() || saving()" (click)="saveChecklist()">{{ 'common.save' | translate }}</button> }
+          }
+        </footer>
+      }
+    </aside>
+  </div>
+}
+
+<ng-template #actionCards let-list>
+  <ul class="action-cards">
+    @for (a of asActions(list); track a.id) {
+      <li>
+        <button type="button" class="action-card" [class.is-late]="a.isOverdue" (click)="openAction(a)">
+          <span class="prio" [class]="'prio p-' + a.priority"></span>
+          <span class="stack grow">
+            <span class="cell-main wrap">{{ a.title }}</span>
+            <span class="cell-sub">{{ a.assigneeName }} · <span class="num">{{ a.dueOn | date: 'd MMM' : 'UTC' : lang() }}</span></span>
+          </span>
+          <span [class]="actionChip[a.status]">{{ 'safety.as.' + a.status | translate }}</span>
+        </button>
+      </li>
+    } @empty {
+      <li class="small dim pad-sm">{{ 'safety.noActionsHere' | translate }}</li>
+    }
+  </ul>
+</ng-template>
