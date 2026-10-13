@@ -14,7 +14,9 @@
     "no": "No",
     "retry": "Try again",
     "close": "Close",
-    "open": "Open"
+    "open": "Open",
+    "remove": "Remove",
+    "reset": "Reset"
   },
   "nav": {
     "dashboard": "Dashboard",
@@ -593,7 +595,11 @@
     "relations.manage": "Manage employee relations cases",
     "safety.manage": "Manage health and safety",
     "reports.build": "Build reports and letter templates",
-    "letters.issue": "Issue letters and certificates"
+    "letters.issue": "Issue letters and certificates",
+    "ai.use": "Use the AI assistant chat",
+    "ai.insights": "Run and view AI insights",
+    "ai.screening": "Screen CVs with AI",
+    "ai.manage": "Change AI settings and limits"
   },
   "permModule": {
     "Dashboard": "Dashboard",
@@ -603,7 +609,8 @@
     "Settings": "Administration",
     "Relations": "Relations",
     "Safety": "Safety",
-    "Reports": "Reports"
+    "Reports": "Reports",
+    "AI": "AI"
   },
   "payrollSetup": {
     "intro": "Everything payroll needs before the first run: company defaults, pay groups and their periods, pay components and tax rules.",
@@ -5414,6 +5421,202 @@
       "workPhone": "Work phone",
       "workedHours": "Worked hours",
       "year": "Year"
+    }
+  },
+  "ai": {
+    "intro": "Ask about your people in plain words. It only sees what your role can see, and says where every number came from.",
+    "newChat": "New chat",
+    "tabs": {
+      "chat": "Chat",
+      "insights": "Insights",
+      "screening": "Recruitment screening",
+      "settings": "Settings"
+    },
+    "off": {
+      "title": "AI is not set up yet.",
+      "admin": "Nothing is sent to the AI and there is no cost. To switch it on, add the API key in Key Vault and restart the Employee API.",
+      "user": "Nothing is sent to the AI. Your admin can switch it on."
+    },
+    "limitReached": "This month's limit of {{n}} AI requests is used up. It resets on the 1st, or an admin can raise it in Settings.",
+    "noAccess": {
+      "title": "No AI access",
+      "body": "Your role does not include the AI assistant. Ask an admin to add it in Roles & permissions."
+    },
+    "history": {
+      "empty": "Your chats will show here.",
+      "today": "Today",
+      "yesterday": "Yesterday",
+      "earlier": "Earlier",
+      "delete": "Delete chat",
+      "confirmDelete": "Delete this chat?"
+    },
+    "sees": {
+      "title": "What it can see",
+      "nothing": "No data areas are switched on.",
+      "same": "Same permissions as your login."
+    },
+    "usageLine": "{{used}} / {{limit}} requests this month",
+    "welcome": {
+      "title": "Ask HR",
+      "body": "Ask about leave, attendance, payroll, people or policies, in English, عربي, 中文 or Türkçe. It reads data, it never changes anything."
+    },
+    "suggest": {
+      "joined": "Who joined this month?",
+      "late": "Late arrivals this week",
+      "payroll": "Payroll cost vs last month",
+      "policy": "Summarise the leave policy"
+    },
+    "copy": "Copy",
+    "copied": "Copied.",
+    "readOnlyNote": "The assistant reads and drafts; it never sends email or changes records.",
+    "thinking": "Looking it up…",
+    "chatFull": "This chat is long. Start a new chat to keep answers quick.",
+    "askLabel": "Ask a question",
+    "askPlaceholder": "Ask about leave, attendance, payroll, people…  (English, عربي, 中文, Türkçe)",
+    "askOff": "AI is not set up yet",
+    "askLimit": "This month's AI limit is used up",
+    "send": "Send",
+    "level": {
+      "Attention": "Needs attention",
+      "Look": "Worth a look",
+      "Info": "For info"
+    },
+    "fit": {
+      "Strong": "Strong",
+      "Partial": "Partial",
+      "Weak": "Weak"
+    },
+    "met": {
+      "yes": "✓ Yes",
+      "partial": "~ Partly",
+      "no": "✗ Not found"
+    },
+    "insight": {
+      "runNow": "Run now",
+      "running": "Running…",
+      "runningHelp": "Reading your data and looking for what stands out. This can take a minute.",
+      "filter": "Filter insights",
+      "open": "Open",
+      "dismissed": "Dismissed",
+      "lastRun": "Last run {{when}} by {{by}}",
+      "noneTitle": "No insights yet",
+      "noneBody": "Press Run now and the assistant will look through your HR data for things worth a look. Each run counts as one request.",
+      "noneOff": "Insights run only when someone presses Run now, so nothing runs (and nothing is spent) until AI is set up.",
+      "noneDismissed": "Nothing dismissed in the last 60 days",
+      "basedOn": "Based on: {{source}}",
+      "open_page": "Open",
+      "ask": "Ask about this",
+      "dismiss": "Dismiss",
+      "restore": "Restore",
+      "askPrompt": "Tell me more about this: {{title}} {{metric}}"
+    },
+    "screen": {
+      "job": "Job opening",
+      "applicants": "{{n}} applicants",
+      "openPipeline": "Open pipeline",
+      "noRequirements": "This opening has no requirements written. Add them in Recruitment so the AI has something to check CVs against.",
+      "noJobs": "No open jobs",
+      "noJobsBody": "Screening works on open or on-hold job openings. Open one in Recruitment first.",
+      "ranked": "Ranked candidates",
+      "screened": "{{n}} of {{total}} screened",
+      "sorted": "Sorted by match",
+      "notYet": "Not screened",
+      "noApplicants": "No applications for this opening yet.",
+      "detail": "Candidate detail",
+      "years": "{{n}} yrs",
+      "applied": "applied {{date}}",
+      "outOf": "/ 100 match",
+      "requirement": "Requirement",
+      "met": "Met",
+      "evidence": "Evidence from CV",
+      "questions": "Suggested interview questions",
+      "moveInterview": "Move to Interview",
+      "moved": "{{name}} moved to Interview.",
+      "again": "Screen again",
+      "by": "Screened by {{by}}, {{when}}",
+      "cvHelp": "Paste the CV text or upload the PDF. Only the job and the CV go to the AI, not the candidate record.",
+      "cvPlaceholder": "Paste the CV here…",
+      "uploadPdf": "Upload PDF",
+      "pdfOnly": "Upload a PDF file.",
+      "pdfTooBig": "The PDF is larger than 5 MB.",
+      "screen": "Screen CV",
+      "screening": "Screening…",
+      "fairNote": "The AI is told to judge only skills and experience and to ignore name, photo, age, gender and nationality. It ranks; people decide who moves on.",
+      "pick": "Pick a candidate to see or run their screening.",
+      "stage": {
+        "Applied": "Applied",
+        "Screening": "Screening",
+        "Interview": "Interview",
+        "Offer": "Offer",
+        "Hired": "Hired",
+        "Rejected": "Rejected",
+        "Withdrawn": "Withdrawn"
+      }
+    },
+    "area": {
+      "People": {
+        "name": "People & organization",
+        "desc": "Employees, departments, positions, managers, headcount, documents, assets"
+      },
+      "TimeLeave": {
+        "name": "Leave & attendance",
+        "desc": "Requests, balances, rules, daily attendance, late arrivals"
+      },
+      "Payroll": {
+        "name": "Payroll & salaries",
+        "desc": "Payroll runs, totals, salaries, payslips"
+      },
+      "LoansExpenses": {
+        "name": "Loans & expenses",
+        "desc": "Loans, advances, expense claims"
+      },
+      "Recruitment": {
+        "name": "Recruitment",
+        "desc": "Openings, applications, CV screening"
+      },
+      "PoliciesLearning": {
+        "name": "Policies & learning",
+        "desc": "Published policies, courses, performance and lifecycle summaries"
+      },
+      "RelationsSafety": {
+        "name": "Employee relations & health",
+        "desc": "Grievances, disciplinary cases, incidents"
+      }
+    },
+    "settings": {
+      "areasTitle": "What the assistant can read",
+      "areasHelp": "Even when an area is on, each person only gets answers their own permissions allow. ID card numbers, bank accounts and passwords are removed before anything reaches the AI.",
+      "standard": "Standard",
+      "sensitive": "Sensitive",
+      "offDefault": "Off by default",
+      "connection": "Connection",
+      "connected": "Connected · {{model}}",
+      "notConnected": "Not set up. No requests are sent and nothing is charged.",
+      "keyHelp": "To switch it on, add this secret to Azure Key Vault and restart the Employee API:",
+      "usageTitle": "Usage · {{month}}",
+      "ofLimit": "of {{n}} requests",
+      "usagePct": "{{n}} percent of the monthly limit used",
+      "chat": "Chat answers",
+      "screens": "CV screens",
+      "runs": "Insight runs",
+      "tokens": "Tokens",
+      "usageHelp": "Each chat answer, CV screen or insights run is one request. Resets on the 1st.",
+      "options": "Options",
+      "limit": "Monthly limit (requests)",
+      "limitHint": "0 stops all AI requests.",
+      "limitRange": "The monthly limit must be between 0 and 100,000.",
+      "history": "Keep chat history for",
+      "days": "{{n}} days",
+      "selfService": "Employees can use the assistant for their own data (My leave, My payslips)",
+      "save": "Save settings",
+      "saved": "AI settings saved."
+    },
+    "errors": {
+      "load": "Could not load the AI assistant.",
+      "ask": "The question could not be answered. Try again.",
+      "run": "Insights could not be run. Try again.",
+      "screen": "The CV could not be screened. Try again.",
+      "save": "Could not save. Try again."
     }
   }
 }

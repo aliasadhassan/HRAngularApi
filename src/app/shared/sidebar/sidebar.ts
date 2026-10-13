@@ -45,7 +45,7 @@ export class SidebarComponent {
     {
       items: [
         { icon: 'space_dashboard', label: 'nav.dashboard', route: '/app/dashboard', permission: P.dashboardView },
-        { icon: 'smart_toy', label: 'nav.aiAssistant', route: '/app/ai' }
+        { icon: 'smart_toy', label: 'nav.aiAssistant', route: '/app/ai', permission: [P.aiUse, P.aiInsights, P.aiScreening, P.aiManage] }
       ]
     },
 

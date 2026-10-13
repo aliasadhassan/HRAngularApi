@@ -14,7 +14,9 @@
     "no": "否",
     "retry": "重试",
     "close": "关闭",
-    "open": "打开"
+    "open": "打开",
+    "remove": "移除",
+    "reset": "重置"
   },
   "nav": {
     "dashboard": "工作台",
@@ -593,7 +595,11 @@
     "relations.manage": "管理员工关系案件",
     "safety.manage": "管理健康与安全",
     "reports.build": "创建报表和信函模板",
-    "letters.issue": "签发信函和证明"
+    "letters.issue": "签发信函和证明",
+    "ai.use": "使用 AI 助手对话",
+    "ai.insights": "运行和查看 AI 洞察",
+    "ai.screening": "用 AI 筛选简历",
+    "ai.manage": "更改 AI 设置和额度"
   },
   "permModule": {
     "Dashboard": "工作台",
@@ -603,7 +609,8 @@
     "Settings": "系统管理",
     "Relations": "员工关系",
     "Safety": "安全",
-    "Reports": "报表"
+    "Reports": "报表",
+    "AI": "AI"
   },
   "payrollSetup": {
     "intro": "首次核算薪资前所需的全部配置：公司默认设置、薪资组及其期间、薪资项目和个税规则。",
@@ -5414,6 +5421,202 @@
       "workPhone": "工作电话",
       "workedHours": "工作小时数",
       "year": "年份"
+    }
+  },
+  "ai": {
+    "intro": "用简单的话询问有关员工的问题。它只能看到你的角色可见的内容，并说明每个数字的来源。",
+    "newChat": "新对话",
+    "tabs": {
+      "chat": "对话",
+      "insights": "洞察",
+      "screening": "招聘筛选",
+      "settings": "设置"
+    },
+    "off": {
+      "title": "AI 尚未设置。",
+      "admin": "不会向 AI 发送任何内容，也不会产生费用。要启用它，请在 Key Vault 中添加 API 密钥并重启 Employee API。",
+      "user": "不会向 AI 发送任何内容。管理员可以启用它。"
+    },
+    "limitReached": "本月 {{n}} 次 AI 请求的额度已用完。每月 1 日重置，管理员也可以在设置中提高额度。",
+    "noAccess": {
+      "title": "无 AI 权限",
+      "body": "你的角色不包含 AI 助手。请管理员在角色与权限中添加。"
+    },
+    "history": {
+      "empty": "你的对话会显示在这里。",
+      "today": "今天",
+      "yesterday": "昨天",
+      "earlier": "更早",
+      "delete": "删除对话",
+      "confirmDelete": "删除此对话？"
+    },
+    "sees": {
+      "title": "它能看到什么",
+      "nothing": "没有启用任何数据范围。",
+      "same": "权限与你的登录相同。"
+    },
+    "usageLine": "本月 {{used}} / {{limit}} 次请求",
+    "welcome": {
+      "title": "问问 HR",
+      "body": "可以用 English、عربي、中文或 Türkçe 询问请假、考勤、薪资、员工或政策。它只读取数据，从不修改任何内容。"
+    },
+    "suggest": {
+      "joined": "本月有谁入职？",
+      "late": "本周迟到情况",
+      "payroll": "薪资成本与上月对比",
+      "policy": "总结请假政策"
+    },
+    "copy": "复制",
+    "copied": "已复制。",
+    "readOnlyNote": "助手只读取和起草，从不发送邮件或修改记录。",
+    "thinking": "正在查询…",
+    "chatFull": "此对话已很长。请开始新对话以保持回答迅速。",
+    "askLabel": "提出问题",
+    "askPlaceholder": "询问请假、考勤、薪资、员工…（English、عربي、中文、Türkçe）",
+    "askOff": "AI 尚未设置",
+    "askLimit": "本月 AI 额度已用完",
+    "send": "发送",
+    "level": {
+      "Attention": "需要关注",
+      "Look": "值得一看",
+      "Info": "供参考"
+    },
+    "fit": {
+      "Strong": "高",
+      "Partial": "部分",
+      "Weak": "低"
+    },
+    "met": {
+      "yes": "✓ 是",
+      "partial": "~ 部分",
+      "no": "✗ 未找到"
+    },
+    "insight": {
+      "runNow": "立即运行",
+      "running": "运行中…",
+      "runningHelp": "正在读取你的数据并寻找值得注意的地方。可能需要一分钟。",
+      "filter": "筛选洞察",
+      "open": "未处理",
+      "dismissed": "已忽略",
+      "lastRun": "上次运行 {{when}}，由 {{by}}",
+      "noneTitle": "暂无洞察",
+      "noneBody": "点击“立即运行”，助手会在你的 HR 数据中寻找值得关注的内容。每次运行计为一次请求。",
+      "noneOff": "洞察只在有人点击“立即运行”时运行，因此在设置 AI 之前不会运行（也不会产生费用）。",
+      "noneDismissed": "过去 60 天内没有忽略的内容",
+      "basedOn": "依据：{{source}}",
+      "open_page": "打开",
+      "ask": "询问此事",
+      "dismiss": "忽略",
+      "restore": "恢复",
+      "askPrompt": "告诉我更多关于这件事：{{title}} {{metric}}"
+    },
+    "screen": {
+      "job": "职位",
+      "applicants": "{{n}} 名申请人",
+      "openPipeline": "打开招聘流程",
+      "noRequirements": "此职位没有填写要求。请在招聘中添加，以便 AI 据此检查简历。",
+      "noJobs": "没有开放的职位",
+      "noJobsBody": "筛选适用于开放或暂停的职位。请先在招聘中开放一个职位。",
+      "ranked": "候选人排名",
+      "screened": "已筛选 {{n}} / {{total}}",
+      "sorted": "按匹配度排序",
+      "notYet": "未筛选",
+      "noApplicants": "此职位暂无申请。",
+      "detail": "候选人详情",
+      "years": "{{n}} 年",
+      "applied": "{{date}} 申请",
+      "outOf": "/ 100 匹配",
+      "requirement": "要求",
+      "met": "符合",
+      "evidence": "简历中的依据",
+      "questions": "建议的面试问题",
+      "moveInterview": "移至面试",
+      "moved": "已将 {{name}} 移至面试。",
+      "again": "重新筛选",
+      "by": "由 {{by}} 筛选，{{when}}",
+      "cvHelp": "粘贴简历文本或上传 PDF。只有职位和简历会发送给 AI，不包括候选人记录。",
+      "cvPlaceholder": "在此粘贴简历…",
+      "uploadPdf": "上传 PDF",
+      "pdfOnly": "请上传 PDF 文件。",
+      "pdfTooBig": "PDF 超过 5 MB。",
+      "screen": "筛选简历",
+      "screening": "筛选中…",
+      "fairNote": "AI 被要求只根据技能和经验进行判断，忽略姓名、照片、年龄、性别和国籍。它负责排序；由人决定谁进入下一步。",
+      "pick": "选择一位候选人以查看或运行筛选。",
+      "stage": {
+        "Applied": "已申请",
+        "Screening": "筛选",
+        "Interview": "面试",
+        "Offer": "录用通知",
+        "Hired": "已录用",
+        "Rejected": "已拒绝",
+        "Withdrawn": "已撤回"
+      }
+    },
+    "area": {
+      "People": {
+        "name": "员工与组织",
+        "desc": "员工、部门、职位、经理、人数、文件、资产"
+      },
+      "TimeLeave": {
+        "name": "请假与考勤",
+        "desc": "申请、余额、规则、每日考勤、迟到"
+      },
+      "Payroll": {
+        "name": "薪资",
+        "desc": "薪资批次、总额、工资、工资单"
+      },
+      "LoansExpenses": {
+        "name": "借款与报销",
+        "desc": "借款、预支、报销申请"
+      },
+      "Recruitment": {
+        "name": "招聘",
+        "desc": "职位、申请、简历筛选"
+      },
+      "PoliciesLearning": {
+        "name": "政策与学习",
+        "desc": "已发布的政策、课程、绩效与员工生命周期概要"
+      },
+      "RelationsSafety": {
+        "name": "员工关系与健康",
+        "desc": "申诉、纪律案件、事故"
+      }
+    },
+    "settings": {
+      "areasTitle": "助手可以读取的内容",
+      "areasHelp": "即使某个范围已启用，每个人也只能得到其自身权限允许的答案。身份证号、银行账户和密码会在发送给 AI 之前被移除。",
+      "standard": "标准",
+      "sensitive": "敏感",
+      "offDefault": "默认关闭",
+      "connection": "连接",
+      "connected": "已连接 · {{model}}",
+      "notConnected": "未设置。不会发送请求，也不会收费。",
+      "keyHelp": "要启用它，请将此密钥添加到 Azure Key Vault 并重启 Employee API：",
+      "usageTitle": "用量 · {{month}}",
+      "ofLimit": "/ {{n}} 次请求",
+      "usagePct": "已使用月度额度的 {{n}}%",
+      "chat": "对话回答",
+      "screens": "简历筛选",
+      "runs": "洞察运行",
+      "tokens": "令牌",
+      "usageHelp": "每次对话回答、简历筛选或洞察运行计为一次请求。每月 1 日重置。",
+      "options": "选项",
+      "limit": "每月额度（请求数）",
+      "limitHint": "0 表示停止所有 AI 请求。",
+      "limitRange": "每月额度必须在 0 到 100,000 之间。",
+      "history": "对话记录保留",
+      "days": "{{n}} 天",
+      "selfService": "员工可以使用助手查询自己的数据（我的请假、我的工资单）",
+      "save": "保存设置",
+      "saved": "AI 设置已保存。"
+    },
+    "errors": {
+      "load": "无法加载 AI 助手。",
+      "ask": "无法回答该问题。请重试。",
+      "run": "无法运行洞察。请重试。",
+      "screen": "无法筛选简历。请重试。",
+      "save": "无法保存。请重试。"
     }
   }
 }

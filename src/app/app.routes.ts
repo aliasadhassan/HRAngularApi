@@ -48,10 +48,7 @@ const soon = (
  * Sidebar mein naam hai, page baad mein. Order sidebar jaisa.
  * Consolidation: ek kaam ke chhote pages ek page ke tabs hain (56 → 19 planned pages).
  */
-const PLANNED: Route[] = [
-  // AI
-  soon('ai', 'nav.aiAssistant', undefined, ['chat', 'insights', 'aiRecruitment'])
-];
+const PLANNED: Route[] = [];
 
 export const routes: Routes = [
   { path: '', redirectTo: 'login', pathMatch: 'full' },
@@ -88,6 +85,12 @@ export const routes: Routes = [
       { path: 'compliance/health-safety', loadComponent: () => import('./pages/safety/safety').then(m => m.SafetyComponent), data: { titleKey: 'nav.healthSafety' } },
       { path: 'compliance/relations', loadComponent: () => import('./pages/relations/relations').then(m => m.RelationsComponent), data: { titleKey: 'nav.employeeRelations' } },
       { path: 'compliance/audit', loadComponent: () => import('./pages/audit/audit').then(m => m.AuditComponent), canActivate: [permissionGuard], data: { titleKey: 'nav.audit', permission: P.settingsView } },
+      {
+        path: 'ai',
+        loadComponent: () => import('./pages/ai/ai').then(m => m.AiComponent),
+        canActivate: [permissionGuard],
+        data: { titleKey: 'nav.aiAssistant', permission: [P.aiUse, P.aiInsights, P.aiScreening, P.aiManage] }
+      },
       {
         path: 'reports/builder',
         canActivate: [permissionGuard],

@@ -14,7 +14,9 @@
     "no": "Hayır",
     "retry": "Tekrar dene",
     "close": "Kapat",
-    "open": "Aç"
+    "open": "Aç",
+    "remove": "Kaldır",
+    "reset": "Sıfırla"
   },
   "nav": {
     "dashboard": "Gösterge Paneli",
@@ -593,7 +595,11 @@
     "relations.manage": "Çalışan ilişkileri vakalarını yönet",
     "safety.manage": "İş sağlığı ve güvenliğini yönet",
     "reports.build": "Rapor ve mektup şablonu oluştur",
-    "letters.issue": "Mektup ve belge düzenle"
+    "letters.issue": "Mektup ve belge düzenle",
+    "ai.use": "Yapay zekâ asistanı sohbetini kullan",
+    "ai.insights": "Yapay zekâ içgörülerini çalıştır ve gör",
+    "ai.screening": "Özgeçmişleri yapay zekâ ile tara",
+    "ai.manage": "Yapay zekâ ayarlarını ve sınırlarını değiştir"
   },
   "permModule": {
     "Dashboard": "Gösterge Paneli",
@@ -603,7 +609,8 @@
     "Settings": "Yönetim",
     "Relations": "Çalışan ilişkileri",
     "Safety": "Güvenlik",
-    "Reports": "Raporlar"
+    "Reports": "Raporlar",
+    "AI": "Yapay zekâ"
   },
   "payrollSetup": {
     "intro": "İlk çalıştırmadan önce bordronun ihtiyaç duyduğu her şey: şirket varsayılanları, ücret grupları ve dönemleri, ücret bileşenleri ve vergi kuralları.",
@@ -5414,6 +5421,202 @@
       "workPhone": "İş telefonu",
       "workedHours": "Çalışılan saat",
       "year": "Yıl"
+    }
+  },
+  "ai": {
+    "intro": "Çalışanlarınız hakkında sade sözcüklerle soru sorun. Yalnızca rolünüzün görebildiklerini görür ve her sayının nereden geldiğini söyler.",
+    "newChat": "Yeni sohbet",
+    "tabs": {
+      "chat": "Sohbet",
+      "insights": "İçgörüler",
+      "screening": "Aday tarama",
+      "settings": "Ayarlar"
+    },
+    "off": {
+      "title": "Yapay zekâ henüz kurulmadı.",
+      "admin": "Yapay zekâya hiçbir şey gönderilmez ve maliyet yoktur. Açmak için API anahtarını Key Vault'a ekleyin ve Employee API'yi yeniden başlatın.",
+      "user": "Yapay zekâya hiçbir şey gönderilmez. Yöneticiniz açabilir."
+    },
+    "limitReached": "Bu ayın {{n}} yapay zekâ isteği sınırı doldu. Ayın 1'inde sıfırlanır veya bir yönetici Ayarlar'dan artırabilir.",
+    "noAccess": {
+      "title": "Yapay zekâ erişimi yok",
+      "body": "Rolünüz yapay zekâ asistanını içermiyor. Bir yöneticiden Roller ve izinler'de eklemesini isteyin."
+    },
+    "history": {
+      "empty": "Sohbetleriniz burada görünecek.",
+      "today": "Bugün",
+      "yesterday": "Dün",
+      "earlier": "Daha önce",
+      "delete": "Sohbeti sil",
+      "confirmDelete": "Bu sohbet silinsin mi?"
+    },
+    "sees": {
+      "title": "Neleri görebilir",
+      "nothing": "Açık veri alanı yok.",
+      "same": "Girişinizle aynı izinler."
+    },
+    "usageLine": "Bu ay {{used}} / {{limit}} istek",
+    "welcome": {
+      "title": "İK'ya sor",
+      "body": "İzin, devam, bordro, çalışanlar veya politikalar hakkında English, عربي, 中文 veya Türkçe sorun. Veriyi okur, hiçbir şeyi değiştirmez."
+    },
+    "suggest": {
+      "joined": "Bu ay kimler katıldı?",
+      "late": "Bu haftaki geç gelişler",
+      "payroll": "Bordro maliyeti geçen aya göre",
+      "policy": "İzin politikasını özetle"
+    },
+    "copy": "Kopyala",
+    "copied": "Kopyalandı.",
+    "readOnlyNote": "Asistan okur ve taslak hazırlar; asla e-posta göndermez veya kayıt değiştirmez.",
+    "thinking": "Bakılıyor…",
+    "chatFull": "Bu sohbet uzadı. Yanıtların hızlı kalması için yeni bir sohbet başlatın.",
+    "askLabel": "Soru sorun",
+    "askPlaceholder": "İzin, devam, bordro, çalışanlar hakkında sorun…  (English, عربي, 中文, Türkçe)",
+    "askOff": "Yapay zekâ henüz kurulmadı",
+    "askLimit": "Bu ayın yapay zekâ sınırı doldu",
+    "send": "Gönder",
+    "level": {
+      "Attention": "Dikkat gerekli",
+      "Look": "Göz atmaya değer",
+      "Info": "Bilgi için"
+    },
+    "fit": {
+      "Strong": "Güçlü",
+      "Partial": "Kısmi",
+      "Weak": "Zayıf"
+    },
+    "met": {
+      "yes": "✓ Evet",
+      "partial": "~ Kısmen",
+      "no": "✗ Bulunamadı"
+    },
+    "insight": {
+      "runNow": "Şimdi çalıştır",
+      "running": "Çalışıyor…",
+      "runningHelp": "Verileriniz okunuyor ve öne çıkanlar aranıyor. Bu bir dakika sürebilir.",
+      "filter": "İçgörüleri filtrele",
+      "open": "Açık",
+      "dismissed": "Kapatılanlar",
+      "lastRun": "Son çalıştırma {{when}}, {{by}}",
+      "noneTitle": "Henüz içgörü yok",
+      "noneBody": "Şimdi çalıştır'a basın; asistan İK verilerinizde göz atmaya değer şeyleri arasın. Her çalıştırma bir istek sayılır.",
+      "noneOff": "İçgörüler yalnızca biri Şimdi çalıştır'a bastığında çalışır; yapay zekâ kurulana kadar hiçbir şey çalışmaz (ve harcanmaz).",
+      "noneDismissed": "Son 60 günde kapatılan bir şey yok",
+      "basedOn": "Kaynak: {{source}}",
+      "open_page": "Aç",
+      "ask": "Bunu sor",
+      "dismiss": "Kapat",
+      "restore": "Geri al",
+      "askPrompt": "Bana bunun hakkında daha fazla bilgi ver: {{title}} {{metric}}"
+    },
+    "screen": {
+      "job": "Açık pozisyon",
+      "applicants": "{{n}} başvuru",
+      "openPipeline": "Süreci aç",
+      "noRequirements": "Bu pozisyon için yazılı şart yok. Yapay zekânın özgeçmişleri karşılaştırabilmesi için İşe alım'da ekleyin.",
+      "noJobs": "Açık pozisyon yok",
+      "noJobsBody": "Tarama açık veya beklemedeki pozisyonlarda çalışır. Önce İşe alım'da bir pozisyon açın.",
+      "ranked": "Sıralı adaylar",
+      "screened": "{{total}} adaydan {{n}} tarandı",
+      "sorted": "Uyuma göre sıralı",
+      "notYet": "Taranmadı",
+      "noApplicants": "Bu pozisyona henüz başvuru yok.",
+      "detail": "Aday ayrıntısı",
+      "years": "{{n}} yıl",
+      "applied": "{{date}} başvurdu",
+      "outOf": "/ 100 uyum",
+      "requirement": "Şart",
+      "met": "Karşılıyor",
+      "evidence": "Özgeçmişteki kanıt",
+      "questions": "Önerilen mülakat soruları",
+      "moveInterview": "Mülakata taşı",
+      "moved": "{{name}} mülakata taşındı.",
+      "again": "Yeniden tara",
+      "by": "{{by}} taradı, {{when}}",
+      "cvHelp": "Özgeçmiş metnini yapıştırın veya PDF yükleyin. Yapay zekâya aday kaydı değil, yalnızca pozisyon ve özgeçmiş gider.",
+      "cvPlaceholder": "Özgeçmişi buraya yapıştırın…",
+      "uploadPdf": "PDF yükle",
+      "pdfOnly": "Bir PDF dosyası yükleyin.",
+      "pdfTooBig": "PDF 5 MB'tan büyük.",
+      "screen": "Özgeçmişi tara",
+      "screening": "Taranıyor…",
+      "fairNote": "Yapay zekâya yalnızca beceri ve deneyime göre değerlendirmesi; ad, fotoğraf, yaş, cinsiyet ve uyruğu yok sayması söylenir. O sıralar; kimin ilerleyeceğine insanlar karar verir.",
+      "pick": "Taramasını görmek veya çalıştırmak için bir aday seçin.",
+      "stage": {
+        "Applied": "Başvurdu",
+        "Screening": "Ön eleme",
+        "Interview": "Mülakat",
+        "Offer": "Teklif",
+        "Hired": "İşe alındı",
+        "Rejected": "Reddedildi",
+        "Withdrawn": "Çekildi"
+      }
+    },
+    "area": {
+      "People": {
+        "name": "Çalışanlar ve organizasyon",
+        "desc": "Çalışanlar, departmanlar, pozisyonlar, yöneticiler, kadro, belgeler, varlıklar"
+      },
+      "TimeLeave": {
+        "name": "İzin ve devam",
+        "desc": "Talepler, bakiyeler, kurallar, günlük devam, geç gelişler"
+      },
+      "Payroll": {
+        "name": "Bordro ve maaşlar",
+        "desc": "Bordro dönemleri, toplamlar, maaşlar, bordro pusulaları"
+      },
+      "LoansExpenses": {
+        "name": "Krediler ve masraflar",
+        "desc": "Krediler, avanslar, masraf talepleri"
+      },
+      "Recruitment": {
+        "name": "İşe alım",
+        "desc": "Pozisyonlar, başvurular, özgeçmiş tarama"
+      },
+      "PoliciesLearning": {
+        "name": "Politikalar ve eğitim",
+        "desc": "Yayınlanmış politikalar, kurslar, performans ve yaşam döngüsü özetleri"
+      },
+      "RelationsSafety": {
+        "name": "Çalışan ilişkileri ve sağlık",
+        "desc": "Şikâyetler, disiplin vakaları, olaylar"
+      }
+    },
+    "settings": {
+      "areasTitle": "Asistanın okuyabildikleri",
+      "areasHelp": "Bir alan açık olsa bile herkes yalnızca kendi izinlerinin izin verdiği yanıtları alır. Kimlik numaraları, banka hesapları ve parolalar yapay zekâya ulaşmadan önce kaldırılır.",
+      "standard": "Standart",
+      "sensitive": "Hassas",
+      "offDefault": "Varsayılan kapalı",
+      "connection": "Bağlantı",
+      "connected": "Bağlı · {{model}}",
+      "notConnected": "Kurulmadı. İstek gönderilmez ve ücret alınmaz.",
+      "keyHelp": "Açmak için bu gizli değeri Azure Key Vault'a ekleyin ve Employee API'yi yeniden başlatın:",
+      "usageTitle": "Kullanım · {{month}}",
+      "ofLimit": "/ {{n}} istek",
+      "usagePct": "Aylık sınırın yüzde {{n}}'i kullanıldı",
+      "chat": "Sohbet yanıtları",
+      "screens": "Özgeçmiş taramaları",
+      "runs": "İçgörü çalıştırmaları",
+      "tokens": "Token",
+      "usageHelp": "Her sohbet yanıtı, özgeçmiş taraması veya içgörü çalıştırması bir istektir. Ayın 1'inde sıfırlanır.",
+      "options": "Seçenekler",
+      "limit": "Aylık sınır (istek)",
+      "limitHint": "0 tüm yapay zekâ isteklerini durdurur.",
+      "limitRange": "Aylık sınır 0 ile 100.000 arasında olmalıdır.",
+      "history": "Sohbet geçmişini sakla",
+      "days": "{{n}} gün",
+      "selfService": "Çalışanlar asistanı kendi verileri için kullanabilir (İzinlerim, Bordrolarım)",
+      "save": "Ayarları kaydet",
+      "saved": "Yapay zekâ ayarları kaydedildi."
+    },
+    "errors": {
+      "load": "Yapay zekâ asistanı yüklenemedi.",
+      "ask": "Soru yanıtlanamadı. Tekrar deneyin.",
+      "run": "İçgörüler çalıştırılamadı. Tekrar deneyin.",
+      "screen": "Özgeçmiş taranamadı. Tekrar deneyin.",
+      "save": "Kaydedilemedi. Tekrar deneyin."
     }
   }
 }
