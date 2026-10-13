@@ -2191,6 +2191,7 @@
     "assignHint": "以“{{cond}}”成色发出，员工需要确认签收。",
     "findEmployee": "查找员工",
     "noEmployeeMatch": "没有匹配的员工。",
+    "staffLoadFailed": "无法加载员工列表。",
     "conditionIn": "归还成色",
     "afterReturn": "归还后资产为",
     "noteRequired": "备注（必填）",

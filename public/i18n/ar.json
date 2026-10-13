@@ -2191,6 +2191,7 @@
     "assignHint": "يُسلَّم بحالة {{cond}}. سيُطلب من الموظف تأكيد الاستلام.",
     "findEmployee": "ابحث عن موظف",
     "noEmployeeMatch": "لا يوجد موظف مطابق.",
+    "staffLoadFailed": "تعذّر تحميل الموظفين.",
     "conditionIn": "الحالة عند الإرجاع",
     "afterReturn": "بعدها يصبح الأصل",
     "noteRequired": "ملاحظة (مطلوبة)",

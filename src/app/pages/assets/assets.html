@@ -566,7 +566,7 @@
                             </button>
                           </li>
                         } @empty {
-                          <li class="dim empty-line pad">{{ (staff().length ? 'assets.noEmployeeMatch' : 'common.loading') | translate }}</li>
+                          <li class="dim empty-line pad">{{ (staff().length ? 'assets.noEmployeeMatch' : staffFailed() ? 'assets.staffLoadFailed' : 'common.loading') | translate }}</li>
                         }
                       </ul>
                       <div class="form-grid">

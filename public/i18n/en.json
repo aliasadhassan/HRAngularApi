@@ -2191,6 +2191,7 @@
     "assignHint": "It goes out in {{cond}} condition. The employee will be asked to confirm receipt.",
     "findEmployee": "Find employee",
     "noEmployeeMatch": "No employee matches.",
+    "staffLoadFailed": "Could not load employees.",
     "conditionIn": "Condition on return",
     "afterReturn": "Then the asset is",
     "noteRequired": "Note (required)",

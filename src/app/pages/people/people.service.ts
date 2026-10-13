@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable, map, shareReplay } from 'rxjs';
+import { EMPTY, Observable, expand, map, reduce, shareReplay } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import {
   ChangeJob, CreateEmployee, Department, Designation, EmployeeDetails, EmployeeListItem, EmploymentStatus,
@@ -30,6 +30,15 @@ export class PeopleService {
     if (q.status) p = p.set('status', q.status);
     if (q.includeExited) p = p.set('includeExited', true);
     return this.http.get<Paged<EmployeeListItem>>(this.employees, { params: p });
+  }
+
+  /** Every employee, fetched page by page (API caps pageSize at 100). For pickers. */
+  getAllEmployees(q: { includeExited?: boolean } = {}): Observable<EmployeeListItem[]> {
+    const pageSize = 100;
+    return this.getEmployees({ page: 1, pageSize, ...q }).pipe(
+      expand(r => r.page * pageSize < r.totalCount ? this.getEmployees({ page: r.page + 1, pageSize, ...q }) : EMPTY),
+      reduce((all, r) => all.concat(r.items), [] as EmployeeListItem[])
+    );
   }
 
   getEmployee(id: string): Observable<EmployeeDetails> {
