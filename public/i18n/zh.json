@@ -5678,6 +5678,7 @@
     },
     "checksTitle": "检查内容",
     "checks": {
+      "columns": "列名必须与模板一致（顺序不限）。拼写错误或多余的列，以及 “null”、“N/A” 等文字都会被拒绝。",
       "locations": {
         "1": "代码和名称为必填且唯一，忽略大小写和多余空格。",
         "2": "不允许与系统中已有的代码或名称重复，也不允许在文件内重复。",
@@ -5781,6 +5782,11 @@
       "emptyFile": "文件中没有数据行。",
       "tooManyRows": "每个文件最多 {{max}} 行，请拆分为较小的文件。",
       "missingColumn": "缺少列 {{column}}。请使用模板。",
+      "unknownColumn": "列 {{column}} 不在模板中。请重命名或删除。",
+      "unknownColumnHint": "列 {{column}} 不在模板中。您是指 {{suggestion}} 吗？",
+      "duplicateColumn": "列 {{column}} 出现了多次。只保留一个。",
+      "nullText": "“{{value}}” 不是有效值。请将单元格留空。",
+      "cellError": "此单元格包含 Excel 错误（如 #N/A）。请直接输入值，而不是公式。",
       "required": "{{column}} 为必填项。",
       "tooLong": "{{column}} 不能超过 {{max}} 个字符。",
       "invalidCode": "只能使用字母、数字和 . _ / -，不能有空格。",

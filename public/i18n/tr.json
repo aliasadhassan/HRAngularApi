@@ -5678,6 +5678,7 @@
     },
     "checksTitle": "Neleri kontrol ediyoruz",
     "checks": {
+      "columns": "Sütun adları şablonla eşleşmelidir (sıra önemli değil). Yanlış yazılmış veya fazla sütunlar ve “null”, “N/A” gibi metinler reddedilir.",
       "locations": {
         "1": "Kod ve ad zorunlu ve benzersizdir; büyük/küçük harf ve fazla boşluk dikkate alınmaz.",
         "2": "Sistemde zaten olan veya dosya içinde tekrar eden kod ya da ad olamaz.",
@@ -5781,6 +5782,11 @@
       "emptyFile": "Dosyada veri satırı yok.",
       "tooManyRows": "Bir dosyada en fazla {{max}} satır olabilir. Daha küçük dosyalara bölün.",
       "missingColumn": "{{column}} sütunu eksik. Şablonu kullanın.",
+      "unknownColumn": "{{column}} sütunu şablonda yok. Yeniden adlandırın veya kaldırın.",
+      "unknownColumnHint": "{{column}} sütunu şablonda yok. {{suggestion}} mı demek istediniz?",
+      "duplicateColumn": "{{column}} sütunu birden fazla kez var. Yalnızca birini bırakın.",
+      "nullText": "“{{value}}” bir değer değil. Bunun yerine hücreyi boş bırakın.",
+      "cellError": "Bu hücrede bir Excel hatası var (#N/A gibi). Formül yerine değeri yazın.",
       "required": "{{column}} zorunludur.",
       "tooLong": "{{column}} en fazla {{max}} karakter olabilir.",
       "invalidCode": "Yalnızca harf, rakam ve . _ / - kullanın, boşluk olmadan.",

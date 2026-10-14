@@ -87,6 +87,7 @@
         @for (n of checks(); track n) {
           <li><span class="material-icons-outlined" aria-hidden="true">verified</span>{{ 'import.checks.' + kind() + '.' + n | translate }}</li>
         }
+        <li><span class="material-icons-outlined" aria-hidden="true">verified</span>{{ 'import.checks.columns' | translate }}</li>
       </ul>
       @if (kind() !== 'locations') {
         <p class="order-hint"><span class="material-icons-outlined" aria-hidden="true">info</span>{{ 'import.orderHint' | translate }}</p>

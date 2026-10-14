@@ -5678,6 +5678,7 @@
     },
     "checksTitle": "What we check",
     "checks": {
+      "columns": "Column names must match the template (any order). Misspelled or extra columns, and text like “null” or “N/A”, are rejected.",
       "locations": {
         "1": "Code and name are required and unique, ignoring case and extra spaces.",
         "2": "No code or name that already exists, or that repeats inside the file.",
@@ -5781,6 +5782,11 @@
       "emptyFile": "The file has no data rows.",
       "tooManyRows": "A file can have at most {{max}} rows. Split it into smaller files.",
       "missingColumn": "The column {{column}} is missing. Use the template.",
+      "unknownColumn": "The column {{column}} is not in the template. Rename or remove it.",
+      "unknownColumnHint": "The column {{column}} is not in the template. Did you mean {{suggestion}}?",
+      "duplicateColumn": "The column {{column}} appears more than once. Keep only one.",
+      "nullText": "“{{value}}” is not a value. Leave the cell empty instead.",
+      "cellError": "This cell has an Excel error (like #N/A). Type the value instead of a formula.",
       "required": "{{column}} is required.",
       "tooLong": "{{column}} cannot be longer than {{max}} characters.",
       "invalidCode": "Use only letters, digits and . _ / - without spaces.",

@@ -164,8 +164,14 @@ export class BulkImportComponent {
   }
 
   message(e: ImportError): string {
-    const key = 'import.errors.' + e.code;
-    const text = this.translate.instant(key, { ...(e.args ?? {}), column: this.columnLabel(e.column) });
+    // Ghalat spelling wale column ke saath qareeb tareen sahi naam bhi batao
+    const hint = e.code === 'unknownColumn' && e.args?.['suggestion'];
+    const key = 'import.errors.' + (hint ? 'unknownColumnHint' : e.code);
+    const text = this.translate.instant(key, {
+      ...(e.args ?? {}),
+      column: this.columnLabel(e.column),
+      suggestion: hint ? this.columnLabel(e.args!['suggestion']) : ''
+    });
     return text === key ? e.message : text;
   }
 
