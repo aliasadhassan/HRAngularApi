@@ -6,12 +6,15 @@ import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { Observable } from 'rxjs';
 import { LanguageService } from '../../../core/i18n/language.service';
 import { PermissionService } from '../../../core/auth/permissions';
+import { MyPhotoService } from '../../../core/auth/my-photo';
+import { AvatarComponent } from '../../../shared/avatar/avatar';
+import { PhotoEditComponent } from '../../../shared/photo-edit/photo-edit';
 import { AlertService } from '../../../services/alert/alert';
 import { PayrollService } from '../../payroll/payroll.service';
 import { PeopleService } from '../people.service';
 import {
   ChangeJob, Department, Designation, EmployeeDetails, EmployeeListItem, Gender, Location, MaritalStatus,
-  STATUS_CHIP, UpdateProfile, initialsOf
+  STATUS_CHIP, UpdateProfile
 } from '../people.models';
 
 type Tab = 'overview' | 'job' | 'contacts';
@@ -19,7 +22,7 @@ type Drawer = 'profile' | 'job' | 'exit' | 'confirm' | null;
 
 @Component({
   selector: 'app-employee-profile',
-  imports: [DatePipe, FormsModule, RouterLink, TranslatePipe],
+  imports: [AvatarComponent, DatePipe, FormsModule, PhotoEditComponent, RouterLink, TranslatePipe],
   templateUrl: './employee-profile.html',
   styleUrl: './employee-profile.css'
 })
@@ -32,7 +35,6 @@ export class EmployeeProfileComponent {
   readonly lang = inject(LanguageService).language;
   readonly canEdit = inject(PermissionService).hasAny('employees.edit');
   readonly chip = STATUS_CHIP;
-  readonly initials = initialsOf;
   readonly genders: Gender[] = ['Male', 'Female', 'Other'];
   readonly maritals: MaritalStatus[] = ['Single', 'Married', 'Divorced', 'Widowed'];
 
@@ -67,6 +69,19 @@ export class EmployeeProfileComponent {
     months = Math.max(0, months);
     return { years: Math.floor(months / 12), months: months % 12 };
   });
+
+  private readonly myPhoto = inject(MyPhotoService);
+
+  /** HR (employees.edit) ya khud employee; exited ki photo nahi badalti; storage band ho to button hi nahi */
+  readonly canChangePhoto = computed(() => {
+    const e = this.emp();
+    return !!e && this.myPhoto.enabled() && e.employmentStatus !== 'Exited'
+      && (this.canEdit || this.myPhoto.employeeId() === e.id);
+  });
+
+  setPhoto(url: string | null): void {
+    this.emp.update(e => (e ? { ...e, photoUrl: url } : e));
+  }
 
   readonly history = computed(() =>
     [...(this.emp()?.jobHistory ?? [])].sort((a, b) => b.effectiveDate.localeCompare(a.effectiveDate)));

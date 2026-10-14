@@ -71,7 +71,7 @@
     </a>
 
     <div class="user">
-      <span class="avatar" aria-hidden="true">{{ user.initials }}</span>
+      <span class="avatar" aria-hidden="true"><app-avatar [initials]="user.initials" [src]="myPhoto.photoUrl()" /></span>
       <span class="user-text">
         <span class="user-name">{{ user.name }}</span>
         @if (user.email) {

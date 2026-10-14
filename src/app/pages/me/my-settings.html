@@ -1,7 +1,13 @@
 <div class="page narrow">
   @if (me(); as m) {
     <header class="masthead">
-      <span class="avatar-xl" aria-hidden="true">{{ initials() }}</span>
+      @if (myPhoto.employeeId(); as empId) {
+        <app-photo-edit [employeeId]="empId" [hasPhoto]="!!myPhoto.photoUrl()" [canChange]="myPhoto.enabled()">
+          <span class="avatar-xl" aria-hidden="true"><app-avatar [initials]="initials()" [src]="myPhoto.photoUrl()" /></span>
+        </app-photo-edit>
+      } @else {
+        <span class="avatar-xl" aria-hidden="true">{{ initials() }}</span>
+      }
       <div>
         <h2>{{ m.displayName }}</h2>
         <p class="mast-sub">

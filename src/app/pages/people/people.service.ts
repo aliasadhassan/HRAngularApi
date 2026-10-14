@@ -4,7 +4,7 @@ import { EMPTY, Observable, expand, map, reduce, shareReplay } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import {
   ChangeJob, CreateEmployee, Department, Designation, EmployeeDetails, EmployeeListItem, EmploymentStatus,
-  Location, Paged, SaveDepartment, SaveDesignation, SaveLocation, UpdateProfile
+  Location, MyPhoto, Paged, SaveDepartment, SaveDesignation, SaveLocation, UpdateProfile
 } from './people.models';
 
 /**
@@ -43,6 +43,21 @@ export class PeopleService {
 
   getEmployee(id: string): Observable<EmployeeDetails> {
     return this.http.get<EmployeeDetails>(`${this.employees}/${id}`);
+  }
+
+  // ── Photo (server 256px WebP banata hai; file private bucket mein) ──
+  uploadPhoto(employeeId: string, file: File): Observable<{ photoUrl: string | null }> {
+    const form = new FormData();
+    form.append('file', file, file.name);
+    return this.http.put<{ photoUrl: string | null }>(`${this.employees}/${employeeId}/photo`, form);
+  }
+
+  removePhoto(employeeId: string): Observable<void> {
+    return this.http.delete<void>(`${this.employees}/${employeeId}/photo`);
+  }
+
+  getMyPhoto(): Observable<MyPhoto> {
+    return this.http.get<MyPhoto>(`${this.employees}/me/photo`);
   }
 
   createEmployee(body: CreateEmployee): Observable<string> {

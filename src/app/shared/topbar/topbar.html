@@ -61,7 +61,7 @@
         [attr.aria-expanded]="menuOpen()"
         aria-haspopup="menu"
       >
-        <span class="avatar" aria-hidden="true">{{ user.initials }}</span>
+        <span class="avatar" aria-hidden="true"><app-avatar [initials]="user.initials" [src]="myPhoto.photoUrl()" /></span>
         <span class="profile-name">{{ user.name }}</span>
         <span class="material-icons-outlined chevron" aria-hidden="true">expand_more</span>
       </button>

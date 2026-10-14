@@ -3,6 +3,8 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
 import { TranslatePipe } from '@ngx-translate/core';
 import { LayoutService } from '../../core/layout/layout.service';
 import { CurrentUserService } from '../../core/auth/current-user';
+import { MyPhotoService } from '../../core/auth/my-photo';
+import { AvatarComponent } from '../avatar/avatar';
 import { P, PermissionService } from '../../core/auth/permissions';
 
 interface NavItem {
@@ -21,7 +23,7 @@ interface NavSection {
 
 @Component({
   selector: 'app-sidebar',
-  imports: [RouterLink, RouterLinkActive, TranslatePipe],
+  imports: [AvatarComponent, RouterLink, RouterLinkActive, TranslatePipe],
   templateUrl: './sidebar.html',
   styleUrl: './sidebar.css',
   host: {
@@ -32,7 +34,12 @@ interface NavSection {
 export class SidebarComponent {
   readonly layout = inject(LayoutService);
   readonly user = inject(CurrentUserService).get();
+  readonly myPhoto = inject(MyPhotoService);
   private readonly permissions = inject(PermissionService);
+
+  constructor() {
+    this.myPhoto.load();   // apni photo ek dafa (har user ke liye) — warna initials
+  }
 
   // Accordion: default mein koi module open nahi.
   readonly expandedSections = signal<Record<string, boolean>>({});

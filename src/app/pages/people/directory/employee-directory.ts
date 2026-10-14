@@ -10,17 +10,18 @@ import { P, PermissionService } from '../../../core/auth/permissions';
 import { AlertService } from '../../../services/alert/alert';
 import { PayrollService } from '../../payroll/payroll.service';
 import { DEFAULT_PAGE_SIZE, PaginationComponent } from '../../../shared/pagination/pagination';
+import { AvatarComponent } from '../../../shared/avatar/avatar';
 import { PeopleService } from '../people.service';
 import {
   CreateEmployee, Department, Designation, EmployeeListItem, EmploymentStatus, EmploymentType, Location,
-  STATUS_CHIP, initialsOf
+  STATUS_CHIP
 } from '../people.models';
 
 type Tab = '' | 'Active' | 'Probation' | 'OnNotice' | 'Exited';
 
 @Component({
   selector: 'app-employee-directory',
-  imports: [DatePipe, FormsModule, TranslatePipe, PaginationComponent],
+  imports: [AvatarComponent, DatePipe, FormsModule, TranslatePipe, PaginationComponent],
   templateUrl: './employee-directory.html',
   styleUrl: './employee-directory.css'
 })
@@ -34,7 +35,6 @@ export class EmployeeDirectoryComponent {
   readonly rtl = inject(LanguageService).isRtl;
   readonly canCreate = inject(PermissionService).hasAny('employees.create');
   readonly chip = STATUS_CHIP;
-  readonly initials = initialsOf;
   readonly tabs: Tab[] = ['', 'Active', 'Probation', 'OnNotice', 'Exited'];
   readonly types: EmploymentType[] = ['FullTime', 'PartTime', 'Contract', 'Intern'];
 

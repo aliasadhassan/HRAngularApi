@@ -971,6 +971,18 @@
       "state": "State / province",
       "postal": "Postal code",
       "country": "Country code"
+    },
+    "photo": {
+      "upload": "Upload photo",
+      "change": "Change photo",
+      "remove": "Remove photo",
+      "saved": "Photo updated.",
+      "removed": "Photo removed.",
+      "tooLarge": "The photo is too large. The limit is 5 MB.",
+      "badType": "Use a JPG, PNG or WebP photo.",
+      "off": "Photo storage is not set up yet. Ask your admin to finish the setup.",
+      "error": "The photo could not be saved. Try again.",
+      "hint": "JPG, PNG or WebP up to 5 MB. We crop it to a square."
     }
   },
   "org": {
