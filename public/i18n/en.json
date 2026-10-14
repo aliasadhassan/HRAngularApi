@@ -80,7 +80,8 @@
     "engagement": "Engagement",
     "reports": "Reports",
     "policiesCompliance": "Policies & Compliance",
-    "employeeRelations": "Employee Relations"
+    "employeeRelations": "Employee Relations",
+    "bulkImport": "Bulk import"
   },
   "topbar": {
     "notifications": "Notifications",
@@ -1429,6 +1430,7 @@
     "success": "Done",
     "error": "Something went wrong",
     "info": "Note",
+    "warning": "Check this",
     "dismiss": "Dismiss"
   },
   "loans": {
@@ -5638,6 +5640,177 @@
       "run": "Insights could not be run. Try again.",
       "screen": "The CV could not be screened. Try again.",
       "save": "Could not save. Try again."
+    }
+  },
+  "import": {
+    "intro": "Add hundreds or thousands of records at once from Excel. The whole file is checked first and saved in one go; if any row has a problem, nothing is saved.",
+    "tabs": {
+      "locations": "Locations",
+      "departments": "Departments",
+      "designations": "Designations",
+      "employees": "Employees"
+    },
+    "what": {
+      "locations": "locations",
+      "departments": "departments",
+      "designations": "designations",
+      "employees": "employees"
+    },
+    "step1": {
+      "title": "Download the template",
+      "help": "Use this Excel file so the columns match. Columns marked * are required. The template lists your current codes for the dropdowns.",
+      "download": "Download template (.xlsx)",
+      "downloading": "Preparing…"
+    },
+    "step2": {
+      "title": "Fill it in and choose the file",
+      "drop": "Drop the .xlsx file here or click to browse",
+      "limits": "Excel .xlsx only · up to 10,000 rows · max 10 MB"
+    },
+    "step3": {
+      "title": "Check and import",
+      "help": "Check only reads the file and lists problems. Import checks again and saves every row together.",
+      "check": "Check only",
+      "checking": "Checking…",
+      "import": "Import",
+      "importing": "Importing…",
+      "working": "Reading and checking every row. Large files can take a minute."
+    },
+    "checksTitle": "What we check",
+    "checks": {
+      "columns": "Column names must match the template (any order). Misspelled or extra columns, and text like “null” or “N/A”, are rejected.",
+      "locations": {
+        "1": "Code and name are required and unique, ignoring case and extra spaces.",
+        "2": "No code or name that already exists, or that repeats inside the file.",
+        "3": "Country is a 2-letter ISO code such as PK or AE.",
+        "4": "Time zone is a real zone such as Asia/Karachi; work week like Mon-Fri.",
+        "5": "Only one head office. Marking one replaces the current head office."
+      },
+      "departments": {
+        "1": "Code and name are required and unique, ignoring case and extra spaces.",
+        "2": "No department that already exists, or that repeats inside the file.",
+        "3": "Parent department must be in this file or already in the system.",
+        "4": "No department is its own parent and parents never form a loop.",
+        "5": "Head must be an existing employee who has not left (code or email)."
+      },
+      "designations": {
+        "1": "Title is required and unique, ignoring case and extra spaces.",
+        "2": "No title that already exists, or that repeats inside the file.",
+        "3": "Level is a whole number from 1 to 20."
+      },
+      "employees": {
+        "1": "Work email and employee code are unique: checked with trim and lower case, inside the file and against everyone already in the system.",
+        "2": "The same person is never added twice: same first name, last name and date of birth is blocked even with a different email.",
+        "3": "Department, designation and location must exist and be active.",
+        "4": "Manager is matched by employee code or work email, in this file or in the system. Ali's manager Moeen can be a row in the same file.",
+        "5": "Nobody is their own manager, managers never form a loop, and a manager who has left is rejected.",
+        "6": "Names use letters only, emails and mobile numbers are valid, gender and employment type come from the list.",
+        "7": "Dates make sense: joining date within a year from today, probation after joining, age at joining 14 to 80."
+      }
+    },
+    "orderHint": "Import in order: locations, departments, designations, then employees. Each step uses the codes added before it.",
+    "columns": {
+      "locations": {
+        "code": "Code",
+        "name": "Name",
+        "country": "Country",
+        "timezone": "Time zone",
+        "city": "City",
+        "address": "Address",
+        "workweek": "Work week",
+        "headoffice": "Head office"
+      },
+      "departments": {
+        "code": "Code",
+        "name": "Name",
+        "description": "Description",
+        "parent": "Parent department",
+        "head": "Head"
+      },
+      "designations": {
+        "title": "Title",
+        "level": "Level",
+        "description": "Description"
+      },
+      "employees": {
+        "employeecode": "Employee code",
+        "firstname": "First name",
+        "middlename": "Middle name",
+        "lastname": "Last name",
+        "workemail": "Work email",
+        "personalemail": "Personal email",
+        "mobile": "Mobile",
+        "gender": "Gender",
+        "dateofbirth": "Date of birth",
+        "department": "Department",
+        "designation": "Designation",
+        "location": "Location",
+        "manager": "Manager",
+        "employmenttype": "Employment type",
+        "joiningdate": "Joining date",
+        "probationenddate": "Probation end date"
+      }
+    },
+    "result": {
+      "doneTitle": "Form submitted successfully",
+      "done": "{{count}} {{what}} were added in one go.",
+      "view": "View them",
+      "checkedTitle": "The file is ready",
+      "checked": "All {{count}} rows passed every check. Click Import to save the {{what}}.",
+      "failedTitle": "Nothing was saved",
+      "failed": "{{count}} problems in {{rows}} of {{total}} rows. Fix them in the file and upload it again.",
+      "capped": "Showing the first {{shown}} problems. Download the list to see them all.",
+      "downloadErrors": "Download list (CSV)"
+    },
+    "toast": {
+      "done": "Form submitted successfully: {{count}} {{what}} added.",
+      "checked": "All {{count}} rows are valid. Nothing saved yet.",
+      "failed": "Nothing was saved: {{count}} problems found."
+    },
+    "table": {
+      "row": "Row",
+      "column": "Column",
+      "value": "Value",
+      "problem": "Problem"
+    },
+    "errors": {
+      "template": "Could not download the template.",
+      "upload": "Could not upload the file.",
+      "notXlsx": "Choose an Excel .xlsx file.",
+      "tooBig": "The file is too large. The limit is 10 MB.",
+      "badFile": "This is not a valid .xlsx file. Download the template and fill it in.",
+      "emptyFile": "The file has no data rows.",
+      "tooManyRows": "A file can have at most {{max}} rows. Split it into smaller files.",
+      "missingColumn": "The column {{column}} is missing. Use the template.",
+      "unknownColumn": "The column {{column}} is not in the template. Rename or remove it.",
+      "unknownColumnHint": "The column {{column}} is not in the template. Did you mean {{suggestion}}?",
+      "duplicateColumn": "The column {{column}} appears more than once. Keep only one.",
+      "nullText": "“{{value}}” is not a value. Leave the cell empty instead.",
+      "cellError": "This cell has an Excel error (like #N/A). Type the value instead of a formula.",
+      "required": "{{column}} is required.",
+      "tooLong": "{{column}} cannot be longer than {{max}} characters.",
+      "invalidCode": "Use only letters, digits and . _ / - without spaces.",
+      "invalidName": "Use letters, spaces, apostrophes, dots and hyphens only.",
+      "invalidEmail": "Not a valid email address.",
+      "invalidPhone": "Not a valid phone number, e.g. +92 300 1234567.",
+      "invalidDate": "Not a valid date. Use 2026-01-31.",
+      "invalidNumber": "Must be a whole number from {{min}} to {{max}}.",
+      "invalidChoice": "Must be one of: {{options}}.",
+      "invalidCountry": "Use a 2-letter ISO country code such as PK or AE.",
+      "invalidTimeZone": "Unknown time zone. Use an id such as Asia/Karachi.",
+      "invalidWorkWeek": "List the days like Mon-Fri or Mon,Tue,Wed,Thu,Fri,Sat.",
+      "duplicateInFile": "Duplicate: the same value is already in row {{row}} of this file.",
+      "alreadyExists": "Duplicate: this already exists in the system.",
+      "duplicatePerson": "Duplicate person: someone with the same name and date of birth is already in this file or the system.",
+      "notFound": "Not found in this file or in the system.",
+      "inactive": "This record is inactive or the person has left.",
+      "selfReference": "A record cannot point to itself.",
+      "loop": "These rows point to each other in a loop (A → B → A).",
+      "dateOrder": "The dates are in the wrong order.",
+      "dateRange": "The date must be between {{from}} and {{to}}.",
+      "ageRange": "Age at joining would be {{age}}; it must be from {{min}} to {{max}}.",
+      "multipleHeadOffices": "Only one head office is allowed; row {{row}} is already marked.",
+      "rowInvalid": "Depends on row {{row}}, which has problems."
     }
   }
 }

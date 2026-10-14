@@ -1,5 +1,6 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { ActivatedRoute } from '@angular/router';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { Observable } from 'rxjs';
 import { LanguageService } from '../../../core/i18n/language.service';
@@ -47,6 +48,9 @@ export class OrganizationComponent {
 
   constructor() {
     this.load(false);
+    // Bulk import ke baad ?tab=locations waghera
+    const tab = inject(ActivatedRoute).snapshot.queryParamMap.get('tab') as Tab | null;
+    if (tab && this.tabs.includes(tab)) this.tab.set(tab);
   }
 
   load(refresh = true): void {

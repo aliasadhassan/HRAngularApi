@@ -80,7 +80,8 @@
     "engagement": "Bağlılık",
     "reports": "Raporlar",
     "policiesCompliance": "Politikalar ve Uyum",
-    "employeeRelations": "Çalışan İlişkileri"
+    "employeeRelations": "Çalışan İlişkileri",
+    "bulkImport": "Toplu içe aktarma"
   },
   "topbar": {
     "notifications": "Bildirimler",
@@ -1429,6 +1430,7 @@
     "success": "Tamamlandı",
     "error": "Bir şeyler ters gitti",
     "info": "Not",
+    "warning": "Dikkat",
     "dismiss": "Kapat"
   },
   "loans": {
@@ -5638,6 +5640,177 @@
       "run": "İçgörüler çalıştırılamadı. Tekrar deneyin.",
       "screen": "Özgeçmiş taranamadı. Tekrar deneyin.",
       "save": "Kaydedilemedi. Tekrar deneyin."
+    }
+  },
+  "import": {
+    "intro": "Excel'den yüzlerce, binlerce kaydı tek seferde ekleyin. Önce dosyanın tamamı kontrol edilir, sonra hepsi birlikte kaydedilir; herhangi bir satırda sorun varsa hiçbir şey kaydedilmez.",
+    "tabs": {
+      "locations": "Lokasyonlar",
+      "departments": "Departmanlar",
+      "designations": "Unvanlar",
+      "employees": "Çalışanlar"
+    },
+    "what": {
+      "locations": "lokasyon",
+      "departments": "departman",
+      "designations": "unvan",
+      "employees": "çalışan"
+    },
+    "step1": {
+      "title": "Şablonu indirin",
+      "help": "Sütunların eşleşmesi için bu Excel dosyasını kullanın. * ile işaretli sütunlar zorunludur. Şablon, açılır listeler için mevcut kodlarınızı içerir.",
+      "download": "Şablonu indir (.xlsx)",
+      "downloading": "Hazırlanıyor…"
+    },
+    "step2": {
+      "title": "Doldurun ve dosyayı seçin",
+      "drop": ".xlsx dosyasını buraya bırakın veya seçmek için tıklayın",
+      "limits": "Yalnızca Excel .xlsx · en fazla 10.000 satır · en fazla 10 MB"
+    },
+    "step3": {
+      "title": "Kontrol et ve içe aktar",
+      "help": "Yalnızca kontrol, dosyayı okur ve sorunları listeler. İçe aktar, tekrar kontrol eder ve tüm satırları birlikte kaydeder.",
+      "check": "Yalnızca kontrol",
+      "checking": "Kontrol ediliyor…",
+      "import": "İçe aktar",
+      "importing": "İçe aktarılıyor…",
+      "working": "Her satır okunuyor ve kontrol ediliyor. Büyük dosyalar bir dakika sürebilir."
+    },
+    "checksTitle": "Neleri kontrol ediyoruz",
+    "checks": {
+      "columns": "Sütun adları şablonla eşleşmelidir (sıra önemli değil). Yanlış yazılmış veya fazla sütunlar ve “null”, “N/A” gibi metinler reddedilir.",
+      "locations": {
+        "1": "Kod ve ad zorunlu ve benzersizdir; büyük/küçük harf ve fazla boşluk dikkate alınmaz.",
+        "2": "Sistemde zaten olan veya dosya içinde tekrar eden kod ya da ad olamaz.",
+        "3": "Ülke, PK veya AE gibi 2 harfli ISO kodudur.",
+        "4": "Saat dilimi Asia/Karachi gibi gerçek bir dilimdir; çalışma haftası Mon-Fri gibi yazılır.",
+        "5": "Yalnızca bir merkez ofis olabilir. Yenisini işaretlemek mevcut merkez ofisin yerini alır."
+      },
+      "departments": {
+        "1": "Kod ve ad zorunlu ve benzersizdir; büyük/küçük harf ve fazla boşluk dikkate alınmaz.",
+        "2": "Zaten var olan veya dosyada tekrar eden departman olamaz.",
+        "3": "Üst departman bu dosyada veya sistemde olmalıdır.",
+        "4": "Hiçbir departman kendi üstü olamaz ve üst ilişkileri döngü oluşturamaz.",
+        "5": "Yönetici, ayrılmamış mevcut bir çalışan olmalıdır (kod veya e-posta)."
+      },
+      "designations": {
+        "1": "Unvan zorunlu ve benzersizdir; büyük/küçük harf ve fazla boşluk dikkate alınmaz.",
+        "2": "Zaten var olan veya dosyada tekrar eden unvan olamaz.",
+        "3": "Seviye 1 ile 20 arasında bir tam sayıdır."
+      },
+      "employees": {
+        "1": "İş e-postası ve çalışan kodu benzersizdir: boşluklar kırpılıp küçük harfe çevrilerek, dosya içinde ve sistemdeki herkesle karşılaştırılır.",
+        "2": "Aynı kişi iki kez eklenmez: ad, soyad ve doğum tarihi aynıysa farklı e-postayla da engellenir.",
+        "3": "Departman, unvan ve lokasyon mevcut ve aktif olmalıdır.",
+        "4": "Yönetici, çalışan kodu veya iş e-postasıyla bu dosyada ya da sistemde eşleştirilir. Ali'nin yöneticisi Moeen aynı dosyada bir satır olabilir.",
+        "5": "Kimse kendi yöneticisi olamaz, yöneticiler döngü oluşturamaz ve ayrılmış bir yönetici reddedilir.",
+        "6": "Adlar yalnızca harf içerir, e-posta ve cep telefonu geçerlidir, cinsiyet ve istihdam türü listeden seçilir.",
+        "7": "Tarihler mantıklıdır: işe giriş bugünden itibaren bir yıl içinde, deneme süresi girişten sonra, girişteki yaş 14 ile 80 arası."
+      }
+    },
+    "orderHint": "Sırayla içe aktarın: lokasyonlar, departmanlar, unvanlar, sonra çalışanlar. Her adım önceki adımda eklenen kodları kullanır.",
+    "columns": {
+      "locations": {
+        "code": "Kod",
+        "name": "Ad",
+        "country": "Ülke",
+        "timezone": "Saat dilimi",
+        "city": "Şehir",
+        "address": "Adres",
+        "workweek": "Çalışma haftası",
+        "headoffice": "Merkez ofis"
+      },
+      "departments": {
+        "code": "Kod",
+        "name": "Ad",
+        "description": "Açıklama",
+        "parent": "Üst departman",
+        "head": "Yönetici"
+      },
+      "designations": {
+        "title": "Unvan",
+        "level": "Seviye",
+        "description": "Açıklama"
+      },
+      "employees": {
+        "employeecode": "Çalışan kodu",
+        "firstname": "Ad",
+        "middlename": "İkinci ad",
+        "lastname": "Soyad",
+        "workemail": "İş e-postası",
+        "personalemail": "Kişisel e-posta",
+        "mobile": "Cep telefonu",
+        "gender": "Cinsiyet",
+        "dateofbirth": "Doğum tarihi",
+        "department": "Departman",
+        "designation": "Unvan",
+        "location": "Lokasyon",
+        "manager": "Yönetici",
+        "employmenttype": "İstihdam türü",
+        "joiningdate": "İşe giriş tarihi",
+        "probationenddate": "Deneme süresi bitişi"
+      }
+    },
+    "result": {
+      "doneTitle": "Form başarıyla gönderildi",
+      "done": "{{count}} {{what}} tek seferde eklendi.",
+      "view": "Görüntüle",
+      "checkedTitle": "Dosya hazır",
+      "checked": "{{count}} satırın tamamı tüm kontrollerden geçti. Kaydetmek için İçe aktar'a tıklayın.",
+      "failedTitle": "Hiçbir şey kaydedilmedi",
+      "failed": "{{total}} satırın {{rows}} tanesinde {{count}} sorun var. Dosyada düzeltip tekrar yükleyin.",
+      "capped": "İlk {{shown}} sorun gösteriliyor. Tümünü görmek için listeyi indirin.",
+      "downloadErrors": "Listeyi indir (CSV)"
+    },
+    "toast": {
+      "done": "Form başarıyla gönderildi: {{count}} {{what}} eklendi.",
+      "checked": "{{count}} satırın tamamı geçerli. Henüz bir şey kaydedilmedi.",
+      "failed": "Hiçbir şey kaydedilmedi: {{count}} sorun bulundu."
+    },
+    "table": {
+      "row": "Satır",
+      "column": "Sütun",
+      "value": "Değer",
+      "problem": "Sorun"
+    },
+    "errors": {
+      "template": "Şablon indirilemedi.",
+      "upload": "Dosya yüklenemedi.",
+      "notXlsx": "Bir Excel .xlsx dosyası seçin.",
+      "tooBig": "Dosya çok büyük. Sınır 10 MB.",
+      "badFile": "Bu geçerli bir .xlsx dosyası değil. Şablonu indirip doldurun.",
+      "emptyFile": "Dosyada veri satırı yok.",
+      "tooManyRows": "Bir dosyada en fazla {{max}} satır olabilir. Daha küçük dosyalara bölün.",
+      "missingColumn": "{{column}} sütunu eksik. Şablonu kullanın.",
+      "unknownColumn": "{{column}} sütunu şablonda yok. Yeniden adlandırın veya kaldırın.",
+      "unknownColumnHint": "{{column}} sütunu şablonda yok. {{suggestion}} mı demek istediniz?",
+      "duplicateColumn": "{{column}} sütunu birden fazla kez var. Yalnızca birini bırakın.",
+      "nullText": "“{{value}}” bir değer değil. Bunun yerine hücreyi boş bırakın.",
+      "cellError": "Bu hücrede bir Excel hatası var (#N/A gibi). Formül yerine değeri yazın.",
+      "required": "{{column}} zorunludur.",
+      "tooLong": "{{column}} en fazla {{max}} karakter olabilir.",
+      "invalidCode": "Yalnızca harf, rakam ve . _ / - kullanın, boşluk olmadan.",
+      "invalidName": "Yalnızca harf, boşluk, kesme işareti, nokta ve tire kullanın.",
+      "invalidEmail": "Geçerli bir e-posta adresi değil.",
+      "invalidPhone": "Geçerli bir telefon numarası değil, ör. +92 300 1234567.",
+      "invalidDate": "Geçerli bir tarih değil. 2026-01-31 biçimini kullanın.",
+      "invalidNumber": "{{min}} ile {{max}} arasında bir tam sayı olmalıdır.",
+      "invalidChoice": "Şunlardan biri olmalıdır: {{options}}.",
+      "invalidCountry": "PK veya AE gibi 2 harfli ISO ülke kodu kullanın.",
+      "invalidTimeZone": "Bilinmeyen saat dilimi. Asia/Karachi gibi bir kimlik kullanın.",
+      "invalidWorkWeek": "Günleri Mon-Fri veya Mon,Tue,Wed,Thu,Fri,Sat gibi yazın.",
+      "duplicateInFile": "Tekrar: aynı değer bu dosyanın {{row}}. satırında zaten var.",
+      "alreadyExists": "Tekrar: bu kayıt sistemde zaten var.",
+      "duplicatePerson": "Tekrarlanan kişi: aynı ad ve doğum tarihine sahip biri bu dosyada veya sistemde zaten var.",
+      "notFound": "Bu dosyada veya sistemde bulunamadı.",
+      "inactive": "Bu kayıt pasif veya kişi ayrılmış.",
+      "selfReference": "Bir kayıt kendisini gösteremez.",
+      "loop": "Bu satırlar birbirini döngü halinde gösteriyor (A → B → A).",
+      "dateOrder": "Tarihlerin sırası yanlış.",
+      "dateRange": "Tarih {{from}} ile {{to}} arasında olmalıdır.",
+      "ageRange": "İşe girişteki yaş {{age}} olur; {{min}} ile {{max}} arasında olmalıdır.",
+      "multipleHeadOffices": "Yalnızca bir merkez ofis olabilir; {{row}}. satır zaten işaretli.",
+      "rowInvalid": "Sorunlu olan {{row}}. satıra bağlı."
     }
   }
 }

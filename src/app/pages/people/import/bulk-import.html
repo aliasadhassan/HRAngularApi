@@ -1,0 +1,157 @@
+<div class="page">
+  <header class="page-intro">
+    <p>{{ 'import.intro' | translate }}</p>
+  </header>
+
+  <nav class="tabs" [attr.aria-label]="'nav.bulkImport' | translate">
+    @for (k of kinds; track k; let i = $index) {
+      <button type="button" class="tab" [class.is-active]="kind() === k" [disabled]="busy() === 'import'" (click)="setKind(k)">
+        <span class="step-no num">{{ i + 1 }}</span>{{ 'import.tabs.' + k | translate }}
+      </button>
+    }
+  </nav>
+
+  <div class="layout">
+    <section class="panel steps">
+      <!-- 1. Template -->
+      <div class="step">
+        <span class="step-badge num">1</span>
+        <div class="step-body">
+          <h3>{{ 'import.step1.title' | translate }}</h3>
+          <p class="panel-sub">{{ 'import.step1.help' | translate }}</p>
+          <div class="cols">
+            @for (c of columns(); track c.key) {
+              <span class="col" [class.is-required]="c.required">{{ 'import.columns.' + kind() + '.' + c.key | translate }}@if (c.required) {<b aria-hidden="true">*</b>}</span>
+            }
+          </div>
+          <button type="button" class="btn btn-quiet" [disabled]="busy() !== null" (click)="downloadTemplate()">
+            <span class="material-icons-outlined" aria-hidden="true">download</span>
+            {{ (busy() === 'template' ? 'import.step1.downloading' : 'import.step1.download') | translate }}
+          </button>
+        </div>
+      </div>
+
+      <!-- 2. Upload -->
+      <div class="step">
+        <span class="step-badge num">2</span>
+        <div class="step-body">
+          <h3>{{ 'import.step2.title' | translate }}</h3>
+          @if (file(); as f) {
+            <div class="file-card">
+              <span class="material-icons-outlined file-icon" aria-hidden="true">table_view</span>
+              <span class="file-meta">
+                <span class="cell-main">{{ f.name }}</span>
+                <span class="cell-sub">{{ fileSize(f.size) }}</span>
+              </span>
+              <button type="button" class="btn-link" [disabled]="busy() !== null" (click)="clearFile()" [attr.aria-label]="'common.remove' | translate">
+                <span class="material-icons-outlined" aria-hidden="true">close</span>
+              </button>
+            </div>
+          } @else {
+            <label class="drop" [class.is-over]="dragging()" (dragover)="onDragOver($event)" (dragleave)="dragging.set(false)" (drop)="onDrop($event)">
+              <span class="material-icons-outlined" aria-hidden="true">upload_file</span>
+              <span class="drop-main">{{ 'import.step2.drop' | translate }}</span>
+              <span class="drop-sub">{{ 'import.step2.limits' | translate }}</span>
+              <input #picker type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" class="sr-only" (change)="onPick(picker)" />
+            </label>
+          }
+        </div>
+      </div>
+
+      <!-- 3. Check + import -->
+      <div class="step">
+        <span class="step-badge num">3</span>
+        <div class="step-body">
+          <h3>{{ 'import.step3.title' | translate }}</h3>
+          <p class="panel-sub">{{ 'import.step3.help' | translate }}</p>
+          <div class="actions">
+            <button type="button" class="btn btn-quiet" [disabled]="!file() || busy() !== null" (click)="run(true)">
+              <span class="material-icons-outlined" aria-hidden="true">fact_check</span>
+              {{ (busy() === 'check' ? 'import.step3.checking' : 'import.step3.check') | translate }}
+            </button>
+            <button type="button" class="btn btn-ink" [disabled]="!file() || busy() !== null" (click)="run(false)">
+              <span class="material-icons-outlined" aria-hidden="true">publish</span>
+              {{ (busy() === 'import' ? 'import.step3.importing' : 'import.step3.import') | translate }}
+            </button>
+          </div>
+          @if (busy() === 'import' || busy() === 'check') {
+            <p class="working"><span class="spinner" aria-hidden="true"></span>{{ 'import.step3.working' | translate }}</p>
+          }
+        </div>
+      </div>
+    </section>
+
+    <aside class="panel rules">
+      <h3>{{ 'import.checksTitle' | translate }}</h3>
+      <ul>
+        @for (n of checks(); track n) {
+          <li><span class="material-icons-outlined" aria-hidden="true">verified</span>{{ 'import.checks.' + kind() + '.' + n | translate }}</li>
+        }
+        <li><span class="material-icons-outlined" aria-hidden="true">verified</span>{{ 'import.checks.columns' | translate }}</li>
+      </ul>
+      @if (kind() !== 'locations') {
+        <p class="order-hint"><span class="material-icons-outlined" aria-hidden="true">info</span>{{ 'import.orderHint' | translate }}</p>
+      }
+    </aside>
+  </div>
+
+  @if (result(); as r) {
+    @if (r.succeeded) {
+      <div class="notice notice-info result import-result" role="status">
+        <span class="material-icons-outlined" aria-hidden="true">{{ r.dryRun ? 'fact_check' : 'task_alt' }}</span>
+        <div>
+          @if (r.dryRun) {
+            <strong>{{ 'import.result.checkedTitle' | translate }}</strong>
+            <p>{{ 'import.result.checked' | translate: { count: (r.totalRows | number), what: ('import.what.' + kind() | translate) } }}</p>
+          } @else {
+            <strong>{{ 'import.result.doneTitle' | translate }}</strong>
+            <p>{{ 'import.result.done' | translate: { count: (r.imported | number), what: ('import.what.' + kind() | translate) } }}</p>
+            <a class="panel-link" [routerLink]="viewLink()" [queryParams]="viewParams()">{{ 'import.result.view' | translate }}</a>
+          }
+        </div>
+      </div>
+    } @else {
+      <section class="panel panel-flush import-result">
+        <div class="notice notice-error result" role="alert">
+          <span class="material-icons-outlined" aria-hidden="true">block</span>
+          <div>
+            <strong>{{ 'import.result.failedTitle' | translate }}</strong>
+            <p>{{ 'import.result.failed' | translate: { count: (r.errorCount | number), rows: (badRows() | number), total: (r.totalRows | number) } }}</p>
+            @if (r.errorCount > r.errors.length) {
+              <p class="cell-sub">{{ 'import.result.capped' | translate: { shown: (r.errors.length | number) } }}</p>
+            }
+          </div>
+          <button type="button" class="btn btn-quiet btn-small csv" (click)="downloadErrors()">
+            <span class="material-icons-outlined" aria-hidden="true">download</span>{{ 'import.result.downloadErrors' | translate }}
+          </button>
+        </div>
+        <div class="table-wrap">
+          <table class="ledger-table">
+            <thead>
+              <tr>
+                <th class="row-col">{{ 'import.table.row' | translate }}</th>
+                <th>{{ 'import.table.column' | translate }}</th>
+                <th>{{ 'import.table.value' | translate }}</th>
+                <th>{{ 'import.table.problem' | translate }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (e of pagedErrors(); track $index) {
+                <tr>
+                  <td class="row-col num">{{ e.row }}</td>
+                  <td>{{ columnLabel(e.column) }}</td>
+                  <td class="mono value"><bdi>{{ e.value ?? '—' }}</bdi></td>
+                  <td>{{ message(e) }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+        @if (r.errors.length > 10) {
+          <app-pagination [page]="page()" [pageSize]="pageSize()" [total]="r.errors.length"
+            (pageChange)="page.set($event)" (pageSizeChange)="setPageSize($event)" />
+        }
+      </section>
+    }
+  }
+</div>
