@@ -76,6 +76,7 @@ export class SidebarComponent {
       items: [
         { icon: 'groups', label: 'nav.employees', route: '/app/employees', permission: P.employeesView },
         { icon: 'lan', label: 'nav.organization', route: '/app/organization', permission: P.employeesView },
+        { icon: 'upload_file', label: 'nav.bulkImport', route: '/app/bulk-import', permission: P.employeesCreate },
         { icon: 'devices', label: 'nav.assets', route: '/app/assets' }
       ]
     },

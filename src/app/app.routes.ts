@@ -66,6 +66,7 @@ export const routes: Routes = [
       { path: 'dashboard', component: DashboardComponent, data: { titleKey: 'nav.dashboard' } },
       { path: 'employees', component: EmployeeDirectoryComponent, canActivate: [permissionGuard], data: { titleKey: 'nav.employees', permission: P.employeesView } },
       { path: 'employees/:id', component: EmployeeProfileComponent, canActivate: [permissionGuard], data: { titleKey: 'nav.employees', permission: P.employeesView } },
+      { path: 'bulk-import', loadComponent: () => import('./pages/people/import/bulk-import').then(m => m.BulkImportComponent), canActivate: [permissionGuard], data: { titleKey: 'nav.bulkImport', permission: P.employeesCreate } },
       { path: 'organization', component: OrganizationComponent, canActivate: [permissionGuard], data: { titleKey: 'nav.organization', permission: P.employeesView } },
       { path: 'attendance', loadComponent: () => import('./pages/attendance/attendance').then(m => m.AttendanceComponent), data: { titleKey: 'nav.attendance' } },
       { path: 'attendance-setup', loadComponent: () => import('./pages/attendance/setup/attendance-setup').then(m => m.AttendanceSetupComponent), canActivate: [permissionGuard], data: { titleKey: 'nav.attendanceSetup', permission: P.settingsManage } },
