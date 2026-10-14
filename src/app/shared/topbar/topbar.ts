@@ -7,10 +7,12 @@ import { AuthService } from '../../auth/auth';
 import { AppLanguage, LanguageService } from '../../core/i18n/language.service';
 import { LayoutService } from '../../core/layout/layout.service';
 import { CurrentUserService } from '../../core/auth/current-user';
+import { MyPhotoService } from '../../core/auth/my-photo';
+import { AvatarComponent } from '../avatar/avatar';
 
 @Component({
   selector: 'app-topbar',
-  imports: [TranslatePipe, RouterLink],
+  imports: [AvatarComponent, TranslatePipe, RouterLink],
   templateUrl: './topbar.html',
   styleUrl: './topbar.css'
 })
@@ -21,6 +23,7 @@ export class TopbarComponent {
   readonly language = inject(LanguageService);
   readonly layout = inject(LayoutService);
   readonly user = inject(CurrentUserService).get();
+  readonly myPhoto = inject(MyPhotoService);   // sidebar load karta hai
   readonly menuOpen = signal(false);
   readonly langOpen = signal(false);
 

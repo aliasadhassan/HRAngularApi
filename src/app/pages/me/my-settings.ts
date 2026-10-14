@@ -8,6 +8,9 @@ import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { environment } from '../../../environments/environment';
 import { AppLanguage, LanguageService } from '../../core/i18n/language.service';
 import { AlertService } from '../../services/alert/alert';
+import { MyPhotoService } from '../../core/auth/my-photo';
+import { AvatarComponent } from '../../shared/avatar/avatar';
+import { PhotoEditComponent } from '../../shared/photo-edit/photo-edit';
 import { PayrollService } from '../payroll/payroll.service';
 import { LoginMethod, describeDevice, utc } from '../admin/admin.models';
 
@@ -47,7 +50,7 @@ interface MySignIn {
 
 @Component({
   selector: 'app-my-settings',
-  imports: [FormsModule, TranslatePipe, DatePipe],
+  imports: [AvatarComponent, FormsModule, PhotoEditComponent, TranslatePipe, DatePipe],
   templateUrl: './my-settings.html',
   styleUrl: './my-settings.css'
 })
@@ -57,6 +60,7 @@ export class MySettingsComponent {
   private readonly translate = inject(TranslateService);
   private readonly router = inject(Router);
   readonly language = inject(LanguageService);
+  readonly myPhoto = inject(MyPhotoService);
   private readonly url = `${environment.apiGatewayUrl}/identity/me`;
 
   readonly me = signal<Me | null>(null);

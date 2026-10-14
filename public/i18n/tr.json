@@ -971,6 +971,18 @@
       "state": "İl / eyalet",
       "postal": "Posta kodu",
       "country": "Ülke kodu"
+    },
+    "photo": {
+      "upload": "Fotoğraf yükle",
+      "change": "Fotoğrafı değiştir",
+      "remove": "Fotoğrafı kaldır",
+      "saved": "Fotoğraf güncellendi.",
+      "removed": "Fotoğraf kaldırıldı.",
+      "tooLarge": "Fotoğraf çok büyük. Sınır 5 MB.",
+      "badType": "JPG, PNG veya WebP fotoğraf kullanın.",
+      "off": "Fotoğraf depolama henüz ayarlanmadı. Kurulumu tamamlaması için yöneticinize başvurun.",
+      "error": "Fotoğraf kaydedilemedi. Tekrar deneyin.",
+      "hint": "En fazla 5 MB JPG, PNG veya WebP. Kare olarak kırpılır."
     }
   },
   "org": {

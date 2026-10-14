@@ -54,7 +54,7 @@
               <tr class="is-link" tabindex="0" (click)="open(e)" (keydown.enter)="open(e)">
                 <td>
                   <div class="who">
-                    <span class="avatar" aria-hidden="true">{{ initials(e.fullName) }}</span>
+                    <span class="avatar" aria-hidden="true"><app-avatar [name]="e.fullName" [src]="e.photoUrl" /></span>
                     <span>
                       <span class="cell-main">{{ e.fullName }}</span>
                       <span class="cell-sub">{{ e.employeeCode }} · {{ e.workEmail }}</span>

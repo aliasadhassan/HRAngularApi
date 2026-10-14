@@ -1,0 +1,97 @@
+:host {
+  display: inline-block;
+  flex-shrink: 0;
+}
+.photo {
+  position: relative;
+  display: inline-block;
+  line-height: 0;
+}
+.photo-busy {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--ink) 55%, transparent);
+  color: var(--brass);
+}
+.spin {
+  animation: photo-spin 0.9s linear infinite;
+}
+@keyframes photo-spin {
+  to { transform: rotate(360deg); }
+}
+.photo-btn {
+  position: absolute;
+  inset-inline-end: -4px;
+  bottom: -4px;
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 2px solid var(--vellum);
+  border-radius: 50%;
+  background: var(--brass);
+  color: var(--ink);
+  cursor: pointer;
+  box-shadow: var(--shadow-pop);
+}
+.photo-btn:hover:not(:disabled) {
+  background: var(--gold);
+}
+.photo-btn:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+.photo-btn .material-icons-outlined {
+  font-size: 15px;
+}
+.photo-menu {
+  position: absolute;
+  top: calc(100% + 10px);
+  inset-inline-start: 0;
+  z-index: 20;
+  min-width: 220px;
+  padding: 6px;
+  line-height: normal;
+  background: var(--sheet);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-panel);
+  box-shadow: var(--shadow-pop);
+  display: flex;
+  flex-direction: column;
+}
+.photo-menu button {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 10px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  font-family: var(--font-ui);
+  font-size: var(--fs-13);
+  color: var(--text);
+  text-align: start;
+  cursor: pointer;
+}
+.photo-menu button:hover {
+  background: var(--vellum);
+}
+.photo-menu .material-icons-outlined {
+  font-size: 18px;
+  color: var(--text-muted);
+}
+.photo-menu .danger,
+.photo-menu .danger .material-icons-outlined {
+  color: var(--oxblood);
+}
+.photo-hint {
+  margin: 4px 10px 6px;
+  padding-top: 8px;
+  border-top: 1px solid var(--rule);
+  font-size: var(--fs-12);
+  color: var(--text-faint);
+}

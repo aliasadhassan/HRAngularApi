@@ -8,6 +8,7 @@
 }
 .masthead h2 { font-size: var(--fs-28); font-weight: 500; }
 .avatar-xl {
+  overflow: hidden;
   width: 64px;
   height: 64px;
   border-radius: 50%;

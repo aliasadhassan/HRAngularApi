@@ -6,7 +6,9 @@
   @if (emp(); as e) {
     <!-- Masthead -->
     <header class="masthead">
-      <span class="avatar-xl" aria-hidden="true">{{ initials(fullName()) }}</span>
+      <app-photo-edit [employeeId]="e.id" [hasPhoto]="!!e.photoUrl" [canChange]="canChangePhoto()" (photoChange)="setPhoto($event)">
+        <span class="avatar-xl" aria-hidden="true"><app-avatar [name]="fullName()" [src]="e.photoUrl" /></span>
+      </app-photo-edit>
       <div class="mast-text">
         <div class="mast-title">
           <h2>{{ fullName() }}</h2>

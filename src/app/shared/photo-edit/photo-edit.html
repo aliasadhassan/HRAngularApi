@@ -1,0 +1,28 @@
+<div class="photo" [attr.aria-busy]="busy()">
+  <ng-content />
+  @if (busy()) {
+    <span class="photo-busy" aria-hidden="true"><span class="material-icons-outlined spin">progress_activity</span></span>
+  }
+  @if (canChange()) {
+    <button type="button" class="photo-btn" (click)="open(); $event.stopPropagation()" [disabled]="busy()"
+            [attr.aria-label]="(hasPhoto() ? 'people.photo.change' : 'people.photo.upload') | translate"
+            [attr.title]="(hasPhoto() ? 'people.photo.change' : 'people.photo.upload') | translate"
+            [attr.aria-expanded]="hasPhoto() ? menuOpen() : null" [attr.aria-haspopup]="hasPhoto() ? 'menu' : null">
+      <span class="material-icons-outlined" aria-hidden="true">photo_camera</span>
+    </button>
+    @if (menuOpen()) {
+      <div class="photo-menu" role="menu">
+        <button type="button" role="menuitem" (click)="choose()">
+          <span class="material-icons-outlined" aria-hidden="true">upload</span>{{ 'people.photo.upload' | translate }}
+        </button>
+        <button type="button" role="menuitem" class="danger" (click)="remove()">
+          <span class="material-icons-outlined" aria-hidden="true">delete</span>{{ 'people.photo.remove' | translate }}
+        </button>
+        <p class="photo-hint">{{ 'people.photo.hint' | translate }}</p>
+      </div>
+    }
+    <input #file type="file" accept="image/jpeg,image/png,image/webp" hidden (change)="onFile($event)" />
+  } @else {
+    <input #file type="file" hidden disabled />
+  }
+</div>

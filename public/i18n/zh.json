@@ -971,6 +971,18 @@
       "state": "省 / 州",
       "postal": "邮政编码",
       "country": "国家代码"
+    },
+    "photo": {
+      "upload": "上传照片",
+      "change": "更换照片",
+      "remove": "删除照片",
+      "saved": "照片已更新。",
+      "removed": "照片已删除。",
+      "tooLarge": "照片太大，上限为 5 MB。",
+      "badType": "请使用 JPG、PNG 或 WebP 照片。",
+      "off": "照片存储尚未设置，请联系管理员完成设置。",
+      "error": "照片无法保存，请重试。",
+      "hint": "支持 JPG、PNG、WebP，最大 5 MB，系统会裁剪为正方形。"
     }
   },
   "org": {

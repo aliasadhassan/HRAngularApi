@@ -23,7 +23,8 @@ export interface EmployeeListItem {
   employmentType: EmploymentType;
   employmentStatus: EmploymentStatus;
   joiningDate: string;
-  photoStorageKey: string | null;
+  /** Short-lived signed URL (private bucket). null = koi photo nahi ya storage band. */
+  photoUrl: string | null;
 }
 
 export interface Address {
@@ -84,7 +85,8 @@ export interface EmployeeDetails {
   noticePeriodDays: number | null;
   exitDate: string | null;
   exitReason: string | null;
-  photoStorageKey: string | null;
+  /** Short-lived signed URL (private bucket). null = koi photo nahi ya storage band. */
+  photoUrl: string | null;
   emergencyContacts: EmergencyContact[];
   jobHistory: JobHistory[];
 }
@@ -192,6 +194,13 @@ export interface Paged<T> {
   page: number;
   pageSize: number;
   totalCount: number;
+}
+
+/** GET /employees/me/photo — login wale user ki apni photo. */
+export interface MyPhoto {
+  enabled: boolean;
+  employeeId: string | null;
+  photoUrl: string | null;
 }
 
 export const STATUS_CHIP: Record<EmploymentStatus, string> = {
