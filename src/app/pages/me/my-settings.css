@@ -79,8 +79,6 @@
 .session-main .chip { margin-inline-start: 8px; vertical-align: middle; }
 
 /* Sign-ins */
-.ledger-table.compact td { padding: 10px 14px; }
-.ledger-table.compact th { padding: 10px 14px 8px; }
 .ledger-table td.num { white-space: nowrap; }
 tr.is-failed td:first-child { box-shadow: inset 3px 0 0 var(--oxblood); }
 :host-context([dir='rtl']) tr.is-failed td:first-child { box-shadow: inset -3px 0 0 var(--oxblood); }
