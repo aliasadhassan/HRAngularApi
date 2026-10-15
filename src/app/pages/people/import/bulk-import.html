@@ -12,6 +12,7 @@
   </nav>
 
   <div class="layout">
+    <div class="main-col">
     <section class="panel steps">
       <!-- 1. Template -->
       <div class="step">
@@ -81,6 +82,67 @@
       </div>
     </section>
 
+      @if (result(); as r) {
+        @if (r.succeeded) {
+          <div class="notice notice-info result import-result" role="status">
+            <span class="material-icons-outlined" aria-hidden="true">{{ r.dryRun ? 'fact_check' : 'task_alt' }}</span>
+            <div>
+              @if (r.dryRun) {
+                <strong>{{ 'import.result.checkedTitle' | translate }}</strong>
+                <p>{{ 'import.result.checked' | translate: { count: (r.totalRows | number), what: ('import.what.' + kind() | translate) } }}</p>
+              } @else {
+                <strong>{{ 'import.result.doneTitle' | translate }}</strong>
+                <p>{{ 'import.result.done' | translate: { count: (r.imported | number), what: ('import.what.' + kind() | translate) } }}</p>
+                <a class="panel-link" [routerLink]="viewLink()" [queryParams]="viewParams()">{{ 'import.result.view' | translate }}</a>
+              }
+            </div>
+          </div>
+        } @else {
+          <section class="panel panel-flush import-result">
+            <div class="notice notice-error result" role="alert">
+              <span class="material-icons-outlined" aria-hidden="true">block</span>
+              <div>
+                <strong>{{ 'import.result.failedTitle' | translate }}</strong>
+                <p>{{ 'import.result.failed' | translate: { count: (r.errorCount | number), rows: (badRows() | number), total: (r.totalRows | number) } }}</p>
+                @if (r.errorCount > r.errors.length) {
+                  <p class="cell-sub">{{ 'import.result.capped' | translate: { shown: (r.errors.length | number) } }}</p>
+                }
+              </div>
+              <button type="button" class="btn btn-quiet btn-small csv" (click)="downloadErrors()">
+                <span class="material-icons-outlined" aria-hidden="true">download</span>{{ 'import.result.downloadErrors' | translate }}
+              </button>
+            </div>
+            <div class="table-wrap">
+              <table class="ledger-table">
+                <thead>
+                  <tr>
+                    <th class="row-col">{{ 'import.table.row' | translate }}</th>
+                    <th>{{ 'import.table.column' | translate }}</th>
+                    <th>{{ 'import.table.value' | translate }}</th>
+                    <th>{{ 'import.table.problem' | translate }}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (e of pagedErrors(); track $index) {
+                    <tr>
+                      <td class="row-col num">{{ e.row }}</td>
+                      <td>{{ columnLabel(e.column) }}</td>
+                      <td class="mono value"><bdi>{{ e.value ?? '—' }}</bdi></td>
+                      <td>{{ message(e) }}</td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+            @if (r.errors.length > 10) {
+              <app-pagination [page]="page()" [pageSize]="pageSize()" [total]="r.errors.length"
+                (pageChange)="page.set($event)" (pageSizeChange)="setPageSize($event)" />
+            }
+          </section>
+        }
+      }
+    </div>
+
     <aside class="panel rules">
       <h3>{{ 'import.checksTitle' | translate }}</h3>
       <ul>
@@ -95,63 +157,4 @@
     </aside>
   </div>
 
-  @if (result(); as r) {
-    @if (r.succeeded) {
-      <div class="notice notice-info result import-result" role="status">
-        <span class="material-icons-outlined" aria-hidden="true">{{ r.dryRun ? 'fact_check' : 'task_alt' }}</span>
-        <div>
-          @if (r.dryRun) {
-            <strong>{{ 'import.result.checkedTitle' | translate }}</strong>
-            <p>{{ 'import.result.checked' | translate: { count: (r.totalRows | number), what: ('import.what.' + kind() | translate) } }}</p>
-          } @else {
-            <strong>{{ 'import.result.doneTitle' | translate }}</strong>
-            <p>{{ 'import.result.done' | translate: { count: (r.imported | number), what: ('import.what.' + kind() | translate) } }}</p>
-            <a class="panel-link" [routerLink]="viewLink()" [queryParams]="viewParams()">{{ 'import.result.view' | translate }}</a>
-          }
-        </div>
-      </div>
-    } @else {
-      <section class="panel panel-flush import-result">
-        <div class="notice notice-error result" role="alert">
-          <span class="material-icons-outlined" aria-hidden="true">block</span>
-          <div>
-            <strong>{{ 'import.result.failedTitle' | translate }}</strong>
-            <p>{{ 'import.result.failed' | translate: { count: (r.errorCount | number), rows: (badRows() | number), total: (r.totalRows | number) } }}</p>
-            @if (r.errorCount > r.errors.length) {
-              <p class="cell-sub">{{ 'import.result.capped' | translate: { shown: (r.errors.length | number) } }}</p>
-            }
-          </div>
-          <button type="button" class="btn btn-quiet btn-small csv" (click)="downloadErrors()">
-            <span class="material-icons-outlined" aria-hidden="true">download</span>{{ 'import.result.downloadErrors' | translate }}
-          </button>
-        </div>
-        <div class="table-wrap">
-          <table class="ledger-table">
-            <thead>
-              <tr>
-                <th class="row-col">{{ 'import.table.row' | translate }}</th>
-                <th>{{ 'import.table.column' | translate }}</th>
-                <th>{{ 'import.table.value' | translate }}</th>
-                <th>{{ 'import.table.problem' | translate }}</th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (e of pagedErrors(); track $index) {
-                <tr>
-                  <td class="row-col num">{{ e.row }}</td>
-                  <td>{{ columnLabel(e.column) }}</td>
-                  <td class="mono value"><bdi>{{ e.value ?? '—' }}</bdi></td>
-                  <td>{{ message(e) }}</td>
-                </tr>
-              }
-            </tbody>
-          </table>
-        </div>
-        @if (r.errors.length > 10) {
-          <app-pagination [page]="page()" [pageSize]="pageSize()" [total]="r.errors.length"
-            (pageChange)="page.set($event)" (pageSizeChange)="setPageSize($event)" />
-        }
-      </section>
-    }
-  }
 </div>

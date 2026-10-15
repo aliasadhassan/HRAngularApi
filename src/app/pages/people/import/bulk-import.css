@@ -20,6 +20,13 @@
   align-items: start;
 }
 
+.main-col {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+
 .steps {
   display: flex;
   flex-direction: column;
