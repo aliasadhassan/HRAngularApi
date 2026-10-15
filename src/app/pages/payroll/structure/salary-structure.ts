@@ -6,6 +6,8 @@ import { AmountPipe } from '../../../shared/pipes/amount.pipe';
 import { LanguageService } from '../../../core/i18n/language.service';
 import { AlertService } from '../../../services/alert/alert';
 import { PayrollService } from '../payroll.service';
+import { PaginationComponent } from '../../../shared/pagination/pagination';
+import { clientPager } from '../../../shared/pagination/client-pager';
 import { CalcType, PayComponent, SalaryGrade, TemplateLine, TemplateListItem } from '../payroll.models';
 
 type Drawer = 'grade' | 'template' | null;
@@ -15,7 +17,7 @@ const PREVIEW_GROSS = 150_000;
 
 @Component({
   selector: 'app-salary-structure',
-  imports: [FormsModule, TranslatePipe, AmountPipe],
+  imports: [FormsModule, TranslatePipe, AmountPipe, PaginationComponent],
   templateUrl: './salary-structure.html',
   styleUrl: './salary-structure.css'
 })
@@ -30,6 +32,7 @@ export class SalaryStructureComponent {
   readonly isNaN = Number.isNaN;
 
   readonly grades = signal<SalaryGrade[]>([]);
+  readonly gradesPager = clientPager(this.grades);
   readonly templates = signal<TemplateListItem[]>([]);
   readonly components = signal<PayComponent[]>([]);
   readonly drawer = signal<Drawer>(null);

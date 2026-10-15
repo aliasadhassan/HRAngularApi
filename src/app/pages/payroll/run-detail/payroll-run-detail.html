@@ -163,7 +163,7 @@
               </tr>
             </thead>
             <tbody>
-              @for (p of payslips(); track p.id) {
+              @for (p of payslipsPager.rows(); track p.id) {
                 <tr class="is-link" tabindex="0" (click)="openPayslip(p)" (keydown.enter)="openPayslip(p)">
                   <td>
                     <span class="cell-main">{{ p.employeeName }}</span>
@@ -180,6 +180,8 @@
             </tbody>
           </table>
         </div>
+        <app-pagination [page]="payslipsPager.page()" [pageSize]="payslipsPager.pageSize()" [total]="payslipsPager.total()"
+                        (pageChange)="payslipsPager.setPage($event)" (pageSizeChange)="payslipsPager.setPageSize($event)" />
       } @else if (!loading()) {
         <div class="empty-state">
           <span class="material-icons-outlined" aria-hidden="true">calculate</span>

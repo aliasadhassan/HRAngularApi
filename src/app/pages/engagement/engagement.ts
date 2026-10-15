@@ -11,6 +11,8 @@ import { PayrollService } from '../payroll/payroll.service';
 import { utc } from '../admin/admin.models';
 import { todayIso } from '../lifecycle/lifecycle.models';
 import { EngagementService } from './engagement.service';
+import { PaginationComponent } from '../../shared/pagination/pagination';
+import { clientPager } from '../../shared/pagination/client-pager';
 import {
   EngagementSummary, FeedScope, Lookups, MAX_OPTIONS, MAX_QUESTIONS, MAX_RECIPIENTS, NPS_SCALE, QUESTION_ICON, QUESTION_TYPES,
   QuestionResult, QuestionType, RATINGS, RECOGNITION_VALUES, Recognition, RecognitionStats, RecognitionValue, STATUS_CHIP,
@@ -58,7 +60,7 @@ interface GiveForm {
 
 @Component({
   selector: 'app-engagement',
-  imports: [DatePipe, DecimalPipe, FormsModule, TranslatePipe],
+  imports: [DatePipe, DecimalPipe, FormsModule, TranslatePipe, PaginationComponent],
   templateUrl: './engagement.html',
   styleUrl: './engagement.css'
 })
@@ -99,6 +101,7 @@ export class EngagementComponent {
   readonly toAnswer = computed(() => (this.mine() ?? []).filter(s => s.canRespond));
   readonly answered = computed(() => (this.mine() ?? []).filter(s => !s.canRespond).slice(0, 6));
   readonly all = signal<SurveyListItem[] | null>(null);
+  readonly allPager = clientPager(() => this.all() ?? []);
   readonly allStatus = signal<SurveyStatus | ''>('');
   readonly allSearch = signal('');
   private readonly all$ = new Subject<void>();
@@ -196,11 +199,13 @@ export class EngagementComponent {
 
   setAllStatus(v: SurveyStatus | ''): void {
     this.allStatus.set(v);
+    this.allPager.reset();
     this.loadAll();
   }
 
   onAllSearch(v: string): void {
     this.allSearch.set(v);
+    this.allPager.reset();
     this.all$.next();
   }
 

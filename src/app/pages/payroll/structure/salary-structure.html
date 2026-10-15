@@ -24,7 +24,7 @@
             </tr>
           </thead>
           <tbody>
-            @for (g of grades(); track g.id) {
+            @for (g of gradesPager.rows(); track g.id) {
               <tr class="is-link" tabindex="0" (click)="openGrade(g)" (keydown.enter)="openGrade(g)">
                 <td>
                   <span class="cell-main"><span class="grade-code">{{ g.code }}</span> {{ g.name }}</span>
@@ -45,6 +45,10 @@
           </tbody>
         </table>
       </div>
+      @if (gradesPager.total() > 0) {
+        <app-pagination [page]="gradesPager.page()" [pageSize]="gradesPager.pageSize()" [total]="gradesPager.total()"
+                        (pageChange)="gradesPager.setPage($event)" (pageSizeChange)="gradesPager.setPageSize($event)" />
+      }
     </section>
 
     <!-- Templates -->

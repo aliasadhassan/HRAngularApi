@@ -7,6 +7,8 @@ import { LanguageService } from '../../core/i18n/language.service';
 import { P, PermissionService } from '../../core/auth/permissions';
 import { AlertService } from '../../services/alert/alert';
 import { AmountPipe } from '../../shared/pipes/amount.pipe';
+import { PaginationComponent } from '../../shared/pagination/pagination';
+import { clientPager } from '../../shared/pagination/client-pager';
 import { PayrollService } from '../payroll/payroll.service';
 import { PayComponent } from '../payroll/payroll.models';
 import { ExpensesService } from './expenses.service';
@@ -32,7 +34,7 @@ const emptyLine = (categoryId = ''): LineForm => ({
 
 @Component({
   selector: 'app-expenses',
-  imports: [DatePipe, FormsModule, TranslatePipe, AmountPipe],
+  imports: [DatePipe, FormsModule, TranslatePipe, AmountPipe, PaginationComponent],
   templateUrl: './expenses.html',
   styleUrl: './expenses.css'
 })
@@ -84,6 +86,13 @@ export class ExpensesComponent {
   });
   readonly advanceOut = computed(() => this.sum(this.myTrips().filter(t => t.advanceStatus === 'Paid'), t => t.advanceApproved));
   readonly claimableTrips = computed(() => this.myTrips().filter(t => t.canClaim));
+
+  readonly myClaimsPager = clientPager(this.myClaims);
+  readonly myTripsPager = clientPager(this.myTrips);
+  readonly claimsPager = clientPager(this.claims);
+  readonly tripsPager = clientPager(this.trips);
+  readonly advancesPager = clientPager(this.advances);
+  readonly categoriesPager = clientPager(this.categories);
 
   // ───── Drawer state ─────
   readonly drawer = signal<Drawer | null>(null);

@@ -125,7 +125,7 @@
             @if (jobs() === null) {
               <tr><td colspan="6"><p class="loading-line">{{ 'common.loading' | translate }}</p></td></tr>
             }
-            @for (j of jobs(); track j.id) {
+            @for (j of jobsPager.rows(); track j.id) {
               <tr class="is-link" tabindex="0" (click)="openJob(j.id)" (keydown.enter)="openJob(j.id)">
                 <td class="job-cell">
                   <span class="cell-main wrap">{{ j.title }}</span>
@@ -159,6 +159,10 @@
           </tbody>
         </table>
       </div>
+      @if (jobsPager.total() > 0) {
+        <app-pagination [page]="jobsPager.page()" [pageSize]="jobsPager.pageSize()" [total]="jobsPager.total()"
+                        (pageChange)="jobsPager.setPage($event)" (pageSizeChange)="jobsPager.setPageSize($event)" />
+      }
     </section>
   }
 
@@ -284,7 +288,7 @@
             @if (candidates() === null) {
               <tr><td colspan="5"><p class="loading-line">{{ 'common.loading' | translate }}</p></td></tr>
             }
-            @for (c of candidates(); track c.id) {
+            @for (c of candidatesPager.rows(); track c.id) {
               <tr class="is-link" tabindex="0" (click)="openCandidate(c.id)" (keydown.enter)="openCandidate(c.id)">
                 <td><span class="cell-main">{{ c.firstName }} {{ c.lastName }}</span><span class="cell-sub">{{ c.email }}@if (c.city) { · {{ c.city }} }</span></td>
                 <td class="wrap-cell">
@@ -315,6 +319,10 @@
           </tbody>
         </table>
       </div>
+      @if (candidatesPager.total() > 0) {
+        <app-pagination [page]="candidatesPager.page()" [pageSize]="candidatesPager.pageSize()" [total]="candidatesPager.total()"
+                        (pageChange)="candidatesPager.setPage($event)" (pageSizeChange)="candidatesPager.setPageSize($event)" />
+      }
     </section>
   }
 
@@ -414,7 +422,7 @@
             @if (headcount() === null) {
               <tr><td colspan="8"><p class="loading-line">{{ 'common.loading' | translate }}</p></td></tr>
             }
-            @for (h of headcount(); track h.departmentId) {
+            @for (h of headcountPager.rows(); track h.departmentId) {
               <tr>
                 <td class="cell-main">{{ h.departmentName }}</td>
                 <td class="hc-bar-col">
@@ -436,6 +444,10 @@
           </tbody>
         </table>
       </div>
+      @if (headcountPager.total() > 0) {
+        <app-pagination [page]="headcountPager.page()" [pageSize]="headcountPager.pageSize()" [total]="headcountPager.total()"
+                        (pageChange)="headcountPager.setPage($event)" (pageSizeChange)="headcountPager.setPageSize($event)" />
+      }
     </section>
   }
 </div>

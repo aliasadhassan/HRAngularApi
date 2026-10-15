@@ -30,7 +30,7 @@
             </tr>
           </thead>
           <tbody>
-            @for (s of shifts(); track s.id) {
+            @for (s of shiftsPager.rows(); track s.id) {
               <tr class="is-link" tabindex="0" (click)="openShift(s)" (keydown.enter)="openShift(s)" [class.is-dim]="!s.isActive">
                 <td><span class="swatch" [style.background]="s.color || 'var(--moss)'"></span><span class="cell-main">{{ s.name }}</span> <span class="mono dim">{{ s.code }}</span></td>
                 <td class="num">
@@ -46,6 +46,10 @@
           </tbody>
         </table>
       </div>
+      @if (shiftsPager.total() > 0) {
+        <app-pagination [page]="shiftsPager.page()" [pageSize]="shiftsPager.pageSize()" [total]="shiftsPager.total()"
+                        (pageChange)="shiftsPager.setPage($event)" (pageSizeChange)="shiftsPager.setPageSize($event)" />
+      }
     </section>
   }
 
@@ -108,7 +112,7 @@
             </tr>
           </thead>
           <tbody>
-            @for (d of devices(); track d.id) {
+            @for (d of devicesPager.rows(); track d.id) {
               <tr class="is-link" tabindex="0" (click)="openDevice(d)" (keydown.enter)="openDevice(d)" [class.is-dim]="!d.isActive">
                 <td><span class="cell-main">{{ d.name }}</span><span class="cell-sub mono">{{ d.serialNumber }}@if (d.vendor) { · {{ d.vendor }} }</span></td>
                 <td>{{ d.locationName }}</td>
@@ -119,6 +123,10 @@
           </tbody>
         </table>
       </div>
+      @if (devicesPager.total() > 0) {
+        <app-pagination [page]="devicesPager.page()" [pageSize]="devicesPager.pageSize()" [total]="devicesPager.total()"
+                        (pageChange)="devicesPager.setPage($event)" (pageSizeChange)="devicesPager.setPageSize($event)" />
+      }
     </section>
   }
 </div>

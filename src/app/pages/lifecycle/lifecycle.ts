@@ -10,6 +10,8 @@ import { P, PermissionService } from '../../core/auth/permissions';
 import { AlertService } from '../../services/alert/alert';
 import { PayrollService } from '../payroll/payroll.service';
 import { PeopleService } from '../people/people.service';
+import { PaginationComponent } from '../../shared/pagination/pagination';
+import { clientPager } from '../../shared/pagination/client-pager';
 import { LifecycleService } from './lifecycle.service';
 import {
   CASE_CHIP, Candidate, CaseListItem, CaseStatus, ChecklistTemplate, EXIT_TYPES, ExitType, LifecycleCase, LifecycleKind,
@@ -43,7 +45,7 @@ interface TemplateForm {
 
 @Component({
   selector: 'app-lifecycle',
-  imports: [DatePipe, NgTemplateOutlet, FormsModule, TranslatePipe],
+  imports: [DatePipe, NgTemplateOutlet, FormsModule, TranslatePipe, PaginationComponent],
   templateUrl: './lifecycle.html',
   styleUrl: './lifecycle.css'
 })
@@ -75,6 +77,7 @@ export class LifecycleComponent {
   // ───── HR lists ─────
   readonly summary = signal<LifecycleSummary | null>(null);
   readonly cases = signal<CaseListItem[] | null>(null);
+  readonly casesPager = clientPager(() => this.cases() ?? []);
   readonly status = signal<CaseStatus | ''>('InProgress');
   readonly search = signal('');
   private readonly search$ = new Subject<void>();
@@ -148,7 +151,10 @@ export class LifecycleComponent {
   }
 
   setTab(t: Tab): void {
-    if (this.tab() !== t) this.cases.set(null);
+    if (this.tab() !== t) {
+      this.cases.set(null);
+      this.casesPager.reset();
+    }
     this.tab.set(t);
     this.confirm = null;
     if (t === 'onboarding' || t === 'exits') this.loadCases();
@@ -158,11 +164,13 @@ export class LifecycleComponent {
 
   onSearch(value: string): void {
     this.search.set(value);
+    this.casesPager.reset();
     this.search$.next();
   }
 
   setStatus(value: CaseStatus | ''): void {
     this.status.set(value);
+    this.casesPager.reset();
     this.loadCases();
   }
 

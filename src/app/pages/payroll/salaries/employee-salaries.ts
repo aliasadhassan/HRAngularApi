@@ -8,6 +8,7 @@ import { AmountPipe } from '../../../shared/pipes/amount.pipe';
 import { LanguageService } from '../../../core/i18n/language.service';
 import { AlertService } from '../../../services/alert/alert';
 import { PayrollService } from '../payroll.service';
+import { DEFAULT_PAGE_SIZE, PaginationComponent } from '../../../shared/pagination/pagination';
 import {
   CalcType, EmployeeSalary, PayComponent, PayGroup, PayrollEmployee, SalaryBasis, SalaryChangeReason,
   SalaryGrade, SalaryTemplate, TemplateListItem
@@ -17,7 +18,7 @@ type Filter = 'all' | 'unassigned';
 
 @Component({
   selector: 'app-employee-salaries',
-  imports: [DatePipe, FormsModule, TranslatePipe, AmountPipe],
+  imports: [DatePipe, FormsModule, TranslatePipe, AmountPipe, PaginationComponent],
   templateUrl: './employee-salaries.html',
   styleUrl: './employee-salaries.css'
 })
@@ -27,7 +28,6 @@ export class EmployeeSalariesComponent {
   private readonly translate = inject(TranslateService);
 
   readonly lang = inject(LanguageService).language;
-  readonly Math = Math;
   readonly bases: SalaryBasis[] = ['Monthly', 'Annual'];
   readonly reasons: SalaryChangeReason[] = ['Joining', 'Increment', 'Promotion', 'Correction', 'Other'];
   readonly overrideTypes: CalcType[] = ['Fixed', 'PercentOfGross', 'PercentOfComponent'];
@@ -37,7 +37,7 @@ export class EmployeeSalariesComponent {
   readonly total = signal(0);
   readonly loading = signal(true);
   readonly page = signal(1);
-  readonly pageSize = 20;
+  readonly pageSize = signal(DEFAULT_PAGE_SIZE);
   readonly filter = signal<Filter>('all');
   search = '';
   payGroupId = '';
@@ -62,7 +62,6 @@ export class EmployeeSalariesComponent {
   form = this.emptyForm();
   overrideEdit: { componentId: string; calcType: CalcType; amount: number | null; percentage: number | null; baseComponentId: string | null } | null = null;
 
-  readonly pages = computed(() => Math.max(1, Math.ceil(this.total() / this.pageSize)));
   readonly current = computed(() => {
     const today = new Date().toISOString().slice(0, 10);
     return this.history().find(s => s.effectiveFrom <= today && (!s.effectiveTo || s.effectiveTo >= today)) ?? this.history()[0] ?? null;
@@ -82,7 +81,7 @@ export class EmployeeSalariesComponent {
     if (resetPage) this.page.set(1);
     this.loading.set(true);
     this.api.getPayrollEmployees({
-      page: this.page(), pageSize: this.pageSize, search: this.search,
+      page: this.page(), pageSize: this.pageSize(), search: this.search,
       payGroupId: this.payGroupId || undefined, onlyUnassigned: this.filter() === 'unassigned'
     }).subscribe({
       next: r => {
@@ -107,10 +106,14 @@ export class EmployeeSalariesComponent {
     this.reload();
   }
 
-  goTo(p: number): void {
-    if (p < 1 || p > this.pages()) return;
+  setPage(p: number): void {
     this.page.set(p);
     this.reload(false);
+  }
+
+  setPageSize(size: number): void {
+    this.pageSize.set(size);
+    this.setPage(1);
   }
 
   toggle(id: string, event: Event): void {

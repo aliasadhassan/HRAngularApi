@@ -161,7 +161,7 @@
             @if (cases() === null) {
               <tr><td colspan="5"><p class="loading-line">{{ 'common.loading' | translate }}</p></td></tr>
             }
-            @for (c of cases(); track c.id) {
+            @for (c of casesPager.rows(); track c.id) {
               <tr class="is-link" tabindex="0" (click)="openCase(c.id)" (keydown.enter)="openCase(c.id)">
                 <td>
                   <span class="cell-main">{{ c.employeeName }}</span>
@@ -215,6 +215,10 @@
           </tbody>
         </table>
       </div>
+      @if (casesPager.total() > 0) {
+        <app-pagination [page]="casesPager.page()" [pageSize]="casesPager.pageSize()" [total]="casesPager.total()"
+                        (pageChange)="casesPager.setPage($event)" (pageSizeChange)="casesPager.setPageSize($event)" />
+      }
     </section>
   }
 

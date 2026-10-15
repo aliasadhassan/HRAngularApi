@@ -10,6 +10,8 @@ import { PayrollService } from '../../payroll/payroll.service';
 import { PeopleService } from '../../people/people.service';
 import { Location } from '../../people/people.models';
 import { AttendanceService } from '../attendance.service';
+import { PaginationComponent } from '../../../shared/pagination/pagination';
+import { clientPager } from '../../../shared/pagination/client-pager';
 import { ApproverType, AttendanceDevice, AttendancePolicy, ClockInMethod, SaveDevice, SavePolicy, SaveShift, Shift, hm } from '../attendance.models';
 
 type Tab = 'shifts' | 'policies' | 'devices';
@@ -24,7 +26,7 @@ const toApi = (t: string) => (t.length === 5 ? `${t}:00` : t);
 
 @Component({
   selector: 'app-attendance-setup',
-  imports: [DatePipe, FormsModule, TranslatePipe],
+  imports: [DatePipe, FormsModule, TranslatePipe, PaginationComponent],
   templateUrl: './attendance-setup.html',
   styleUrl: './attendance-setup.css'
 })
@@ -48,6 +50,8 @@ export class AttendanceSetupComponent {
   readonly policies = signal<AttendancePolicy[]>([]);
   readonly devices = signal<AttendanceDevice[]>([]);
   readonly locations = signal<Location[]>([]);
+  readonly shiftsPager = clientPager(this.shifts);
+  readonly devicesPager = clientPager(this.devices);
 
   readonly drawer = signal<Drawer>(null);
   readonly saving = signal(false);

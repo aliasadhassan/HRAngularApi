@@ -10,6 +10,8 @@ import { AlertService } from '../../services/alert/alert';
 import { PayrollService } from '../payroll/payroll.service';
 import { utc } from '../admin/admin.models';
 import { todayIso } from '../lifecycle/lifecycle.models';
+import { PaginationComponent } from '../../shared/pagination/pagination';
+import { clientPager } from '../../shared/pagination/client-pager';
 import { IncidentFilter, SafetyService } from './safety.service';
 import {
   ACTION_CHIP, ACTION_SCOPES, ActionScope, ActionStatus, ENTRY_ICON, INCIDENT_SCOPES, INCIDENT_TYPES, INSPECTION_CHIP, INSPECTION_SCOPES,
@@ -123,7 +125,7 @@ interface ActForm {
 
 @Component({
   selector: 'app-safety',
-  imports: [DatePipe, DecimalPipe, FormsModule, NgTemplateOutlet, TranslatePipe],
+  imports: [DatePipe, DecimalPipe, FormsModule, NgTemplateOutlet, TranslatePipe, PaginationComponent],
   templateUrl: './safety.html',
   styleUrl: './safety.css'
 })
@@ -189,6 +191,7 @@ export class SafetyComponent {
 
   // ───── Lists ─────
   readonly incidents = signal<IncidentListItem[] | null>(null);
+  readonly incidentsPager = clientPager(() => this.incidents() ?? []);
   readonly incidentScope = signal<IncidentScope>('open');
   readonly status = signal<IncidentStatus | ''>('');
   readonly type = signal<IncidentType | ''>('');
@@ -202,6 +205,7 @@ export class SafetyComponent {
   private readonly actionSearch$ = new Subject<void>();
 
   readonly inspections = signal<InspectionListItem[] | null>(null);
+  readonly inspectionsPager = clientPager(() => this.inspections() ?? []);
   readonly inspectionScope = signal<InspectionScope>('upcoming');
 
   readonly checklists = signal<SafetyChecklist[] | null>(null);
@@ -316,6 +320,7 @@ export class SafetyComponent {
 
   setIncidentScope(v: IncidentScope): void {
     this.incidentScope.set(v);
+    this.incidentsPager.reset();
     this.loadIncidents();
   }
 
@@ -323,11 +328,13 @@ export class SafetyComponent {
     if (which === 'status') this.status.set(v as IncidentStatus | '');
     if (which === 'type') this.type.set(v as IncidentType | '');
     if (which === 'severity') this.severity.set(v as SafetySeverity | '');
+    this.incidentsPager.reset();
     this.loadIncidents();
   }
 
   onSearch(v: string): void {
     this.search.set(v);
+    this.incidentsPager.reset();
     this.search$.next();
   }
 
@@ -343,6 +350,7 @@ export class SafetyComponent {
 
   setInspectionScope(v: InspectionScope): void {
     this.inspectionScope.set(v);
+    this.inspectionsPager.reset();
     this.loadInspections();
   }
 
@@ -351,6 +359,8 @@ export class SafetyComponent {
     if (t === 'incidents') this.incidentScope.set(scope as IncidentScope);
     if (t === 'actions') this.actionScope.set(scope as ActionScope);
     if (t === 'inspections') this.inspectionScope.set(scope as InspectionScope);
+    if (t === 'incidents') this.incidentsPager.reset();
+    if (t === 'inspections') this.inspectionsPager.reset();
     const loaded = t === 'incidents' ? this.incidents() : t === 'actions' ? this.actions() : this.inspections();
     this.setTab(t);
     if (loaded !== null) {

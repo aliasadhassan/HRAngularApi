@@ -105,7 +105,7 @@
                 </tr>
               </thead>
               <tbody>
-                @for (c of myClaims(); track c.id) {
+                @for (c of myClaimsPager.rows(); track c.id) {
                   <tr class="is-link" tabindex="0" (click)="viewClaim(c)" (keydown.enter)="viewClaim(c)">
                     <td>
                       <span class="cell-main">{{ c.title }}</span>
@@ -148,6 +148,10 @@
               </tbody>
             </table>
           </div>
+          @if (myClaimsPager.total() > 0) {
+            <app-pagination [page]="myClaimsPager.page()" [pageSize]="myClaimsPager.pageSize()" [total]="myClaimsPager.total()"
+                            (pageChange)="myClaimsPager.setPage($event)" (pageSizeChange)="myClaimsPager.setPageSize($event)" />
+          }
         </section>
 
         @if (myTrips().length) {
@@ -166,7 +170,7 @@
                   </tr>
                 </thead>
                 <tbody>
-                  @for (t of myTrips(); track t.id) {
+                  @for (t of myTripsPager.rows(); track t.id) {
                     <tr>
                       <td>
                         <span class="cell-main">{{ t.destination }}</span>
@@ -199,6 +203,10 @@
                 </tbody>
               </table>
             </div>
+            @if (myTripsPager.total() > 0) {
+              <app-pagination [page]="myTripsPager.page()" [pageSize]="myTripsPager.pageSize()" [total]="myTripsPager.total()"
+                              (pageChange)="myTripsPager.setPage($event)" (pageSizeChange)="myTripsPager.setPageSize($event)" />
+            }
           </section>
         }
       }
@@ -209,7 +217,7 @@
   @if (tab() === 'claims') {
     <section class="panel panel-flush">
       <div class="toolbar">
-        <select class="select-sm" [ngModel]="claimStatus()" (ngModelChange)="claimStatus.set($event); loadClaims()" [attr.aria-label]="'expenses.statusCol' | translate">
+        <select class="select-sm" [ngModel]="claimStatus()" (ngModelChange)="claimStatus.set($event); claimsPager.reset(); loadClaims()" [attr.aria-label]="'expenses.statusCol' | translate">
           <option value="">{{ 'expenses.anyStatus' | translate }}</option>
           @for (s of ['Submitted', 'Approved', 'Paid', 'Rejected', 'Cancelled']; track s) { <option [value]="s">{{ 'expenses.claimStatus.' + s | translate }}</option> }
         </select>
@@ -227,7 +235,7 @@
             </tr>
           </thead>
           <tbody>
-            @for (c of claims(); track c.id) {
+            @for (c of claimsPager.rows(); track c.id) {
               <tr>
                 <td>
                   <span class="cell-main">{{ c.employeeName }}</span>
@@ -292,6 +300,10 @@
           </tbody>
         </table>
       </div>
+      @if (claimsPager.total() > 0) {
+        <app-pagination [page]="claimsPager.page()" [pageSize]="claimsPager.pageSize()" [total]="claimsPager.total()"
+                        (pageChange)="claimsPager.setPage($event)" (pageSizeChange)="claimsPager.setPageSize($event)" />
+      }
     </section>
   }
 
@@ -299,7 +311,7 @@
   @if (tab() === 'travel') {
     <section class="panel panel-flush">
       <div class="toolbar">
-        <select class="select-sm" [ngModel]="tripStatus()" (ngModelChange)="tripStatus.set($event); loadTrips()" [attr.aria-label]="'expenses.statusCol' | translate">
+        <select class="select-sm" [ngModel]="tripStatus()" (ngModelChange)="tripStatus.set($event); tripsPager.reset(); loadTrips()" [attr.aria-label]="'expenses.statusCol' | translate">
           <option value="">{{ 'expenses.anyStatus' | translate }}</option>
           @for (s of ['Pending', 'Approved', 'Rejected', 'Cancelled']; track s) { <option [value]="s">{{ 'expenses.tripStatus.' + s | translate }}</option> }
         </select>
@@ -318,7 +330,7 @@
             </tr>
           </thead>
           <tbody>
-            @for (t of trips(); track t.id) {
+            @for (t of tripsPager.rows(); track t.id) {
               <tr>
                 <td>
                   <span class="cell-main">{{ t.employeeName }}</span>
@@ -365,6 +377,10 @@
           </tbody>
         </table>
       </div>
+      @if (tripsPager.total() > 0) {
+        <app-pagination [page]="tripsPager.page()" [pageSize]="tripsPager.pageSize()" [total]="tripsPager.total()"
+                        (pageChange)="tripsPager.setPage($event)" (pageSizeChange)="tripsPager.setPageSize($event)" />
+      }
     </section>
   }
 
@@ -383,7 +399,7 @@
             </tr>
           </thead>
           <tbody>
-            @for (t of advances(); track t.id) {
+            @for (t of advancesPager.rows(); track t.id) {
               <tr>
                 <td>
                   <span class="cell-main">{{ t.employeeName }}</span>
@@ -429,6 +445,10 @@
           </tbody>
         </table>
       </div>
+      @if (advancesPager.total() > 0) {
+        <app-pagination [page]="advancesPager.page()" [pageSize]="advancesPager.pageSize()" [total]="advancesPager.total()"
+                        (pageChange)="advancesPager.setPage($event)" (pageSizeChange)="advancesPager.setPageSize($event)" />
+      }
     </section>
   }
 
@@ -536,7 +556,7 @@
             </tr>
           </thead>
           <tbody>
-            @for (c of categories(); track c.id) {
+            @for (c of categoriesPager.rows(); track c.id) {
               <tr [class.is-off]="!c.isActive">
                 <td>
                   <span class="cell-main">{{ c.name }}</span>
@@ -555,6 +575,10 @@
           </tbody>
         </table>
       </div>
+      @if (categoriesPager.total() > 0) {
+        <app-pagination [page]="categoriesPager.page()" [pageSize]="categoriesPager.pageSize()" [total]="categoriesPager.total()"
+                        (pageChange)="categoriesPager.setPage($event)" (pageSizeChange)="categoriesPager.setPageSize($event)" />
+      }
     </section>
   }
 </div>

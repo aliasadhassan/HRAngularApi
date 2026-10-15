@@ -8,6 +8,8 @@ import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { LanguageService } from '../../core/i18n/language.service';
 import { AlertService } from '../../services/alert/alert';
 import { ChartComponent } from '../../shared/widgets/chart/chart';
+import { PaginationComponent } from '../../shared/pagination/pagination';
+import { clientPager } from '../../shared/pagination/client-pager';
 import { PayrollService } from '../payroll/payroll.service';
 import { downloadCsv } from '../reports/reports.models';
 import { ReportBuilderService } from './rb.service';
@@ -27,7 +29,7 @@ interface FilterDraft extends ReportFilter {
 
 @Component({
   selector: 'app-table-report',
-  imports: [DecimalPipe, FormsModule, RouterLink, TranslatePipe, ChartComponent],
+  imports: [DecimalPipe, FormsModule, RouterLink, TranslatePipe, ChartComponent, PaginationComponent],
   templateUrl: './table-report.html',
   styleUrls: ['./rb-shared.css', './table-report.css']
 })
@@ -62,6 +64,10 @@ export class TableReportComponent {
   readonly dirty = signal(false);
 
   readonly result = signal<ReportResult | null>(null);
+  /** Result table ka page; chart, totals aur CSV poori result se bante hain */
+  readonly resultPager = clientPager(() => this.result()?.rows ?? []);
+  /** Print pe poori result chhapni hai, sirf dikhaya hua page nahi */
+  readonly printing = signal(false);
   readonly ranFrom = signal<string | null>(null);
   readonly ranTo = signal<string | null>(null);
   readonly running = signal(false);
@@ -435,6 +441,7 @@ export class TableReportComponent {
       next: res => {
         this.running.set(false);
         this.result.set(res.result);
+        this.resultPager.reset();
         this.ranFrom.set(res.from);
         this.ranTo.set(res.to);
         if (this.id && !this.markedRun) {
@@ -517,6 +524,10 @@ export class TableReportComponent {
   }
 
   print(): void {
-    window.print();
+    this.printing.set(true);
+    setTimeout(() => {
+      window.print();
+      this.printing.set(false);
+    });
   }
 }

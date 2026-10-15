@@ -12,6 +12,8 @@ import { PayrollService } from '../payroll/payroll.service';
 import { PeopleService } from '../people/people.service';
 import { addDays, todayIso } from '../lifecycle/lifecycle.models';
 import { PerformanceService } from './performance.service';
+import { PaginationComponent } from '../../shared/pagination/pagination';
+import { clientPager } from '../../shared/pagination/client-pager';
 import {
   CHECKIN_STATUSES, CYCLE_CHIP, GOAL_CHIP, GOAL_STATUSES, GoalDetail, GoalListItem, GoalStatus, MyPerformance, PerformancePerson,
   PerformanceSummary, RATINGS, REVIEW_CHIP, REVIEW_STATUSES, Review, ReviewCycle, ReviewListItem, ReviewStatus, isClosedGoal
@@ -55,7 +57,7 @@ interface LaunchForm {
 
 @Component({
   selector: 'app-performance',
-  imports: [DatePipe, DecimalPipe, FormsModule, TranslatePipe],
+  imports: [DatePipe, DecimalPipe, FormsModule, TranslatePipe, PaginationComponent],
   templateUrl: './performance.html',
   styleUrl: './performance.css'
 })
@@ -102,6 +104,8 @@ export class PerformanceComponent {
   // ───── Team lists ─────
   readonly reviews = signal<ReviewListItem[] | null>(null);
   readonly goals = signal<GoalListItem[] | null>(null);
+  readonly reviewsPager = clientPager(() => this.reviews() ?? []);
+  readonly goalsPager = clientPager(() => this.goals() ?? []);
   readonly cycleId = signal('');
   readonly reviewStatus = signal<ReviewStatus | ''>('');
   readonly goalStatus = signal<GoalStatus | ''>('');
@@ -183,6 +187,7 @@ export class PerformanceComponent {
 
   setTab(t: Tab): void {
     if (this.tab() === t) return;
+    this.resetPages();
     this.tab.set(t);
     this.search.set('');
     this.overdue.set(false);
@@ -191,33 +196,39 @@ export class PerformanceComponent {
   }
 
   onSearch(value: string): void {
+    this.resetPages();
     this.search.set(value);
     this.search$.next();
   }
 
   setCycle(value: string): void {
+    this.resetPages();
     this.cycleId.set(value);
     this.reload();
   }
 
   setReviewStatus(value: ReviewStatus | ''): void {
+    this.resetPages();
     this.reviewStatus.set(value);
     this.overdue.set(false);
     this.loadReviews();
   }
 
   setGoalStatus(value: GoalStatus | ''): void {
+    this.resetPages();
     this.goalStatus.set(value);
     this.loadGoals();
   }
 
   toggleOverdue(): void {
+    this.resetPages();
     this.overdue.update(v => !v);
     this.reload();
   }
 
   /** Tally click → reviews us status par (active cycle) */
   showReviews(status: ReviewStatus | '', overdue = false): void {
+    this.resetPages();
     this.reviewStatus.set(status);
     this.overdue.set(overdue);
     this.cycleId.set(this.summary()?.activeCycleId ?? '');
@@ -229,6 +240,7 @@ export class PerformanceComponent {
   }
 
   showGoals(status: GoalStatus | '', overdue = false): void {
+    this.resetPages();
     this.goalStatus.set(status);
     this.overdue.set(overdue);
     this.cycleId.set('');
@@ -237,6 +249,12 @@ export class PerformanceComponent {
       this.search.set('');
     }
     this.loadGoals();
+  }
+
+  /** Filter/search/tab badle to dono lists page 1 se */
+  private resetPages(): void {
+    this.reviewsPager.reset();
+    this.goalsPager.reset();
   }
 
   // ───── Helpers ─────
@@ -658,6 +676,7 @@ export class PerformanceComponent {
   }
 
   viewCycleReviews(c: ReviewCycle): void {
+    this.resetPages();
     this.cycleId.set(c.id);
     this.reviewStatus.set('');
     this.overdue.set(false);

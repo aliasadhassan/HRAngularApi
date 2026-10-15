@@ -8,6 +8,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { LanguageService } from '../../../core/i18n/language.service';
 import { AlertService } from '../../../services/alert/alert';
 import { PayrollService } from '../../payroll/payroll.service';
+import { DEFAULT_PAGE_SIZE, PaginationComponent } from '../../../shared/pagination/pagination';
 import { AdminService } from '../admin.service';
 import { LoginActivityItem, LoginActivitySummary, LoginMethod, describeDevice, utc } from '../admin.models';
 
@@ -15,7 +16,7 @@ type Outcome = 'all' | 'success' | 'failed';
 
 @Component({
   selector: 'app-login-activity',
-  imports: [DatePipe, FormsModule, TranslatePipe],
+  imports: [DatePipe, FormsModule, TranslatePipe, PaginationComponent],
   templateUrl: './login-activity.html',
   styleUrl: './login-activity.css'
 })
@@ -39,7 +40,7 @@ export class LoginActivityComponent {
   readonly days = signal(7);
   readonly outcome = signal<Outcome>('all');
   readonly page = signal(1);
-  readonly pageSize = 25;
+  readonly pageSize = signal(DEFAULT_PAGE_SIZE);
   method: LoginMethod | '' = '';
   search = '';
 
@@ -49,9 +50,6 @@ export class LoginActivityComponent {
 
   private readonly searchChanged = new Subject<void>();
 
-  readonly pages = computed(() => Math.max(1, Math.ceil(this.total() / this.pageSize)));
-  readonly rangeFrom = computed(() => (this.total() === 0 ? 0 : (this.page() - 1) * this.pageSize + 1));
-  readonly rangeTo = computed(() => Math.min(this.page() * this.pageSize, this.total()));
   readonly failureRate = computed(() => {
     const s = this.summary();
     if (!s || s.signIns + s.failed === 0) return 0;
@@ -76,7 +74,7 @@ export class LoginActivityComponent {
         method: this.method,
         days: this.days(),
         page: this.page(),
-        pageSize: this.pageSize
+        pageSize: this.pageSize()
       })
       .subscribe({
         next: res => {
@@ -120,10 +118,14 @@ export class LoginActivityComponent {
     this.reload();
   }
 
-  goTo(page: number): void {
-    if (page < 1 || page > this.pages()) return;
+  setPage(page: number): void {
     this.page.set(page);
     this.reload(false);
+  }
+
+  setPageSize(size: number): void {
+    this.pageSize.set(size);
+    this.setPage(1);
   }
 
   reasonKey(item: LoginActivityItem): string {

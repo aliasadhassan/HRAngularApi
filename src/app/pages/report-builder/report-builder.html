@@ -73,7 +73,7 @@
                 </tr>
               </thead>
               <tbody>
-                @for (l of list; track l.id) {
+                @for (l of lettersPager.rows(); track l.id) {
                   <tr class="is-link" tabindex="0" [routerLink]="['/app/reports/builder/letter', l.id]">
                     <td>
                       <span class="mono">{{ l.ref }}</span>
@@ -98,6 +98,10 @@
               </tbody>
             </table>
           </div>
+          @if (lettersPager.total() > 0) {
+            <app-pagination [page]="lettersPager.page()" [pageSize]="lettersPager.pageSize()" [total]="lettersPager.total()"
+                            (pageChange)="lettersPager.setPage($event)" (pageSizeChange)="lettersPager.setPageSize($event)" />
+          }
         } @else {
           <div class="empty-state">
             <span class="material-icons-outlined" aria-hidden="true">mark_email_read</span>

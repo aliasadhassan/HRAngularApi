@@ -10,6 +10,8 @@ import { P, PermissionService } from '../../../core/auth/permissions';
 import { AlertService } from '../../../services/alert/alert';
 import { AmountPipe } from '../../../shared/pipes/amount.pipe';
 import { PayrollService } from '../payroll.service';
+import { PaginationComponent } from '../../../shared/pagination/pagination';
+import { clientPager } from '../../../shared/pagination/client-pager';
 import { PayComponent, PayrollEmployee } from '../payroll.models';
 import { LoansService } from './loans.service';
 import {
@@ -30,7 +32,7 @@ const nextMonth = (): string => {
 
 @Component({
   selector: 'app-loans',
-  imports: [DatePipe, FormsModule, TranslatePipe, AmountPipe],
+  imports: [DatePipe, FormsModule, TranslatePipe, AmountPipe, PaginationComponent],
   templateUrl: './loans.html',
   styleUrl: './loans.css'
 })
@@ -92,6 +94,14 @@ export class LoansComponent {
 
   readonly myOpenLoans = computed(() => (this.my()?.loans ?? []).filter(l => l.status === 'Active' || l.status === 'Paused'));
   readonly myPastLoans = computed(() => (this.my()?.loans ?? []).filter(l => l.status === 'Closed' || l.status === 'Cancelled'));
+  readonly myRequests = computed(() => this.my()?.requests ?? []);
+
+  // Har table ka apna pager
+  readonly myRequestsPager = clientPager(this.myRequests);
+  readonly myPastLoansPager = clientPager(this.myPastLoans);
+  readonly requestsPager = clientPager(this.requests);
+  readonly loansPager = clientPager(this.loans);
+  readonly repaymentsPager = clientPager(this.repayments);
 
   constructor() {
     this.employeeSearch.pipe(
@@ -157,6 +167,9 @@ export class LoansComponent {
 
   setTab(t: Tab): void {
     this.tab.set(t);
+    if (t === 'requests') this.requestsPager.reset();
+    if (t === 'loans') this.loansPager.reset();
+    if (t === 'repayments') this.repaymentsPager.reset();
     if (t === 'requests') this.loadRequests();
     if (t === 'loans') this.loadLoans();
     if (t === 'repayments') this.loadRepayments();

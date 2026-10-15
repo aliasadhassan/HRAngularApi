@@ -113,7 +113,7 @@
                 </tr>
               </thead>
               <tbody>
-                @for (r of m.requests; track r.id) {
+                @for (r of myRequestsPager.rows(); track r.id) {
                   <tr>
                     <td>
                       <span class="cell-main">{{ 'loans.type.' + r.loanType | translate }}</span>
@@ -143,6 +143,10 @@
               </tbody>
             </table>
           </div>
+          @if (myRequestsPager.total() > 0) {
+            <app-pagination [page]="myRequestsPager.page()" [pageSize]="myRequestsPager.pageSize()" [total]="myRequestsPager.total()"
+                            (pageChange)="myRequestsPager.setPage($event)" (pageSizeChange)="myRequestsPager.setPageSize($event)" />
+          }
         </section>
 
         @if (myPastLoans().length) {
@@ -151,7 +155,7 @@
             <div class="table-wrap">
               <table class="ledger-table">
                 <tbody>
-                  @for (l of myPastLoans(); track l.id) {
+                  @for (l of myPastLoansPager.rows(); track l.id) {
                     <tr>
                       <td>{{ 'loans.type.' + l.loanType | translate }}</td>
                       <td class="end num">{{ l.currencyCode }} {{ l.principalAmount | amount: lang() }}</td>
@@ -162,6 +166,10 @@
                 </tbody>
               </table>
             </div>
+            @if (myPastLoansPager.total() > 0) {
+              <app-pagination [page]="myPastLoansPager.page()" [pageSize]="myPastLoansPager.pageSize()" [total]="myPastLoansPager.total()"
+                              (pageChange)="myPastLoansPager.setPage($event)" (pageSizeChange)="myPastLoansPager.setPageSize($event)" />
+            }
           </section>
         }
       }
@@ -172,7 +180,7 @@
   @if (tab() === 'requests') {
     <section class="panel panel-flush">
       <div class="toolbar">
-        <select class="select-sm" [ngModel]="requestStatus()" (ngModelChange)="requestStatus.set($event); loadRequests()" [attr.aria-label]="'loans.statusCol' | translate">
+        <select class="select-sm" [ngModel]="requestStatus()" (ngModelChange)="requestStatus.set($event); requestsPager.reset(); loadRequests()" [attr.aria-label]="'loans.statusCol' | translate">
           <option value="">{{ 'loans.anyStatus' | translate }}</option>
           @for (s of ['Pending', 'Approved', 'Rejected', 'Cancelled']; track s) { <option [value]="s">{{ 'loans.requestStatus.' + s | translate }}</option> }
         </select>
@@ -191,7 +199,7 @@
             </tr>
           </thead>
           <tbody>
-            @for (r of requests(); track r.id) {
+            @for (r of requestsPager.rows(); track r.id) {
               <tr>
                 <td>
                   <span class="cell-main">{{ r.employeeName }}</span>
@@ -244,6 +252,10 @@
           </tbody>
         </table>
       </div>
+      @if (requestsPager.total() > 0) {
+        <app-pagination [page]="requestsPager.page()" [pageSize]="requestsPager.pageSize()" [total]="requestsPager.total()"
+                        (pageChange)="requestsPager.setPage($event)" (pageSizeChange)="requestsPager.setPageSize($event)" />
+      }
     </section>
   }
 
@@ -251,11 +263,11 @@
   @if (tab() === 'loans') {
     <section class="panel panel-flush">
       <div class="toolbar">
-        <select class="select-sm" [ngModel]="loanStatus()" (ngModelChange)="loanStatus.set($event); loadLoans()" [attr.aria-label]="'loans.statusCol' | translate">
+        <select class="select-sm" [ngModel]="loanStatus()" (ngModelChange)="loanStatus.set($event); loansPager.reset(); loadLoans()" [attr.aria-label]="'loans.statusCol' | translate">
           <option value="">{{ 'loans.anyStatus' | translate }}</option>
           @for (s of ['Active', 'Paused', 'Closed', 'Cancelled']; track s) { <option [value]="s">{{ 'loans.status.' + s | translate }}</option> }
         </select>
-        <select class="select-sm" [ngModel]="loanType()" (ngModelChange)="loanType.set($event); loadLoans()" [attr.aria-label]="'loans.typeCol' | translate">
+        <select class="select-sm" [ngModel]="loanType()" (ngModelChange)="loanType.set($event); loansPager.reset(); loadLoans()" [attr.aria-label]="'loans.typeCol' | translate">
           <option value="">{{ 'loans.anyType' | translate }}</option>
           @for (t of loanTypes; track t) { <option [value]="t">{{ 'loans.type.' + t | translate }}</option> }
         </select>
@@ -274,7 +286,7 @@
             </tr>
           </thead>
           <tbody>
-            @for (l of loans(); track l.id) {
+            @for (l of loansPager.rows(); track l.id) {
               <tr>
                 <td>
                   <span class="cell-main">{{ l.employeeName }}</span>
@@ -334,6 +346,10 @@
           </tbody>
         </table>
       </div>
+      @if (loansPager.total() > 0) {
+        <app-pagination [page]="loansPager.page()" [pageSize]="loansPager.pageSize()" [total]="loansPager.total()"
+                        (pageChange)="loansPager.setPage($event)" (pageSizeChange)="loansPager.setPageSize($event)" />
+      }
     </section>
   }
 
@@ -341,8 +357,8 @@
   @if (tab() === 'repayments') {
     <section class="panel panel-flush">
       <div class="toolbar">
-        <label class="month-filter">{{ 'loans.from' | translate }} <input type="month" class="select-sm" [(ngModel)]="repFrom" (ngModelChange)="loadRepayments()" /></label>
-        <label class="month-filter">{{ 'loans.to' | translate }} <input type="month" class="select-sm" [(ngModel)]="repTo" (ngModelChange)="loadRepayments()" /></label>
+        <label class="month-filter">{{ 'loans.from' | translate }} <input type="month" class="select-sm" [(ngModel)]="repFrom" (ngModelChange)="repaymentsPager.reset(); loadRepayments()" /></label>
+        <label class="month-filter">{{ 'loans.to' | translate }} <input type="month" class="select-sm" [(ngModel)]="repTo" (ngModelChange)="repaymentsPager.reset(); loadRepayments()" /></label>
         @if (repayments().length) {
           <span class="rep-total num">{{ 'loans.totalRecovered' | translate: { amount: (repTotal() | amount: lang()) } }}</span>
         }
@@ -359,7 +375,7 @@
             </tr>
           </thead>
           <tbody>
-            @for (r of repayments(); track r.id) {
+            @for (r of repaymentsPager.rows(); track r.id) {
               <tr>
                 <td class="cell-main">{{ r.employeeName }}</td>
                 <td>{{ 'loans.type.' + r.loanType | translate }}</td>
@@ -381,6 +397,10 @@
           </tbody>
         </table>
       </div>
+      @if (repaymentsPager.total() > 0) {
+        <app-pagination [page]="repaymentsPager.page()" [pageSize]="repaymentsPager.pageSize()" [total]="repaymentsPager.total()"
+                        (pageChange)="repaymentsPager.setPage($event)" (pageSizeChange)="repaymentsPager.setPageSize($event)" />
+      }
     </section>
   }
 </div>

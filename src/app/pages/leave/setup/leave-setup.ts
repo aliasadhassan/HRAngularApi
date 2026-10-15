@@ -9,6 +9,8 @@ import { PayrollService } from '../../payroll/payroll.service';
 import { PeopleService } from '../../people/people.service';
 import { Location } from '../../people/people.models';
 import { LeaveService } from '../leave.service';
+import { PaginationComponent } from '../../../shared/pagination/pagination';
+import { clientPager } from '../../../shared/pagination/client-pager';
 import { AccrualMethod, ApprovalSettings, ApproverType, Holiday, LeavePolicy, LeaveType, PolicyRule } from '../leave.models';
 
 type Tab = 'types' | 'policies' | 'holidays' | 'approval';
@@ -18,7 +20,7 @@ const COLORS = ['#4F6F52', '#B08D3E', '#8C3B2E', '#3E5C76', '#7A5C99', '#B8712E'
 
 @Component({
   selector: 'app-leave-setup',
-  imports: [DatePipe, FormsModule, TranslatePipe],
+  imports: [DatePipe, FormsModule, TranslatePipe, PaginationComponent],
   templateUrl: './leave-setup.html',
   styleUrl: './leave-setup.css'
 })
@@ -40,6 +42,8 @@ export class LeaveSetupComponent {
   readonly holidays = signal<Holiday[]>([]);
   readonly locations = signal<Location[]>([]);
   readonly year = signal(new Date().getFullYear());
+  readonly typesPager = clientPager(this.types);
+  readonly holidaysPager = clientPager(this.holidays);
   approval: ApprovalSettings = { level1Approver: 'LineManager', level2Approver: null, autoApproveAfterDays: null, allowCancelAfterApproval: true };
 
   readonly drawer = signal<Drawer>(null);
@@ -67,6 +71,7 @@ export class LeaveSetupComponent {
 
   shiftYear(delta: number): void {
     this.year.update(y => y + delta);
+    this.holidaysPager.reset();
     this.loadHolidays();
   }
 

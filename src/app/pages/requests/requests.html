@@ -251,7 +251,7 @@
           </label>
         }
         @if (overdueOnly()) {
-          <button type="button" class="chip chip-oxblood chip-x" (click)="overdueOnly.set(false)">
+          <button type="button" class="chip chip-oxblood chip-x" (click)="overdueOnly.set(false); queuePager.reset()">
             {{ 'requests.sum.overdue' | translate }}<span class="material-icons-outlined" aria-hidden="true">close</span>
           </button>
         }
@@ -272,7 +272,7 @@
             @if (queue() === null) {
               <tr><td colspan="6"><p class="loading-line">{{ 'common.loading' | translate }}</p></td></tr>
             }
-            @for (t of queueRows(); track t.id) {
+            @for (t of queuePager.rows(); track t.id) {
               <tr class="is-link" tabindex="0" (click)="openTicket(t.id)" (keydown.enter)="openTicket(t.id)">
                 <td class="subj-cell">
                   <span class="cell-main wrap">@if (t.isConfidential) { <span class="material-icons-outlined inline-icon" aria-hidden="true">lock</span> }{{ t.subject }}</span>
@@ -294,6 +294,10 @@
           </tbody>
         </table>
       </div>
+      @if (queuePager.total() > 0) {
+        <app-pagination [page]="queuePager.page()" [pageSize]="queuePager.pageSize()" [total]="queuePager.total()"
+                        (pageChange)="queuePager.setPage($event)" (pageSizeChange)="queuePager.setPageSize($event)" />
+      }
     </section>
   }
 
@@ -316,7 +320,7 @@
             @if (categories() === null) {
               <tr><td colspan="6"><p class="loading-line">{{ 'common.loading' | translate }}</p></td></tr>
             }
-            @for (c of categories(); track c.id) {
+            @for (c of categoriesPager.rows(); track c.id) {
               <tr class="is-link" [class.is-off]="!c.isActive" tabindex="0" (click)="editCategory(c)" (keydown.enter)="editCategory(c)">
                 <td>
                   <span class="cat-name">
@@ -348,6 +352,10 @@
           </tbody>
         </table>
       </div>
+      @if (categoriesPager.total() > 0) {
+        <app-pagination [page]="categoriesPager.page()" [pageSize]="categoriesPager.pageSize()" [total]="categoriesPager.total()"
+                        (pageChange)="categoriesPager.setPage($event)" (pageSizeChange)="categoriesPager.setPageSize($event)" />
+      }
     </section>
   }
 </div>

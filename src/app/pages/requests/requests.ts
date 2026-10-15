@@ -11,6 +11,8 @@ import { AlertService } from '../../services/alert/alert';
 import { PayrollService } from '../payroll/payroll.service';
 import { DashboardService } from '../dashboard/dashboard.service';
 import { utc } from '../admin/admin.models';
+import { PaginationComponent } from '../../shared/pagination/pagination';
+import { clientPager } from '../../shared/pagination/client-pager';
 import { RequestsService } from './requests.service';
 import {
   Activity, Category, HelpdeskSummary, Lookups, PRIORITIES, PRIORITY_CHIP, RATINGS, STATUSES, STATUS_CHIP, Ticket, TicketListItem,
@@ -63,7 +65,7 @@ interface CategoryForm {
 
 @Component({
   selector: 'app-requests',
-  imports: [DatePipe, DecimalPipe, FormsModule, NgTemplateOutlet, RouterLink, TranslatePipe],
+  imports: [DatePipe, DecimalPipe, FormsModule, NgTemplateOutlet, RouterLink, TranslatePipe, PaginationComponent],
   templateUrl: './requests.html',
   styleUrl: './requests.css'
 })
@@ -239,26 +241,31 @@ export class RequestsComponent {
   // ───── Queue filters ─────
   onSearch(v: string): void {
     this.search.set(v);
+    this.queuePager.reset();
     this.search$.next();
   }
 
   setStatus(v: TicketStatus | ''): void {
     this.status.set(v);
+    this.queuePager.reset();
     this.loadQueue();
   }
 
   setActiveOnly(v: boolean): void {
     this.activeOnly.set(v);
+    this.queuePager.reset();
     this.loadQueue();
   }
 
   setCategory(v: string): void {
     this.categoryId.set(v);
+    this.queuePager.reset();
     this.loadQueue();
   }
 
   setAssignee(v: string): void {
     this.assignee.set(v);
+    this.queuePager.reset();
     this.loadQueue();
   }
 
@@ -269,12 +276,15 @@ export class RequestsComponent {
     this.activeOnly.set(true);
     this.search.set(overdue ? '' : this.search());
     this.overdueOnly.set(overdue);
+    this.queuePager.reset();
     this.setTab('queue');
     this.loadQueue();
   }
 
   readonly overdueOnly = signal(false);
   readonly queueRows = computed(() => (this.queue() ?? []).filter(t => !this.overdueOnly() || t.isOverdue));
+  readonly queuePager = clientPager(this.queueRows);
+  readonly categoriesPager = clientPager(() => this.categories() ?? []);
 
   // ───── Ticket drawer ─────
   openTicket(id: string): void {

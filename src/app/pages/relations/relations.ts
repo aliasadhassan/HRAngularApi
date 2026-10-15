@@ -11,6 +11,8 @@ import { PayrollService } from '../payroll/payroll.service';
 import { utc } from '../admin/admin.models';
 import { todayIso } from '../lifecycle/lifecycle.models';
 import { CaseFilter, RelationsService } from './relations.service';
+import { PaginationComponent } from '../../shared/pagination/pagination';
+import { clientPager } from '../../shared/pagination/client-pager';
 import {
   ACTIONS, ALWAYS_RESTRICTED, AccessLogItem, CASE_TYPES, CONCERN_TYPES, CaseAction, CaseConfidentiality, CaseDetail, CaseEntry,
   CaseListItem, CaseMemberRole, CaseOutcome, CasePartyRole, CasePhase, CaseScope, CaseSeverity, CaseSource, CaseType, ConcernDetail,
@@ -95,7 +97,7 @@ interface ActForm {
 
 @Component({
   selector: 'app-relations',
-  imports: [DatePipe, FormsModule, TranslatePipe],
+  imports: [DatePipe, FormsModule, TranslatePipe, PaginationComponent],
   templateUrl: './relations.html',
   styleUrl: './relations.css'
 })
@@ -148,6 +150,7 @@ export class RelationsComponent {
   readonly includeClosed = signal(false);
   readonly search = signal('');
   private readonly search$ = new Subject<void>();
+  readonly casesPager = clientPager(() => this.cases() ?? []);
 
   // ───── Concerns ─────
   readonly concerns = signal<ConcernListItem[] | null>(null);
@@ -157,6 +160,7 @@ export class RelationsComponent {
   readonly detail = signal<CaseDetail | null>(null);
   readonly section = signal<Section>('overview');
   readonly accessLog = signal<AccessLogItem[] | null>(null);
+  readonly accessPager = clientPager(() => this.accessLog() ?? []);
   readonly concern = signal<ConcernDetail | null>(null);
 
   caseForm: CaseForm | null = null;
@@ -226,6 +230,7 @@ export class RelationsComponent {
 
   setScope(v: CaseScope): void {
     this.scope.set(v);
+    this.casesPager.reset();
     this.loadCases();
   }
 
@@ -233,11 +238,13 @@ export class RelationsComponent {
     if (which === 'phase') this.phase.set(v as CasePhase | '');
     if (which === 'type') this.type.set(v as CaseType | '');
     if (which === 'severity') this.severity.set(v as CaseSeverity | '');
+    this.casesPager.reset();
     this.loadCases();
   }
 
   setIncludeClosed(v: boolean): void {
     this.includeClosed.set(v);
+    this.casesPager.reset();
     this.loadCases();
   }
 
@@ -246,11 +253,13 @@ export class RelationsComponent {
     const off = this.phase() === p;
     this.phase.set(off ? '' : p);
     if (!off && p === 'Closed') this.includeClosed.set(true);
+    this.casesPager.reset();
     this.loadCases();
   }
 
   onSearch(v: string): void {
     this.search.set(v);
+    this.casesPager.reset();
     this.search$.next();
   }
 
@@ -308,6 +317,7 @@ export class RelationsComponent {
     this.resetForms();
     this.detail.set(null);
     this.accessLog.set(null);
+    this.accessPager.reset();
     this.section.set(section);
     this.drawer.set('case');
     this.api.case(id).subscribe({

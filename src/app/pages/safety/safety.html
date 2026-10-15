@@ -276,7 +276,7 @@
               </tr>
             </thead>
             <tbody>
-              @for (i of incidents(); track i.id) {
+              @for (i of incidentsPager.rows(); track i.id) {
                 <tr class="row-link" tabindex="0" (click)="openIncident(i.id)" (keydown.enter)="openIncident(i.id)">
                   <td>
                     <div class="case-cell">
@@ -313,6 +313,10 @@
             </tbody>
           </table>
         </div>
+        @if (incidentsPager.total() > 0) {
+          <app-pagination [page]="incidentsPager.page()" [pageSize]="incidentsPager.pageSize()" [total]="incidentsPager.total()"
+                          (pageChange)="incidentsPager.setPage($event)" (pageSizeChange)="incidentsPager.setPageSize($event)" />
+        }
       }
     </section>
   }
@@ -427,7 +431,7 @@
               </tr>
             </thead>
             <tbody>
-              @for (i of inspections(); track i.id) {
+              @for (i of inspectionsPager.rows(); track i.id) {
                 <tr class="row-link" tabindex="0" (click)="openInspection(i.id)" (keydown.enter)="openInspection(i.id)">
                   <td>
                     <span class="stack">
@@ -459,6 +463,10 @@
             </tbody>
           </table>
         </div>
+        @if (inspectionsPager.total() > 0) {
+          <app-pagination [page]="inspectionsPager.page()" [pageSize]="inspectionsPager.pageSize()" [total]="inspectionsPager.total()"
+                          (pageChange)="inspectionsPager.setPage($event)" (pageSizeChange)="inspectionsPager.setPageSize($event)" />
+        }
       }
     </section>
   }

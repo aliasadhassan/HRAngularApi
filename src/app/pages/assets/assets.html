@@ -179,7 +179,7 @@
             @if (items() === null) {
               <tr><td colspan="6"><p class="loading-line">{{ 'common.loading' | translate }}</p></td></tr>
             }
-            @for (a of items(); track a.id) {
+            @for (a of itemsPager.rows(); track a.id) {
               <tr class="is-link" tabindex="0" (click)="open(a.id)" (keydown.enter)="open(a.id)">
                 <td>
                   <div class="asset-cell">
@@ -219,6 +219,10 @@
           </tbody>
         </table>
       </div>
+      @if (itemsPager.total() > 0) {
+        <app-pagination [page]="itemsPager.page()" [pageSize]="itemsPager.pageSize()" [total]="itemsPager.total()"
+                        (pageChange)="itemsPager.setPage($event)" (pageSizeChange)="itemsPager.setPageSize($event)" />
+      }
     </section>
   }
 
@@ -246,7 +250,7 @@
             @if (assignments() === null) {
               <tr><td colspan="5"><p class="loading-line">{{ 'common.loading' | translate }}</p></td></tr>
             }
-            @for (x of assignments(); track x.id) {
+            @for (x of assignmentsPager.rows(); track x.id) {
               <tr class="is-link" tabindex="0" (click)="open(x.assetId)" (keydown.enter)="open(x.assetId)">
                 <td>
                   <span class="cell-main">{{ x.employeeName }}</span>
@@ -284,6 +288,10 @@
           </tbody>
         </table>
       </div>
+      @if (assignmentsPager.total() > 0) {
+        <app-pagination [page]="assignmentsPager.page()" [pageSize]="assignmentsPager.pageSize()" [total]="assignmentsPager.total()"
+                        (pageChange)="assignmentsPager.setPage($event)" (pageSizeChange)="assignmentsPager.setPageSize($event)" />
+      }
     </section>
   }
 
@@ -356,7 +364,7 @@
             </tr>
           </thead>
           <tbody>
-            @for (x of returned(); track x.id) {
+            @for (x of returnedPager.rows(); track x.id) {
               <tr class="is-link" tabindex="0" (click)="open(x.assetId)" (keydown.enter)="open(x.assetId)">
                 <td class="num">{{ x.returnedOn | date: 'd MMM y' : undefined : lang() }}</td>
                 <td><span class="cell-main">{{ x.assetName }}</span><span class="cell-sub tag num">{{ x.assetTag }}</span></td>
@@ -374,6 +382,10 @@
           </tbody>
         </table>
       </div>
+      @if (returnedPager.total() > 0) {
+        <app-pagination [page]="returnedPager.page()" [pageSize]="returnedPager.pageSize()" [total]="returnedPager.total()"
+                        (pageChange)="returnedPager.setPage($event)" (pageSizeChange)="returnedPager.setPageSize($event)" />
+      }
     </section>
   }
 

@@ -7,6 +7,8 @@ import { AmountPipe } from '../../../shared/pipes/amount.pipe';
 import { LanguageService } from '../../../core/i18n/language.service';
 import { AlertService } from '../../../services/alert/alert';
 import { PayrollService } from '../payroll.service';
+import { PaginationComponent } from '../../../shared/pagination/pagination';
+import { clientPager } from '../../../shared/pagination/client-pager';
 import {
   CalcType, ComponentType, PayComponent, PayFrequency, PayGroup, PayPeriod, PayrollSettings,
   ProrationMethod, SavePayComponent, TaxCalcMethod, TaxRegime, TaxSlab
@@ -19,7 +21,7 @@ const CURRENCIES = ['PKR', 'AED', 'SAR', 'QAR', 'KWD', 'BHD', 'OMR', 'USD', 'GBP
 
 @Component({
   selector: 'app-payroll-setup',
-  imports: [DatePipe, FormsModule, TranslatePipe, AmountPipe],
+  imports: [DatePipe, FormsModule, TranslatePipe, AmountPipe, PaginationComponent],
   templateUrl: './payroll-setup.html',
   styleUrl: './payroll-setup.css'
 })
@@ -45,9 +47,11 @@ export class PayrollSetupComponent {
   readonly notInitialized = signal(false);
   readonly groups = signal<PayGroup[]>([]);
   readonly components = signal<PayComponent[]>([]);
+  readonly componentsPager = clientPager(this.components);
   readonly regimes = signal<TaxRegime[]>([]);
   readonly selectedGroupId = signal<string | null>(null);
   readonly periods = signal<PayPeriod[]>([]);
+  readonly periodsPager = clientPager(this.periods);
   readonly saving = signal(false);
 
   // Forms
@@ -101,6 +105,7 @@ export class PayrollSetupComponent {
   }
 
   selectGroup(id: string): void {
+    if (this.selectedGroupId() !== id) this.periodsPager.reset();
     this.selectedGroupId.set(id);
     this.api.getPayPeriods(id).subscribe({ next: p => this.periods.set(p), error: () => this.periods.set([]) });
   }

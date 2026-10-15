@@ -9,6 +9,8 @@ import { LanguageService } from '../../core/i18n/language.service';
 import { P, PermissionService } from '../../core/auth/permissions';
 import { AmountPipe } from '../../shared/pipes/amount.pipe';
 import { ChartComponent } from '../../shared/widgets/chart/chart';
+import { PaginationComponent } from '../../shared/pagination/pagination';
+import { clientPager } from '../../shared/pagination/client-pager';
 import { PayrollService } from '../payroll/payroll.service';
 import { PeopleService } from '../people/people.service';
 import { Department } from '../people/people.models';
@@ -29,7 +31,7 @@ interface MixGroup { title: string; rows: { label: string; count: number; pct: n
 
 @Component({
   selector: 'app-reports',
-  imports: [DatePipe, FormsModule, TranslatePipe, AmountPipe, ChartComponent],
+  imports: [DatePipe, FormsModule, TranslatePipe, AmountPipe, ChartComponent, PaginationComponent],
   templateUrl: './reports.html',
   styleUrl: './reports.css'
 })
@@ -68,6 +70,11 @@ export class ReportsComponent {
   readonly register = signal<PayRegister | null>(null);
   readonly registerLoading = signal(false);
   readonly timeSort = signal<TimeSort>('department');
+
+  // Pagination (Employees jaisa): sirf record wali lists; chhoti summary tables (department/month/component) poori dikhti hain.
+  // CSV export hamesha poori list se banta hai.
+  readonly movementsPager = clientPager(() => this.people()?.movements ?? []);
+  readonly registerPager = clientPager(() => this.register()?.rows ?? []);
 
   constructor() {
     const tab = inject(ActivatedRoute).snapshot.queryParamMap.get('tab') as Tab | null;
@@ -113,6 +120,8 @@ export class ReportsComponent {
   load(): void {
     const tab = this.tab();
     this.error.set(null);
+    this.movementsPager.reset();
+    this.timePager.reset();
     this.loading.set(true);
     const done = { complete: () => this.loading.set(false) };
     const fail = (e: unknown) => {
@@ -132,6 +141,7 @@ export class ReportsComponent {
 
   loadRegister(): void {
     this.registerLoading.set(true);
+    this.registerPager.reset();
     this.api.register(this.year, this.registerMonth).subscribe({
       next: r => { this.register.set(r); this.registerLoading.set(false); },
       error: () => { this.register.set(null); this.registerLoading.set(false); }
@@ -206,6 +216,8 @@ export class ReportsComponent {
       default: return rows;
     }
   });
+
+  readonly timePager = clientPager(this.timeRows);
 
   readonly maxLeaveDays = computed(() => Math.max(1, ...(this.time()?.leaveTypes ?? []).map(t => t.days)));
 
