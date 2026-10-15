@@ -10,14 +10,51 @@
   display: flex;
   align-items: center;
   gap: 16px;
-  padding-inline: 32px;
-  background: rgba(238, 240, 234, 0.86);
-  backdrop-filter: saturate(1.4) blur(10px);
-  border-bottom: 1px solid var(--rule);
+  padding-inline: 28px;
+  background: linear-gradient(180deg, #f6f7f2 0%, var(--vellum) 100%);
+  border-bottom: 3px double rgba(176, 141, 62, 0.6);
+}
+
+/* "Ledger" title: brass ring icon, section eyebrow, page naam */
+.page-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+.page-icon {
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  border: 1px solid var(--brass);
+  background: var(--sheet);
+  color: var(--brass);
+  box-shadow: 0 0 0 3px rgba(176, 141, 62, 0.12);
+}
+.page-icon .material-icons-outlined {
+  font-size: 17px;
+}
+.page-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  line-height: 1.1;
+}
+.page-eyebrow {
+  margin-bottom: 2px;
+  font-size: 0.625rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--brass);
 }
 
 .page-title {
-  font-size: var(--fs-20);
+  margin: 0;
+  font-size: 1.1875rem;
   font-weight: 600;
   white-space: nowrap;
   overflow: hidden;

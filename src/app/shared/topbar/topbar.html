@@ -8,7 +8,17 @@
     <span class="material-icons-outlined" aria-hidden="true">menu</span>
   </button>
 
-  <h1 class="page-title">{{ titleKey() | translate }}</h1>
+  <div class="page-head">
+    @if (nav(); as n) {
+      <span class="page-icon" aria-hidden="true"><span class="material-icons-outlined">{{ n.item.icon }}</span></span>
+    }
+    <div class="page-text">
+      @if (nav()?.section; as section) {
+        <span class="page-eyebrow">{{ section | translate }}</span>
+      }
+      <h1 class="page-title">{{ titleKey() | translate }}</h1>
+    </div>
+  </div>
 
   <div class="actions">
     <div class="lang">

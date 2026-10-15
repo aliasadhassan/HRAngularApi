@@ -9,6 +9,7 @@ import { LayoutService } from '../../core/layout/layout.service';
 import { CurrentUserService } from '../../core/auth/current-user';
 import { MyPhotoService } from '../../core/auth/my-photo';
 import { AvatarComponent } from '../avatar/avatar';
+import { findNav } from '../sidebar/nav';
 
 @Component({
   selector: 'app-topbar',
@@ -39,6 +40,16 @@ export class TopbarComponent {
       })
     ),
     { initialValue: 'nav.dashboard' }
+  );
+
+  /** Sidebar ka item is URL ke liye: title ke saath uska icon aur section ka chhota naam (PEOPLE). */
+  readonly nav = toSignal(
+    this.router.events.pipe(
+      filter(e => e instanceof NavigationEnd),
+      startWith(null),
+      map(() => findNav(this.router.url))
+    ),
+    { initialValue: null }
   );
 
   toggleMenu(event: Event): void {

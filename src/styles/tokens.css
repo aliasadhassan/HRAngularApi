@@ -51,7 +51,7 @@
 
   --sidebar-w: 236px;
   --sidebar-w-collapsed: 64px;
-  --topbar-h: 64px;
+  --topbar-h: 56px;
 
   /* Purane naam (employees page) — naye palette pe point karte hain */
   --paper: var(--vellum);
