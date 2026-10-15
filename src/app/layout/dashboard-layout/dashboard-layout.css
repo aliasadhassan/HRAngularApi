@@ -27,6 +27,15 @@
   background: rgba(19, 33, 26, 0.45);
 }
 
+@media (min-width: 1024px) {
+  .shell {
+    --content-zoom: 0.9;
+  }
+  .main {
+    zoom: var(--content-zoom);
+  }
+}
+
 @media (max-width: 1023px) {
   .content {
     padding: 20px;
