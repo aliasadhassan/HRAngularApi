@@ -1018,7 +1018,13 @@
     "none": "无",
     "levelHint": "数字越大级别越高，用于排序和报表。",
     "headOffice": "总部",
-    "workWeekHint": "用于计算该地点的请假天数。"
+    "workWeekHint": "用于计算该地点的请假天数。",
+    "search": {
+      "departments": "搜索部门",
+      "designations": "搜索职位",
+      "locations": "搜索地点"
+    },
+    "noMatch": "没有符合搜索条件的结果。"
   },
   "leave": {
     "intro": "您的假期余额和请假申请。上级也可以在这里审批待处理的申请。",

@@ -52,9 +52,19 @@ export class OrganizationComponent {
   readonly pageSize = signal(DEFAULT_PAGE_SIZE);
   readonly pages = signal<Record<Tab, number>>({ departments: 1, designations: 1, locations: 1 });
   readonly page = computed(() => this.pages()[this.tab()]);
-  readonly pagedDepartments = computed(() => this.slice(this.departments(), this.pages().departments));
-  readonly pagedDesignations = computed(() => this.slice(this.sortedDesignations(), this.pages().designations));
-  readonly pagedLocations = computed(() => this.slice(this.locations(), this.pages().locations));
+  readonly pagedDepartments = computed(() => this.slice(this.filteredDepartments(), this.pages().departments));
+  readonly pagedDesignations = computed(() => this.slice(this.filteredDesignations(), this.pages().designations));
+  readonly pagedLocations = computed(() => this.slice(this.filteredLocations(), this.pages().locations));
+
+  // Search: har tab ka apna text (trim + lower case), client-side kyunke list poori aati hai.
+  readonly queries = signal<Record<Tab, string>>({ departments: '', designations: '', locations: '' });
+  readonly query = computed(() => this.queries()[this.tab()]);
+  readonly filteredDepartments = computed(() => this.match(this.departments(), this.queries().departments,
+    d => [d.name, d.code, d.description, d.parentName, d.headName]));
+  readonly filteredDesignations = computed(() => this.match(this.sortedDesignations(), this.queries().designations,
+    d => [d.title, d.description, d.level ? 'L' + d.level : null]));
+  readonly filteredLocations = computed(() => this.match(this.locations(), this.queries().locations,
+    l => [l.name, l.code, l.city, l.countryCode, l.timeZone]));
 
   constructor() {
     this.load(false);
@@ -67,6 +77,22 @@ export class OrganizationComponent {
     this.api.getDepartments(refresh).subscribe({ next: d => this.departments.set(d), error: e => this.fail(e, 'people.errors.load') });
     this.api.getDesignations(refresh).subscribe({ next: d => this.designations.set(d) });
     this.api.getLocations(refresh).subscribe({ next: d => this.locations.set(d) });
+  }
+
+  setQuery(text: string): void {
+    this.queries.update(q => ({ ...q, [this.tab()]: text }));
+    this.setPage(1);
+  }
+
+  /** Search ke baad kitni rows bachi (pagination ke liye); tab ka badge poora count hi dikhata hai */
+  shown(t: Tab): number {
+    return t === 'departments' ? this.filteredDepartments().length : t === 'designations' ? this.filteredDesignations().length : this.filteredLocations().length;
+  }
+
+  private match<T>(items: T[], text: string, fields: (item: T) => (string | null | undefined)[]): T[] {
+    const q = text.trim().toLowerCase();
+    if (!q) return items;
+    return items.filter(item => fields(item).some(f => f?.toLowerCase().includes(q)));
   }
 
   setPage(page: number): void {

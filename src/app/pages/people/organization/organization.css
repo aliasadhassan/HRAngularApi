@@ -35,3 +35,24 @@ tr.is-dim td {
   border-color: var(--ink);
   color: var(--text-on-ink);
 }
+
+/* Tabs ki line ke aakhir mein search */
+.tabs {
+  align-items: center;
+}
+.org-search {
+  flex: 0 1 300px;
+  min-width: 180px;
+  height: 34px;
+  margin-inline-start: auto;
+  margin-bottom: 4px;
+}
+.org-search input {
+  font-size: var(--fs-13);
+}
+@media (max-width: 720px) {
+  .org-search {
+    flex: 1 1 100%;
+    margin-inline-start: 0;
+  }
+}
