@@ -7,6 +7,7 @@ import { LanguageService } from '../../../core/i18n/language.service';
 import { AlertService } from '../../../services/alert/alert';
 import { PayrollService } from '../../payroll/payroll.service';
 import { PeopleService } from '../people.service';
+import { DEFAULT_PAGE_SIZE, PaginationComponent } from '../../../shared/pagination/pagination';
 import { Department, Designation, EmployeeListItem, Location, SaveDepartment, SaveDesignation, SaveLocation } from '../people.models';
 
 type Tab = 'departments' | 'designations' | 'locations';
@@ -16,7 +17,7 @@ const DAY_KEYS = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
 
 @Component({
   selector: 'app-organization',
-  imports: [FormsModule, TranslatePipe],
+  imports: [FormsModule, TranslatePipe, PaginationComponent],
   templateUrl: './organization.html',
   styleUrl: './organization.css'
 })
@@ -46,6 +47,15 @@ export class OrganizationComponent {
   readonly sortedDesignations = computed(() =>
     [...this.designations()].sort((a, b) => (b.level ?? 0) - (a.level ?? 0) || a.title.localeCompare(b.title)));
 
+  // Pagination (Employees jaisa). Lists poori aati hain (dropdowns ko bhi chahiye), page yahin katta hai.
+  // Har tab ka apna page; size sab tabs ka ek.
+  readonly pageSize = signal(DEFAULT_PAGE_SIZE);
+  readonly pages = signal<Record<Tab, number>>({ departments: 1, designations: 1, locations: 1 });
+  readonly page = computed(() => this.pages()[this.tab()]);
+  readonly pagedDepartments = computed(() => this.slice(this.departments(), this.pages().departments));
+  readonly pagedDesignations = computed(() => this.slice(this.sortedDesignations(), this.pages().designations));
+  readonly pagedLocations = computed(() => this.slice(this.locations(), this.pages().locations));
+
   constructor() {
     this.load(false);
     // Bulk import ke baad ?tab=locations waghera
@@ -59,6 +69,23 @@ export class OrganizationComponent {
     this.api.getLocations(refresh).subscribe({ next: d => this.locations.set(d) });
   }
 
+  setPage(page: number): void {
+    this.pages.update(p => ({ ...p, [this.tab()]: page }));
+  }
+
+  setPageSize(size: number): void {
+    this.pageSize.set(size);
+    this.pages.set({ departments: 1, designations: 1, locations: 1 });
+  }
+
+  /** Page list se bahar ho jaye (size badla / record kam hue) to aakhri page dikhao */
+  private slice<T>(items: T[], page: number): T[] {
+    const size = this.pageSize();
+    const last = Math.max(1, Math.ceil(items.length / size));
+    const start = (Math.min(page, last) - 1) * size;
+    return items.slice(start, start + size);
+  }
+
   count(t: Tab): number {
     return t === 'departments' ? this.departments().length : t === 'designations' ? this.designations().length : this.locations().length;
   }
@@ -67,7 +94,7 @@ export class OrganizationComponent {
   openDept(d?: Department): void {
     this.editingId = d?.id ?? null;
     this.deptForm = d ? { name: d.name, code: d.code, description: d.description, parentDepartmentId: d.parentDepartmentId, headEmployeeId: d.headEmployeeId } : this.emptyDept();
-    this.api.getEmployees({ page: 1, pageSize: 100 }).subscribe({ next: r => this.people.set(r.items) });
+    this.api.getAllEmployees().subscribe({ next: list => this.people.set(list) });
     this.drawer.set('departments');
   }
 

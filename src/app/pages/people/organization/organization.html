@@ -20,7 +20,7 @@
         <table class="ledger-table">
           <thead><tr><th>{{ 'org.department' | translate }}</th><th>{{ 'org.parent' | translate }}</th><th>{{ 'org.head' | translate }}</th><th class="end">{{ 'org.people' | translate }}</th></tr></thead>
           <tbody>
-            @for (d of departments(); track d.id) {
+            @for (d of pagedDepartments(); track d.id) {
               <tr class="is-link" tabindex="0" (click)="openDept(d)" (keydown.enter)="openDept(d)" [class.is-dim]="!d.isActive">
                 <td><span class="cell-main">{{ d.name }} <span class="mono dim">{{ d.code }}</span></span>@if (d.description) { <span class="cell-sub">{{ d.description }}</span> }</td>
                 <td>{{ d.parentName ?? '—' }}</td>
@@ -35,7 +35,7 @@
         <table class="ledger-table">
           <thead><tr><th>{{ 'org.designation' | translate }}</th><th>{{ 'org.level' | translate }}</th><th class="end">{{ 'org.people' | translate }}</th></tr></thead>
           <tbody>
-            @for (d of sortedDesignations(); track d.id) {
+            @for (d of pagedDesignations(); track d.id) {
               <tr class="is-link" tabindex="0" (click)="openDesig(d)" (keydown.enter)="openDesig(d)" [class.is-dim]="!d.isActive">
                 <td><span class="cell-main">{{ d.title }}</span>@if (d.description) { <span class="cell-sub">{{ d.description }}</span> }</td>
                 <td>@if (d.level) { <span class="level num">L{{ d.level }}</span> } @else { — }</td>
@@ -49,7 +49,7 @@
         <table class="ledger-table">
           <thead><tr><th>{{ 'org.location' | translate }}</th><th>{{ 'admin.company.timeZone' | translate }}</th><th>{{ 'admin.company.workWeek' | translate }}</th><th class="end">{{ 'org.people' | translate }}</th></tr></thead>
           <tbody>
-            @for (l of locations(); track l.id) {
+            @for (l of pagedLocations(); track l.id) {
               <tr class="is-link" tabindex="0" (click)="openLoc(l)" (keydown.enter)="openLoc(l)" [class.is-dim]="!l.isActive">
                 <td>
                   <span class="cell-main">{{ l.name }} <span class="mono dim">{{ l.code }}</span> @if (l.isHeadOffice) { <span class="chip chip-ink">{{ 'org.headOffice' | translate }}</span> }</span>
@@ -64,6 +64,10 @@
         </table>
       }
     </div>
+    @if (count(tab()) > 0) {
+      <app-pagination [page]="page()" [pageSize]="pageSize()" [total]="count(tab())"
+                      (pageChange)="setPage($event)" (pageSizeChange)="setPageSize($event)" />
+    }
   </section>
 </div>
 
