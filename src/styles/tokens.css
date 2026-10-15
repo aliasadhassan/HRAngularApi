@@ -52,6 +52,8 @@
   --sidebar-w: 236px;
   --sidebar-w-collapsed: 64px;
   --topbar-h: 56px;
+  /* Right side (topbar + page) ka scale; sidebar 100% rehta hai. 0.9 = browser mein ek dafa Ctrl - */
+  --content-zoom: 1;
 
   /* Purane naam (employees page) — naye palette pe point karte hain */
   --paper: var(--vellum);

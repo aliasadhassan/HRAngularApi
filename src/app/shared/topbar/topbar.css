@@ -6,7 +6,8 @@
 }
 
 .topbar {
-  height: var(--topbar-h);
+  /* zoom ke baad bhi sidebar ke brand block ke barabar */
+  height: calc(var(--topbar-h) / var(--content-zoom, 1));
   display: flex;
   align-items: center;
   gap: 16px;
