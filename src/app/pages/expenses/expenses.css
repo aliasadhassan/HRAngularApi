@@ -296,12 +296,6 @@ tr.is-off td {
   opacity: 0.55;
   cursor: default;
 }
-.ledger-table.compact td {
-  padding: 10px 12px;
-}
-.ledger-table.compact th {
-  padding: 10px 12px 8px;
-}
 .ledger-table tfoot td {
   padding: 10px 12px;
   font-weight: 600;
