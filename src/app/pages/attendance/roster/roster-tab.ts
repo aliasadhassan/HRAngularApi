@@ -8,13 +8,14 @@ import { AlertService } from '../../../services/alert/alert';
 import { PayrollService } from '../../payroll/payroll.service';
 import { PeopleService } from '../../people/people.service';
 import { Department } from '../../people/people.models';
+import { DEFAULT_PAGE_SIZE, PaginationComponent } from '../../../shared/pagination/pagination';
 import { AttendanceService } from '../attendance.service';
 import { RosterDay, RosterRow, Shift, WEEK_BITS, addDays, isoDate } from '../attendance.models';
 
 /** Roster tab: hafta (ya 2 hafte) × employees. HR cell pe click karke us din ki shift badalta hai. */
 @Component({
   selector: 'app-roster-tab',
-  imports: [DatePipe, FormsModule, TranslatePipe],
+  imports: [DatePipe, FormsModule, TranslatePipe, PaginationComponent],
   templateUrl: './roster-tab.html',
   styleUrl: './roster-tab.css'
 })
@@ -46,6 +47,18 @@ export class RosterTabComponent {
     return q ? this.rows().filter(r => r.employeeName.toLowerCase().includes(q) || r.employeeCode.toLowerCase().includes(q)) : this.rows();
   });
 
+  // Pagination (Employees jaisa). Roster API poori list deti hai, page yahin katta hai.
+  readonly page = signal(1);
+  readonly pageSize = signal(DEFAULT_PAGE_SIZE);
+  /** Page list se bahar ho jaye (search/department badla) to aakhri page dikhao */
+  readonly pageRows = computed(() => {
+    const rows = this.visible();
+    const size = this.pageSize();
+    const last = Math.max(1, Math.ceil(rows.length / size));
+    const start = (Math.min(this.page(), last) - 1) * size;
+    return rows.slice(start, start + size);
+  });
+
   // Cell edit
   readonly cell = signal<{ row: RosterRow; day: RosterDay } | null>(null);
   cellForm = { shiftId: null as string | null, note: '' };
@@ -61,6 +74,16 @@ export class RosterTabComponent {
     this.load();
     this.api.shifts(false).subscribe({ next: s => this.shifts.set(s) });
     this.people.getDepartments().subscribe({ next: d => this.departments.set(d.filter(x => x.isActive)) });
+  }
+
+  setQuery(text: string): void {
+    this.query.set(text);
+    this.page.set(1);
+  }
+
+  setPageSize(size: number): void {
+    this.pageSize.set(size);
+    this.page.set(1);
   }
 
   load(): void {

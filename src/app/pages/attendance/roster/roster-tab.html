@@ -11,12 +11,12 @@
       <button type="button" [class.is-on]="span() === 14" (click)="setSpan(14)">{{ 'attendance.roster.twoWeeks' | translate }}</button>
     </div>
     @if (canViewAll()) {
-      <select class="select-sm" [(ngModel)]="departmentId" (change)="load()" [attr.aria-label]="'people.department' | translate">
+      <select class="select-sm" [(ngModel)]="departmentId" (change)="page.set(1); load()" [attr.aria-label]="'people.department' | translate">
         <option value="">{{ 'attendance.allDepartments' | translate }}</option>
         @for (d of departments(); track d.id) { <option [value]="d.id">{{ d.name }}</option> }
       </select>
     }
-    <input class="select-sm search-sm" type="search" [ngModel]="query()" (ngModelChange)="query.set($event)" [placeholder]="'attendance.roster.search' | translate" />
+    <input class="select-sm search-sm" type="search" [ngModel]="query()" (ngModelChange)="setQuery($event)" [placeholder]="'attendance.roster.search' | translate" />
     @if (canManage()) {
       <button type="button" class="btn btn-ink btn-small push" (click)="openAssign()" [disabled]="!shifts().length || !rows().length">
         <span class="material-icons-outlined" aria-hidden="true">event_repeat</span>{{ 'attendance.roster.assign' | translate }}
@@ -38,7 +38,7 @@
         </tr>
       </thead>
       <tbody>
-        @for (r of visible(); track r.employeeId) {
+        @for (r of pageRows(); track r.employeeId) {
           <tr>
             <td class="who"><span class="cell-main">{{ r.employeeName }}</span><span class="cell-sub">{{ r.employeeCode }} · {{ r.departmentName }}</span></td>
             @for (d of r.days; track d.date) {
@@ -62,6 +62,10 @@
       </tbody>
     </table>
   </div>
+  @if (visible().length > 0) {
+    <app-pagination [page]="page()" [pageSize]="pageSize()" [total]="visible().length"
+                    (pageChange)="page.set($event)" (pageSizeChange)="setPageSize($event)" />
+  }
   <footer class="legend">
     <span><i class="dot override"></i>{{ 'attendance.roster.legendOverride' | translate }}</span>
     <span><i class="dot off"></i>{{ 'attendance.roster.off' | translate }}</span>
