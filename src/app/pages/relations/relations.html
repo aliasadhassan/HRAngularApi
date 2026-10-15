@@ -136,7 +136,7 @@
                 </tr>
               </thead>
               <tbody>
-                @for (c of cases(); track c.id) {
+                @for (c of casesPager.rows(); track c.id) {
                   <tr class="row-link" [class.is-masked]="c.masked" tabindex="0" (click)="openCase(c.id)" (keydown.enter)="openCase(c.id)">
                     <td>
                       <span class="case-cell">
@@ -183,6 +183,10 @@
               </tbody>
             </table>
           </div>
+        }
+        @if (casesPager.total() > 0) {
+          <app-pagination [page]="casesPager.page()" [pageSize]="casesPager.pageSize()" [total]="casesPager.total()"
+                          (pageChange)="casesPager.setPage($event)" (pageSizeChange)="casesPager.setPageSize($event)" />
         }
       </section>
 
@@ -825,7 +829,7 @@
                             </tr>
                           </thead>
                           <tbody>
-                            @for (a of accessLog(); track a.id) {
+                            @for (a of accessPager.rows(); track a.id) {
                               <tr [class.is-alert]="a.action === 'BreakGlass'">
                                 <td><span class="cell-main">{{ a.name ?? '—' }}</span></td>
                                 <td>
@@ -842,6 +846,10 @@
                           </tbody>
                         </table>
                       </div>
+                      @if (accessPager.total() > 0) {
+                        <app-pagination [page]="accessPager.page()" [pageSize]="accessPager.pageSize()" [total]="accessPager.total()"
+                                        (pageChange)="accessPager.setPage($event)" (pageSizeChange)="accessPager.setPageSize($event)" />
+                      }
                     }
                   }
                 }

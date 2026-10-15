@@ -77,7 +77,7 @@
               </tr>
             </thead>
             <tbody>
-              @for (r of m.requests; track r.id) {
+              @for (r of myPager.rows(); track r.id) {
                 <tr>
                   <td><span class="dot" [style.background]="r.color || 'var(--moss)'"></span>{{ r.leaveTypeName }}</td>
                   <td class="num">
@@ -107,6 +107,10 @@
             </tbody>
           </table>
         </div>
+        @if (myPager.total() > 0) {
+          <app-pagination [page]="myPager.page()" [pageSize]="myPager.pageSize()" [total]="myPager.total()"
+                          (pageChange)="myPager.setPage($event)" (pageSizeChange)="myPager.setPageSize($event)" />
+        }
       </section>
     }
   }
@@ -155,7 +159,7 @@
   @if (tab() === 'all') {
     <section class="panel panel-flush">
       <div class="toolbar">
-        <select class="select-sm" [ngModel]="allStatus()" (ngModelChange)="allStatus.set($event); loadAll()" [attr.aria-label]="'leave.status' | translate">
+        <select class="select-sm" [ngModel]="allStatus()" (ngModelChange)="allStatus.set($event); allPager.reset(); loadAll()" [attr.aria-label]="'leave.status' | translate">
           <option value="">{{ 'leave.anyStatus' | translate }}</option>
           @for (s of ['Pending', 'Approved', 'Rejected', 'Cancelled']; track s) { <option [value]="s">{{ 'leave.statusName.' + s | translate }}</option> }
         </select>
@@ -172,7 +176,7 @@
             </tr>
           </thead>
           <tbody>
-            @for (r of all(); track r.id) {
+            @for (r of allPager.rows(); track r.id) {
               <tr class="is-link" (click)="toggle(r.id)">
                 <td><span class="cell-main">{{ r.employeeName }}</span><span class="cell-sub">{{ r.departmentName }}</span></td>
                 <td><span class="dot" [style.background]="r.color || 'var(--moss)'"></span>{{ r.leaveTypeName }}</td>
@@ -200,6 +204,10 @@
           </tbody>
         </table>
       </div>
+      @if (allPager.total() > 0) {
+        <app-pagination [page]="allPager.page()" [pageSize]="allPager.pageSize()" [total]="allPager.total()"
+                        (pageChange)="allPager.setPage($event)" (pageSizeChange)="allPager.setPageSize($event)" />
+      }
     </section>
   }
 </div>

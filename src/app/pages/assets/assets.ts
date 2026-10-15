@@ -11,6 +11,8 @@ import { AlertService } from '../../services/alert/alert';
 import { PayrollService } from '../payroll/payroll.service';
 import { PeopleService } from '../people/people.service';
 import { addDays, todayIso } from '../lifecycle/lifecycle.models';
+import { PaginationComponent } from '../../shared/pagination/pagination';
+import { clientPager } from '../../shared/pagination/client-pager';
 import { AssetsService } from './assets.service';
 import {
   AFTER_RETURN, Asset, AssetAssignment, AssetCategory, AssetCondition, AssetEvent, AssetEventType, AssetListItem, AssetStatus,
@@ -49,7 +51,7 @@ interface CategoryForm {
 
 @Component({
   selector: 'app-assets',
-  imports: [DatePipe, DecimalPipe, FormsModule, TranslatePipe],
+  imports: [DatePipe, DecimalPipe, FormsModule, TranslatePipe, PaginationComponent],
   templateUrl: './assets.html',
   styleUrl: './assets.css'
 })
@@ -94,6 +96,9 @@ export class AssetsComponent {
   readonly events = signal<AssetEvent[] | null>(null);
 
   readonly status = signal<AssetStatus | ''>('');
+  readonly itemsPager = clientPager(() => this.items() ?? []);
+  readonly assignmentsPager = clientPager(() => this.assignments() ?? []);
+  readonly returnedPager = clientPager(() => this.returned() ?? []);
   readonly categoryId = signal('');
   readonly search = signal('');
   readonly eventType = signal<AssetEventType | ''>('');
@@ -195,21 +200,31 @@ export class AssetsComponent {
     this.tab.set(t);
     this.search.set('');
     this.confirm = null;
+    this.resetPages();
     this.reload();
   }
 
   onSearch(value: string): void {
     this.search.set(value);
+    this.resetPages();
     this.search$.next();
+  }
+
+  private resetPages(): void {
+    this.itemsPager.reset();
+    this.assignmentsPager.reset();
+    this.returnedPager.reset();
   }
 
   setStatus(value: AssetStatus | ''): void {
     this.status.set(value);
+    this.itemsPager.reset();
     this.loadItems();
   }
 
   setCategory(value: string): void {
     this.categoryId.set(value);
+    this.itemsPager.reset();
     this.loadItems();
   }
 
@@ -227,6 +242,7 @@ export class AssetsComponent {
   /** Tally click → inventory us status par */
   showStatus(s: AssetStatus | ''): void {
     this.status.set(s);
+    this.itemsPager.reset();
     if (this.tab() !== 'inventory') {
       this.tab.set('inventory');
       this.search.set('');

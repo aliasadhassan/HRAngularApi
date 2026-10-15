@@ -38,9 +38,12 @@ interface NewTemplate {
   starter: StarterKey;
 }
 
+import { PaginationComponent } from '../../shared/pagination/pagination';
+import { clientPager } from '../../shared/pagination/client-pager';
+
 @Component({
   selector: 'app-report-builder',
-  imports: [DatePipe, FormsModule, RouterLink, TranslatePipe],
+  imports: [DatePipe, FormsModule, PaginationComponent, RouterLink, TranslatePipe],
   templateUrl: './report-builder.html',
   styleUrls: ['./rb-shared.css', './report-builder.css']
 })
@@ -71,6 +74,8 @@ export class ReportBuilderComponent {
   readonly lettersLoading = signal(false);
   lettersSearch = '';
   private readonly lettersSearch$ = new Subject<void>();
+  /** Issued letters ki table (API poori list deti hai, page yahin katta hai) */
+  readonly lettersPager = clientPager(() => this.letters() ?? []);
 
   /** Kaun sa card ka "…" menu khula hai */
   readonly menu = signal<string | null>(null);
@@ -146,6 +151,7 @@ export class ReportBuilderComponent {
     this.api.letters({ search: this.lettersSearch }).subscribe({
       next: l => {
         this.letters.set(l);
+        this.lettersPager.reset();
         this.lettersLoading.set(false);
       },
       error: e => {

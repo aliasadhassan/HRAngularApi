@@ -9,6 +9,8 @@ import { LanguageService } from '../../core/i18n/language.service';
 import { AlertService } from '../../services/alert/alert';
 import { PayrollService } from '../payroll/payroll.service';
 import { utc } from '../admin/admin.models';
+import { PaginationComponent } from '../../shared/pagination/pagination';
+import { clientPager } from '../../shared/pagination/client-pager';
 import { todayIso } from '../lifecycle/lifecycle.models';
 import { LearningService } from './learning.service';
 import {
@@ -78,7 +80,7 @@ interface RoleForm {
 
 @Component({
   selector: 'app-learning',
-  imports: [DatePipe, DecimalPipe, FormsModule, TranslatePipe],
+  imports: [DatePipe, DecimalPipe, FormsModule, TranslatePipe, PaginationComponent],
   templateUrl: './learning.html',
   styleUrl: './learning.css'
 })
@@ -129,6 +131,7 @@ export class LearningComponent {
   readonly teamDept = signal('');
   readonly teamSearch = signal('');
   private readonly team$ = new Subject<void>();
+  readonly teamPager = clientPager(() => this.team() ?? []);
 
   // ───── Skills / career ─────
   readonly me = signal<PersonGrowth | null>(null);
@@ -142,6 +145,9 @@ export class LearningComponent {
   readonly roles = signal<CareerRole[] | null>(null);
   readonly goals = signal<CareerGoalRow[] | null>(null);
   readonly goalsDept = signal('');
+  readonly matrixPager = clientPager(() => this.matrix()?.people ?? []);
+  readonly libraryPager = clientPager(() => this.library() ?? []);
+  readonly goalsPager = clientPager(() => this.goals() ?? []);
   readonly unratedSkills = computed(() => {
     const mine = new Set((this.me()?.skills ?? []).map(s => s.skillId));
     return this.lookups().skills.filter(s => !mine.has(s.id));
@@ -305,6 +311,7 @@ export class LearningComponent {
   setTeamStatus(v: EnrollmentStatus | ''): void {
     this.teamStatus.set(v);
     this.teamOverdue.set(false);
+    this.teamPager.reset();
     this.loadTeam();
   }
 
@@ -313,36 +320,43 @@ export class LearningComponent {
     this.teamStatus.set('');
     this.teamOverdue.set(true);
     this.courseView.set('team');
+    this.teamPager.reset();
     this.loadTeam();
   }
 
   setTeamDept(v: string): void {
     this.teamDept.set(v);
+    this.teamPager.reset();
     this.loadTeam();
   }
 
   onTeamSearch(v: string): void {
     this.teamSearch.set(v);
+    this.teamPager.reset();
     this.team$.next();
   }
 
   setMatrixDept(v: string): void {
     this.matrixDept.set(v);
+    this.matrixPager.reset();
     this.loadMatrix();
   }
 
   setMatrixSkill(v: string): void {
     this.matrixSkill.set(v);
+    this.matrixPager.reset();
     this.loadMatrix();
   }
 
   onMatrixSearch(v: string): void {
     this.matrixSearch.set(v);
+    this.matrixPager.reset();
     this.matrix$.next();
   }
 
   setGoalsDept(v: string): void {
     this.goalsDept.set(v);
+    this.goalsPager.reset();
     this.loadGoals();
   }
 

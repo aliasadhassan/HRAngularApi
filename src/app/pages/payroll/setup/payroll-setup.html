@@ -122,7 +122,7 @@
                 </tr>
               </thead>
               <tbody>
-                @for (p of periods(); track p.id) {
+                @for (p of periodsPager.rows(); track p.id) {
                   <tr>
                     <td class="num dim">{{ p.fiscalYear }}/{{ p.periodNumber }}</td>
                     <td class="num">
@@ -140,6 +140,10 @@
               </tbody>
             </table>
           </div>
+          @if (periodsPager.total() > 0) {
+            <app-pagination [page]="periodsPager.page()" [pageSize]="periodsPager.pageSize()" [total]="periodsPager.total()"
+                            (pageChange)="periodsPager.setPage($event)" (pageSizeChange)="periodsPager.setPageSize($event)" />
+          }
         </section>
       }
     </div>
@@ -169,7 +173,7 @@
             </tr>
           </thead>
           <tbody>
-            @for (c of components(); track c.id) {
+            @for (c of componentsPager.rows(); track c.id) {
               <tr class="is-link" tabindex="0" (click)="openComponent(c)" (keydown.enter)="openComponent(c)" [class.is-dim]="!c.isActive">
                 <td>
                   <span class="cell-main">{{ c.name }}</span>
@@ -191,6 +195,10 @@
           </tbody>
         </table>
       </div>
+      @if (componentsPager.total() > 0) {
+        <app-pagination [page]="componentsPager.page()" [pageSize]="componentsPager.pageSize()" [total]="componentsPager.total()"
+                        (pageChange)="componentsPager.setPage($event)" (pageSizeChange)="componentsPager.setPageSize($event)" />
+      }
     </section>
   }
 

@@ -271,7 +271,7 @@
             @if (reviews() === null) {
               <tr><td colspan="6"><p class="loading-line">{{ 'common.loading' | translate }}</p></td></tr>
             }
-            @for (r of reviews(); track r.id) {
+            @for (r of reviewsPager.rows(); track r.id) {
               <tr class="is-link" tabindex="0" (click)="openReview(r.id)" (keydown.enter)="openReview(r.id)">
                 <td>
                   <span class="cell-main">{{ r.employeeName }}</span>
@@ -301,6 +301,10 @@
           </tbody>
         </table>
       </div>
+      @if (reviewsPager.total() > 0) {
+        <app-pagination [page]="reviewsPager.page()" [pageSize]="reviewsPager.pageSize()" [total]="reviewsPager.total()"
+                        (pageChange)="reviewsPager.setPage($event)" (pageSizeChange)="reviewsPager.setPageSize($event)" />
+      }
     </section>
   }
 
@@ -340,7 +344,7 @@
             @if (goals() === null) {
               <tr><td colspan="6"><p class="loading-line">{{ 'common.loading' | translate }}</p></td></tr>
             }
-            @for (g of goals(); track g.id) {
+            @for (g of goalsPager.rows(); track g.id) {
               <tr class="is-link" tabindex="0" (click)="openGoal(g.id)" (keydown.enter)="openGoal(g.id)">
                 <td class="goal-cell">
                   <span class="cell-main wrap">{{ g.title }}</span>
@@ -371,6 +375,10 @@
           </tbody>
         </table>
       </div>
+      @if (goalsPager.total() > 0) {
+        <app-pagination [page]="goalsPager.page()" [pageSize]="goalsPager.pageSize()" [total]="goalsPager.total()"
+                        (pageChange)="goalsPager.setPage($event)" (pageSizeChange)="goalsPager.setPageSize($event)" />
+      }
     </section>
   }
 

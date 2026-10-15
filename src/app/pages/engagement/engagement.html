@@ -166,7 +166,7 @@
                 </tr>
               </thead>
               <tbody>
-                @for (v of all(); track v.id) {
+                @for (v of allPager.rows(); track v.id) {
                   <tr class="row-link" tabindex="0" (click)="openSurvey(v.id)" (keydown.enter)="openSurvey(v.id)">
                     <td>
                       <span class="stack">
@@ -201,6 +201,10 @@
               </tbody>
             </table>
           </div>
+        }
+        @if (allPager.total() > 0) {
+          <app-pagination [page]="allPager.page()" [pageSize]="allPager.pageSize()" [total]="allPager.total()"
+                          (pageChange)="allPager.setPage($event)" (pageSizeChange)="allPager.setPageSize($event)" />
         }
       </section>
     }

@@ -12,6 +12,8 @@ import { MyPhotoService } from '../../core/auth/my-photo';
 import { AvatarComponent } from '../../shared/avatar/avatar';
 import { PhotoEditComponent } from '../../shared/photo-edit/photo-edit';
 import { PayrollService } from '../payroll/payroll.service';
+import { PaginationComponent } from '../../shared/pagination/pagination';
+import { clientPager } from '../../shared/pagination/client-pager';
 import { LoginMethod, describeDevice, utc } from '../admin/admin.models';
 
 interface Me {
@@ -50,7 +52,7 @@ interface MySignIn {
 
 @Component({
   selector: 'app-my-settings',
-  imports: [AvatarComponent, FormsModule, PhotoEditComponent, TranslatePipe, DatePipe],
+  imports: [AvatarComponent, FormsModule, PhotoEditComponent, TranslatePipe, DatePipe, PaginationComponent],
   templateUrl: './my-settings.html',
   styleUrl: './my-settings.css'
 })
@@ -71,6 +73,7 @@ export class MySettingsComponent {
 
   readonly sessions = signal<MySession[] | null>(null);
   readonly signIns = signal<MySignIn[] | null>(null);
+  readonly signInsPager = clientPager(() => this.signIns() ?? []);
   /** Pehla click = "dobara click karo", doosra = asli sign out (session id ya 'others'). */
   readonly confirming = signal<string | null>(null);
   readonly revoking = signal<string | null>(null);

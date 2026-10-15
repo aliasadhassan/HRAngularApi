@@ -6,11 +6,13 @@ import { AmountPipe } from '../../../shared/pipes/amount.pipe';
 import { LanguageService } from '../../../core/i18n/language.service';
 import { AlertService } from '../../../services/alert/alert';
 import { PayrollService } from '../payroll.service';
+import { PaginationComponent } from '../../../shared/pagination/pagination';
+import { clientPager } from '../../../shared/pagination/client-pager';
 import { MyPayslip } from '../payroll.models';
 
 @Component({
   selector: 'app-my-payslips',
-  imports: [DatePipe, RouterLink, TranslatePipe, AmountPipe],
+  imports: [DatePipe, RouterLink, TranslatePipe, AmountPipe, PaginationComponent],
   templateUrl: './my-payslips.html',
   styleUrl: './my-payslips.css'
 })
@@ -21,6 +23,7 @@ export class MyPayslipsComponent {
 
   readonly lang = inject(LanguageService).language;
   readonly slips = signal<MyPayslip[] | null>(null);
+  readonly slipsPager = clientPager(() => this.slips() ?? []);
   readonly latest = computed(() => this.slips()?.[0] ?? null);
   readonly yearTotal = computed(() => {
     const y = new Date().getFullYear();

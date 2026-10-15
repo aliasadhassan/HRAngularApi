@@ -192,20 +192,6 @@ tr.is-failed td:first-child {
   color: var(--text-muted);
 }
 
-.pager {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 14px 20px;
-  border-top: 1px solid var(--rule);
-  font-size: var(--fs-13);
-  color: var(--text-muted);
-}
-.pager-buttons {
-  display: flex;
-  gap: 8px;
-}
-
 @media (max-width: 767px) {
   .ledger-strip {
     grid-template-columns: 1fr;

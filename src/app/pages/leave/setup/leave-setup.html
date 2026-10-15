@@ -19,7 +19,7 @@
         <table class="ledger-table">
           <thead><tr><th>{{ 'leave.type' | translate }}</th><th>{{ 'leaveSetup.types.rules' | translate }}</th><th class="end">{{ 'payrollSetup.components.order' | translate }}</th></tr></thead>
           <tbody>
-            @for (t of types(); track t.id) {
+            @for (t of typesPager.rows(); track t.id) {
               <tr class="is-link" tabindex="0" (click)="openType(t)" (keydown.enter)="openType(t)" [class.is-dim]="!t.isActive">
                 <td><span class="swatch" [style.background]="t.color || 'var(--moss)'"></span><span class="cell-main">{{ t.name }}</span> <span class="mono dim">{{ t.code }}</span></td>
                 <td class="flags">
@@ -33,6 +33,10 @@
           </tbody>
         </table>
       </div>
+      @if (typesPager.total() > 0) {
+        <app-pagination [page]="typesPager.page()" [pageSize]="typesPager.pageSize()" [total]="typesPager.total()"
+                        (pageChange)="typesPager.setPage($event)" (pageSizeChange)="typesPager.setPageSize($event)" />
+      }
     </section>
   }
 
@@ -78,7 +82,7 @@
         <table class="ledger-table">
           <thead><tr><th>{{ 'leave.date' | translate }}</th><th>{{ 'org.name' | translate }}</th><th>{{ 'people.location' | translate }}</th><th></th></tr></thead>
           <tbody>
-            @for (h of holidays(); track h.id) {
+            @for (h of holidaysPager.rows(); track h.id) {
               <tr>
                 <td class="num"><span class="cell-main">{{ h.date | date: 'd MMM' : undefined : lang() }}</span><span class="cell-sub">{{ h.date | date: 'EEEE' : undefined : lang() }}</span></td>
                 <td>{{ h.name }} @if (h.isOptional) { <span class="flag">{{ 'leaveSetup.holidays.optional' | translate }}</span> }</td>
@@ -92,6 +96,10 @@
           </tbody>
         </table>
       </div>
+      @if (holidaysPager.total() > 0) {
+        <app-pagination [page]="holidaysPager.page()" [pageSize]="holidaysPager.pageSize()" [total]="holidaysPager.total()"
+                        (pageChange)="holidaysPager.setPage($event)" (pageSizeChange)="holidaysPager.setPageSize($event)" />
+      }
     </section>
   }
 

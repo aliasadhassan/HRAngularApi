@@ -7,6 +7,8 @@ import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { LanguageService } from '../../core/i18n/language.service';
 import { AlertService } from '../../services/alert/alert';
 import { AmountPipe } from '../../shared/pipes/amount.pipe';
+import { PaginationComponent } from '../../shared/pagination/pagination';
+import { clientPager } from '../../shared/pagination/client-pager';
 import { PayrollService } from '../payroll/payroll.service';
 import { utc } from '../admin/admin.models';
 import { RewardsService } from './rewards.service';
@@ -84,7 +86,7 @@ interface BonusForm {
 
 @Component({
   selector: 'app-rewards',
-  imports: [AmountPipe, DatePipe, FormsModule, NgTemplateOutlet, TranslatePipe],
+  imports: [AmountPipe, DatePipe, FormsModule, NgTemplateOutlet, PaginationComponent, TranslatePipe],
   templateUrl: './rewards.html',
   styleUrl: './rewards.css'
 })
@@ -179,6 +181,13 @@ export class RewardsComponent {
   readonly pickedBonuses = signal<ReadonlySet<string>>(new Set());
   readonly pendingBonuses = computed(() => (this.bonuses() ?? []).filter(b => b.status === 'Pending'));
   readonly bonusTotal = computed(() => (this.bonuses() ?? []).reduce((s, b) => s + b.amount, 0));
+
+  // Pagination (Employees jaisa): har table ka apna page, list poori aati hai
+  readonly plansPager = clientPager(() => this.plans() ?? []);
+  readonly enrolPager = clientPager(this.enrolRows);
+  readonly revisionsPager = clientPager(() => this.revisions() ?? []);
+  readonly salaryPager = clientPager(this.salaryRows);
+  readonly bonusesPager = clientPager(() => this.bonuses() ?? []);
 
   // Bulk approve bar
   payout: PayoutMethod = 'Payroll';
@@ -306,26 +315,31 @@ export class RewardsComponent {
 
   setEnrolStatus(v: EnrolmentStatus | ''): void {
     this.enrolStatus.set(v);
+    this.enrolPager.reset();
     this.loadEnrolments();
   }
 
   setEnrolPlan(v: string): void {
     this.enrolPlan.set(v);
+    this.enrolPager.reset();
     this.loadEnrolments();
   }
 
   setRevStatus(v: RevisionStatus | ''): void {
     this.revStatus.set(v);
+    this.revisionsPager.reset();
     this.loadRevisions();
   }
 
   setBonusStatus(v: BonusStatus | ''): void {
     this.bonusStatus.set(v);
+    this.bonusesPager.reset();
     this.loadBonuses();
   }
 
   setBonusType(v: BonusType | ''): void {
     this.bonusType.set(v);
+    this.bonusesPager.reset();
     this.loadBonuses();
   }
 

@@ -8,13 +8,15 @@ import { utc } from '../../admin/admin.models';
 import { LanguageService } from '../../../core/i18n/language.service';
 import { AlertService } from '../../../services/alert/alert';
 import { PayrollService } from '../payroll.service';
+import { PaginationComponent } from '../../../shared/pagination/pagination';
+import { clientPager } from '../../../shared/pagination/client-pager';
 import { PAYSLIP_STATUS_CHIP, PayrollRun, PayslipListItem, RUN_STATUS_CHIP } from '../payroll.models';
 
 type PendingAction = 'approve' | 'cancel' | null;
 
 @Component({
   selector: 'app-payroll-run-detail',
-  imports: [DatePipe, RouterLink, TranslatePipe, AmountPipe],
+  imports: [DatePipe, RouterLink, TranslatePipe, AmountPipe, PaginationComponent],
   templateUrl: './payroll-run-detail.html',
   styleUrl: './payroll-run-detail.css'
 })
@@ -35,6 +37,7 @@ export class PayrollRunDetailComponent {
 
   readonly run = signal<PayrollRun | null>(null);
   readonly payslips = signal<PayslipListItem[]>([]);
+  readonly payslipsPager = clientPager(this.payslips);
   readonly loading = signal(true);
   readonly busy = signal(false);
   readonly confirm = signal<PendingAction>(null);

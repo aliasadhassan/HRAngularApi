@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
@@ -7,6 +7,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { LanguageService } from '../../../core/i18n/language.service';
 import { AlertService } from '../../../services/alert/alert';
 import { PayrollService } from '../../payroll/payroll.service';
+import { DEFAULT_PAGE_SIZE, PaginationComponent } from '../../../shared/pagination/pagination';
 import { AdminService, UserAction } from '../admin.service';
 import { AssignableRole, USER_STATUS_CHIP, UserCounts, UserListItem, UserStatus, initials, utc } from '../admin.models';
 
@@ -15,7 +16,7 @@ type ConfirmAction = Extract<UserAction, 'deactivate' | 'revoke-sessions'>;
 
 @Component({
   selector: 'app-users',
-  imports: [FormsModule, TranslatePipe, RouterLink],
+  imports: [FormsModule, TranslatePipe, RouterLink, PaginationComponent],
   templateUrl: './users.html',
   styleUrl: './users.css'
 })
@@ -37,14 +38,10 @@ export class UsersComponent {
   readonly loading = signal(true);
   readonly status = signal<UserStatus | ''>('');
   readonly page = signal(1);
-  readonly pageSize = 20;
+  readonly pageSize = signal(DEFAULT_PAGE_SIZE);
   search = '';
   roleId = '';
   private readonly searchChanged = new Subject<void>();
-
-  readonly pages = computed(() => Math.max(1, Math.ceil(this.total() / this.pageSize)));
-  readonly rangeFrom = computed(() => (this.total() === 0 ? 0 : (this.page() - 1) * this.pageSize + 1));
-  readonly rangeTo = computed(() => Math.min(this.page() * this.pageSize, this.total()));
 
   // Drawer
   readonly drawer = signal<DrawerMode>(null);
@@ -67,7 +64,7 @@ export class UsersComponent {
     if (resetPage) this.page.set(1);
     this.loading.set(true);
     this.api
-      .getUsers({ search: this.search, status: this.status(), roleId: this.roleId, page: this.page(), pageSize: this.pageSize })
+      .getUsers({ search: this.search, status: this.status(), roleId: this.roleId, page: this.page(), pageSize: this.pageSize() })
       .subscribe({
         next: res => {
           this.users.set(res.items);
@@ -91,10 +88,14 @@ export class UsersComponent {
     this.reload();
   }
 
-  goTo(page: number): void {
-    if (page < 1 || page > this.pages()) return;
+  setPage(page: number): void {
     this.page.set(page);
     this.reload(false);
+  }
+
+  setPageSize(size: number): void {
+    this.pageSize.set(size);
+    this.reload();
   }
 
   countFor(tab: UserStatus | ''): number | null {

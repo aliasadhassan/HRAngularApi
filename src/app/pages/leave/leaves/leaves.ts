@@ -10,13 +10,15 @@ import { PermissionService } from '../../../core/auth/permissions';
 import { AlertService } from '../../../services/alert/alert';
 import { PayrollService } from '../../payroll/payroll.service';
 import { LeaveService } from '../leave.service';
+import { PaginationComponent } from '../../../shared/pagination/pagination';
+import { clientPager } from '../../../shared/pagination/client-pager';
 import { HalfDayPeriod, LEAVE_STATUS_CHIP, LeaveRequest, LeaveStatus, MyLeave } from '../leave.models';
 
 type Tab = 'mine' | 'approvals' | 'all';
 
 @Component({
   selector: 'app-leaves',
-  imports: [DatePipe, FormsModule, TranslatePipe],
+  imports: [DatePipe, FormsModule, TranslatePipe, PaginationComponent],
   templateUrl: './leaves.html',
   styleUrl: './leaves.css'
 })
@@ -51,6 +53,10 @@ export class LeavesComponent {
   // Reject
   rejectingId: string | null = null;
   rejectComment = '';
+
+  readonly myRequests = computed(() => this.my()?.requests ?? []);
+  readonly myPager = clientPager(this.myRequests);
+  readonly allPager = clientPager(this.all);
 
   readonly selectedBalance = computed(() => this.my()?.balances.find(b => b.leaveTypeId === this.form.leaveTypeId) ?? null);
   readonly upcoming = computed(() => {

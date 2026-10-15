@@ -195,7 +195,7 @@
               </tr>
             </thead>
             <tbody>
-              @for (p of tracked(); track p.id) {
+              @for (p of trackedPager.rows(); track p.id) {
                 <tr class="row-link" tabindex="0" (click)="openTracking(p.id)" (keydown.enter)="openTracking(p.id)">
                   <td>
                     <span class="cell-main wrap">{{ p.title }}</span>
@@ -219,6 +219,10 @@
             </tbody>
           </table>
         </div>
+        @if (trackedPager.total() > 0) {
+          <app-pagination [page]="trackedPager.page()" [pageSize]="trackedPager.pageSize()" [total]="trackedPager.total()"
+                          (pageChange)="trackedPager.setPage($event)" (pageSizeChange)="trackedPager.setPageSize($event)" />
+        }
       </section>
     }
 
@@ -265,19 +269,19 @@
   @if (tab() === 'statutory' && summary(); as s) {
     <section class="tallies">
       <button type="button" class="tally" [class.is-alert]="s.obligationsOverdue > 0" [class.is-picked]="obligationFilter() === 'Overdue'"
-        (click)="obligationFilter.set(obligationFilter() === 'Overdue' ? '' : 'Overdue')">
+        (click)="setObligationFilter(obligationFilter() === 'Overdue' ? '' : 'Overdue')">
         <span class="t-label">{{ 'policies.state.Overdue' | translate }}</span>
         <span class="t-figure num">{{ s.obligationsOverdue }}</span>
         <span class="t-sub">{{ 'policies.sum.lateSub' | translate }}</span>
       </button>
       <button type="button" class="tally" [class.is-warn]="s.obligationsDueSoon > 0" [class.is-picked]="obligationFilter() === 'DueSoon'"
-        (click)="obligationFilter.set(obligationFilter() === 'DueSoon' ? '' : 'DueSoon')">
+        (click)="setObligationFilter(obligationFilter() === 'DueSoon' ? '' : 'DueSoon')">
         <span class="t-label">{{ 'policies.state.DueSoon' | translate }}</span>
         <span class="t-figure num">{{ s.obligationsDueSoon }}</span>
         <span class="t-sub">{{ 'policies.sum.soonSub' | translate }}</span>
       </button>
       <button type="button" class="tally" [class.is-picked]="obligationFilter() === 'Upcoming'"
-        (click)="obligationFilter.set(obligationFilter() === 'Upcoming' ? '' : 'Upcoming')">
+        (click)="setObligationFilter(obligationFilter() === 'Upcoming' ? '' : 'Upcoming')">
         <span class="t-label">{{ 'policies.state.Upcoming' | translate }}</span>
         <span class="t-figure num">{{ upcomingCount() }}</span>
         <span class="t-sub">{{ 'policies.sum.upcomingSub' | translate }}</span>
@@ -296,7 +300,7 @@
           <p class="panel-sub">{{ 'policies.calendarSub' | translate }}</p>
         </span>
         @if (obligationFilter(); as f) {
-          <button type="button" class="chip chip-plain chip-x" (click)="obligationFilter.set('')">
+          <button type="button" class="chip chip-plain chip-x" (click)="setObligationFilter('')">
             {{ 'policies.state.' + f | translate }}<span class="material-icons-outlined" aria-hidden="true">close</span>
           </button>
         }
@@ -325,7 +329,7 @@
               </tr>
             </thead>
             <tbody>
-              @for (o of obligationRows(); track o.id) {
+              @for (o of obligationsPager.rows(); track o.id) {
                 <tr class="row-link" [class.is-late]="o.state === 'Overdue'" tabindex="0" (click)="openObligation(o.id)" (keydown.enter)="openObligation(o.id)">
                   <td>
                     <span class="ob-name">
@@ -369,6 +373,10 @@
             </tbody>
           </table>
         </div>
+      }
+      @if (obligationsPager.total() > 0) {
+        <app-pagination [page]="obligationsPager.page()" [pageSize]="obligationsPager.pageSize()" [total]="obligationsPager.total()"
+                        (pageChange)="obligationsPager.setPage($event)" (pageSizeChange)="obligationsPager.setPageSize($event)" />
       }
     </section>
   }

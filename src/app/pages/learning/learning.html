@@ -255,7 +255,7 @@
                 </tr>
               </thead>
               <tbody>
-                @for (e of team(); track e.id) {
+                @for (e of teamPager.rows(); track e.id) {
                   <tr class="row-link" [class.is-late]="e.isOverdue" tabindex="0" (click)="openEnrollment(e)" (keydown.enter)="openEnrollment(e)">
                     <td>
                       <span class="stack">
@@ -287,6 +287,10 @@
               </tbody>
             </table>
           </div>
+        }
+        @if (teamPager.total() > 0) {
+          <app-pagination [page]="teamPager.page()" [pageSize]="teamPager.pageSize()" [total]="teamPager.total()"
+                          (pageChange)="teamPager.setPage($event)" (pageSizeChange)="teamPager.setPageSize($event)" />
         }
       </section>
     }
@@ -402,7 +406,7 @@
                   </tr>
                 </thead>
                 <tbody>
-                  @for (r of m.people; track r.employeeId) {
+                  @for (r of matrixPager.rows(); track r.employeeId) {
                     <tr class="row-link" tabindex="0" (click)="openPerson(r.employeeId)" (keydown.enter)="openPerson(r.employeeId)">
                       <td class="sticky-col">
                         <span class="stack">
@@ -421,6 +425,10 @@
                 </tbody>
               </table>
             </div>
+          }
+          @if (matrixPager.total() > 0) {
+            <app-pagination [page]="matrixPager.page()" [pageSize]="matrixPager.pageSize()" [total]="matrixPager.total()"
+                            (pageChange)="matrixPager.setPage($event)" (pageSizeChange)="matrixPager.setPageSize($event)" />
           }
         } @else {
           <p class="loading-line">{{ 'common.loading' | translate }}</p>
@@ -459,7 +467,7 @@
                 </tr>
               </thead>
               <tbody>
-                @for (k of library(); track k.id) {
+                @for (k of libraryPager.rows(); track k.id) {
                   <tr class="row-link" [class.is-muted]="!k.isActive" tabindex="0" (click)="editSkill(k)" (keydown.enter)="editSkill(k)">
                     <td>
                       <span class="stack">
@@ -477,6 +485,10 @@
               </tbody>
             </table>
           </div>
+        }
+        @if (libraryPager.total() > 0) {
+          <app-pagination [page]="libraryPager.page()" [pageSize]="libraryPager.pageSize()" [total]="libraryPager.total()"
+                          (pageChange)="libraryPager.setPage($event)" (pageSizeChange)="libraryPager.setPageSize($event)" />
         }
       </section>
     }
@@ -625,7 +637,7 @@
                 </tr>
               </thead>
               <tbody>
-                @for (g of goals(); track g.employeeId) {
+                @for (g of goalsPager.rows(); track g.employeeId) {
                   <tr class="row-link" tabindex="0" (click)="openPerson(g.employeeId)" (keydown.enter)="openPerson(g.employeeId)">
                     <td>
                       <span class="stack">
@@ -655,6 +667,10 @@
               </tbody>
             </table>
           </div>
+        }
+        @if (goalsPager.total() > 0) {
+          <app-pagination [page]="goalsPager.page()" [pageSize]="goalsPager.pageSize()" [total]="goalsPager.total()"
+                          (pageChange)="goalsPager.setPage($event)" (pageSizeChange)="goalsPager.setPageSize($event)" />
         }
       </section>
     }

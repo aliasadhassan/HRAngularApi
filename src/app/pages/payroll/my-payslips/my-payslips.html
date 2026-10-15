@@ -35,7 +35,7 @@
           </tr>
         </thead>
         <tbody>
-          @for (s of slips() ?? []; track s.id) {
+          @for (s of slipsPager.rows(); track s.id) {
             <tr class="is-link" [routerLink]="['/app/me/payslips', s.id]" tabindex="0">
               <td><span class="cell-main period">{{ s.periodStart | date: 'MMMM y' : undefined : lang() }}</span>
                 <span class="cell-sub">{{ 'myPayslips.paidOn' | translate: { date: (s.payDate ? (s.payDate | date: 'd MMM' : undefined : lang()) : '—') } }}</span></td>
@@ -49,6 +49,10 @@
         </tbody>
       </table>
     </div>
+    @if (slipsPager.total() > 0) {
+      <app-pagination [page]="slipsPager.page()" [pageSize]="slipsPager.pageSize()" [total]="slipsPager.total()"
+                      (pageChange)="slipsPager.setPage($event)" (pageSizeChange)="slipsPager.setPageSize($event)" />
+    }
     @if (slips()?.length === 0) {
       <div class="empty-state">
         <span class="material-icons-outlined" aria-hidden="true">receipt_long</span>

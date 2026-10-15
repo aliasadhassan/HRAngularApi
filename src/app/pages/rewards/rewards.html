@@ -248,7 +248,7 @@
             @if (plans() === null) {
               <tr><td colspan="6"><p class="loading-line">{{ 'common.loading' | translate }}</p></td></tr>
             }
-            @for (p of plans(); track p.id) {
+            @for (p of plansPager.rows(); track p.id) {
               <tr [class.is-link]="canConfigure()" [class.is-off]="!p.isActive" [attr.tabindex]="canConfigure() ? 0 : null" (click)="canConfigure() && editPlan(p)" (keydown.enter)="canConfigure() && editPlan(p)">
                 <td>
                   <span class="cat-name">
@@ -288,6 +288,10 @@
           </tbody>
         </table>
       </div>
+      @if (plansPager.total() > 0) {
+        <app-pagination [page]="plansPager.page()" [pageSize]="plansPager.pageSize()" [total]="plansPager.total()"
+                        (pageChange)="plansPager.setPage($event)" (pageSizeChange)="plansPager.setPageSize($event)" />
+      }
     </section>
   }
 
@@ -297,7 +301,7 @@
       <div class="toolbar">
         <label class="search">
           <span class="material-icons-outlined" aria-hidden="true">search</span>
-          <input type="search" [ngModel]="enrolSearch()" (ngModelChange)="enrolSearch.set($event)" [placeholder]="'rewards.searchPh' | translate" [attr.aria-label]="'rewards.searchPh' | translate" />
+          <input type="search" [ngModel]="enrolSearch()" (ngModelChange)="enrolSearch.set($event); enrolPager.reset()" [placeholder]="'rewards.searchPh' | translate" [attr.aria-label]="'rewards.searchPh' | translate" />
         </label>
         <select class="select-sm" [ngModel]="enrolStatus()" (ngModelChange)="setEnrolStatus($event)" [attr.aria-label]="'rewards.status' | translate">
           <option value="">{{ 'rewards.anyStatus' | translate }}</option>
@@ -325,7 +329,7 @@
             @if (enrolments() === null) {
               <tr><td colspan="7"><p class="loading-line">{{ 'common.loading' | translate }}</p></td></tr>
             }
-            @for (e of enrolRows(); track e.id) {
+            @for (e of enrolPager.rows(); track e.id) {
               <tr class="is-link" tabindex="0" (click)="openEnrolment(e)" (keydown.enter)="openEnrolment(e)">
                 <td>
                   <span class="cell-main">{{ e.employeeName }}</span>
@@ -361,6 +365,10 @@
           </tbody>
         </table>
       </div>
+      @if (enrolPager.total() > 0) {
+        <app-pagination [page]="enrolPager.page()" [pageSize]="enrolPager.pageSize()" [total]="enrolPager.total()"
+                        (pageChange)="enrolPager.setPage($event)" (pageSizeChange)="enrolPager.setPageSize($event)" />
+      }
     </section>
   }
 
@@ -406,7 +414,7 @@
               @if (revisions() === null) {
                 <tr><td colspan="8"><p class="loading-line">{{ 'common.loading' | translate }}</p></td></tr>
               }
-              @for (r of revisions(); track r.id) {
+              @for (r of revisionsPager.rows(); track r.id) {
                 <tr class="is-link" tabindex="0" (click)="openRevision(r)" (keydown.enter)="openRevision(r)">
                   @if (canApprove() && pendingRevisions().length) {
                     <td class="pick" (click)="$event.stopPropagation()">
@@ -434,6 +442,10 @@
             </tbody>
           </table>
         </div>
+        @if (revisionsPager.total() > 0) {
+          <app-pagination [page]="revisionsPager.page()" [pageSize]="revisionsPager.pageSize()" [total]="revisionsPager.total()"
+                          (pageChange)="revisionsPager.setPage($event)" (pageSizeChange)="revisionsPager.setPageSize($event)" />
+        }
       </section>
     } @else {
       <section class="panel panel-flush">
@@ -444,9 +456,9 @@
           </div>
           <label class="search">
             <span class="material-icons-outlined" aria-hidden="true">search</span>
-            <input type="search" [ngModel]="salarySearch()" (ngModelChange)="salarySearch.set($event)" [placeholder]="'rewards.searchPeoplePh' | translate" [attr.aria-label]="'rewards.searchPeoplePh' | translate" />
+            <input type="search" [ngModel]="salarySearch()" (ngModelChange)="salarySearch.set($event); salaryPager.reset()" [placeholder]="'rewards.searchPeoplePh' | translate" [attr.aria-label]="'rewards.searchPeoplePh' | translate" />
           </label>
-          <select class="select-sm" [ngModel]="salaryDept()" (ngModelChange)="salaryDept.set($event)" [attr.aria-label]="'rewards.department' | translate">
+          <select class="select-sm" [ngModel]="salaryDept()" (ngModelChange)="salaryDept.set($event); salaryPager.reset()" [attr.aria-label]="'rewards.department' | translate">
             <option value="">{{ 'rewards.allDepartments' | translate }}</option>
             @for (d of lookups().departments; track d.id) { <option [value]="d.id">{{ d.name }}</option> }
           </select>
@@ -477,7 +489,7 @@
               @if (salaries() === null) {
                 <tr><td colspan="7"><p class="loading-line">{{ 'common.loading' | translate }}</p></td></tr>
               }
-              @for (s of salaryRows(); track s.employeeId) {
+              @for (s of salaryPager.rows(); track s.employeeId) {
                 <tr>
                   @if (canManage()) {
                     <td class="pick">
@@ -514,6 +526,10 @@
             </tbody>
           </table>
         </div>
+        @if (salaryPager.total() > 0) {
+          <app-pagination [page]="salaryPager.page()" [pageSize]="salaryPager.pageSize()" [total]="salaryPager.total()"
+                          (pageChange)="salaryPager.setPage($event)" (pageSizeChange)="salaryPager.setPageSize($event)" />
+        }
       </section>
     }
   }
@@ -561,7 +577,7 @@
             @if (bonuses() === null) {
               <tr><td colspan="6"><p class="loading-line">{{ 'common.loading' | translate }}</p></td></tr>
             }
-            @for (b of bonuses(); track b.id) {
+            @for (b of bonusesPager.rows(); track b.id) {
               <tr class="is-link" tabindex="0" (click)="openBonus(b)" (keydown.enter)="openBonus(b)">
                 @if (canApprove() && pendingBonuses().length) {
                   <td class="pick" (click)="$event.stopPropagation()">
@@ -591,6 +607,10 @@
           </tbody>
         </table>
       </div>
+      @if (bonusesPager.total() > 0) {
+        <app-pagination [page]="bonusesPager.page()" [pageSize]="bonusesPager.pageSize()" [total]="bonusesPager.total()"
+                        (pageChange)="bonusesPager.setPage($event)" (pageSizeChange)="bonusesPager.setPageSize($event)" />
+      }
     </section>
   }
 </div>

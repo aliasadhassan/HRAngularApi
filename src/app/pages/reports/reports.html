@@ -196,7 +196,7 @@
               </tr>
             </thead>
             <tbody>
-              @for (m of r.movements; track m.employeeId + m.kind) {
+              @for (m of movementsPager.rows(); track m.employeeId + m.kind) {
                 <tr>
                   <td class="num">{{ m.date | date: 'd MMM y' : undefined : lang() }}</td>
                   <td>
@@ -211,6 +211,10 @@
             </tbody>
           </table>
         </div>
+        @if (movementsPager.total() > 0) {
+          <app-pagination [page]="movementsPager.page()" [pageSize]="movementsPager.pageSize()" [total]="movementsPager.total()"
+                          (pageChange)="movementsPager.setPage($event)" (pageSizeChange)="movementsPager.setPageSize($event)" />
+        }
       } @else {
         <p class="empty-state">{{ 'reports.people.noMovements' | translate }}</p>
       }
@@ -312,7 +316,7 @@
           <p class="panel-sub">{{ 'reports.time.byEmployeeHint' | translate }}</p>
         </div>
         <div class="head-actions">
-          <select class="select-sm" [ngModel]="timeSort()" (ngModelChange)="timeSort.set($event)" [attr.aria-label]="'reports.time.sort' | translate">
+          <select class="select-sm" [ngModel]="timeSort()" (ngModelChange)="timeSort.set($event); timePager.reset()" [attr.aria-label]="'reports.time.sort' | translate">
             <option value="department">{{ 'reports.time.sortBy.department' | translate }}</option>
             <option value="rateAsc">{{ 'reports.time.sortBy.rateAsc' | translate }}</option>
             <option value="lateDesc">{{ 'reports.time.sortBy.lateDesc' | translate }}</option>
@@ -340,7 +344,7 @@
               </tr>
             </thead>
             <tbody>
-              @for (e of timeRows(); track e.employeeId) {
+              @for (e of timePager.rows(); track e.employeeId) {
                 <tr>
                   <td>
                     <span class="cell-main">{{ e.name }}</span>
@@ -365,6 +369,10 @@
             </tbody>
           </table>
         </div>
+        @if (timePager.total() > 0) {
+          <app-pagination [page]="timePager.page()" [pageSize]="timePager.pageSize()" [total]="timePager.total()"
+                          (pageChange)="timePager.setPage($event)" (pageSizeChange)="timePager.setPageSize($event)" />
+        }
       } @else {
         <p class="empty-state">{{ 'reports.time.noAttendance' | translate }}</p>
       }
@@ -551,7 +559,7 @@
                 </tr>
               </thead>
               <tbody>
-                @for (x of g.rows; track x.payslipId) {
+                @for (x of registerPager.rows(); track x.payslipId) {
                   <tr>
                     <td>
                       <span class="cell-main">{{ x.employeeName }}</span>
@@ -579,6 +587,10 @@
               </tfoot>
             </table>
           </div>
+          @if (registerPager.total() > 0) {
+            <app-pagination [page]="registerPager.page()" [pageSize]="registerPager.pageSize()" [total]="registerPager.total()"
+                            (pageChange)="registerPager.setPage($event)" (pageSizeChange)="registerPager.setPageSize($event)" />
+          }
         } @else {
           <p class="empty-state">{{ 'reports.pay.noRegister' | translate: { month: monthName(g.month), year: g.year } }}</p>
         }

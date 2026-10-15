@@ -11,6 +11,8 @@ import { PayrollService } from '../payroll/payroll.service';
 import { utc } from '../admin/admin.models';
 import { todayIso } from '../lifecycle/lifecycle.models';
 import { PoliciesService } from './policies.service';
+import { PaginationComponent } from '../../shared/pagination/pagination';
+import { clientPager } from '../../shared/pagination/client-pager';
 import {
   ACK_CHIP, AckPerson, AckState, CATEGORY_ICON, ComplianceSummary, FREQUENCIES, Lookups, OBLIGATION_CATEGORIES, OBLIGATION_ICON,
   Obligation, ObligationCategory, ObligationDetail, ObligationFrequency, ObligationState, POLICY_CATEGORIES, POLICY_STATUSES, Policy,
@@ -61,7 +63,7 @@ interface FilingForm {
 
 @Component({
   selector: 'app-policies',
-  imports: [DatePipe, DecimalPipe, FormsModule, TranslatePipe],
+  imports: [DatePipe, DecimalPipe, FormsModule, TranslatePipe, PaginationComponent],
   templateUrl: './policies.html',
   styleUrl: './policies.css'
 })
@@ -107,12 +109,20 @@ export class PoliciesComponent {
     .filter(p => p.status === 'Published' && p.myAckState !== 'NotRequired')
     .sort((a, b) => this.ackOrder(a.myAckState) - this.ackOrder(b.myAckState) || a.title.localeCompare(b.title)));
   readonly tracked = computed(() => (this.policies() ?? []).filter(p => p.status === 'Published' && p.ackVersion !== null));
+  readonly trackedPager = clientPager(this.tracked);
   readonly overdueTotal = computed(() => this.tracked().reduce((n, p) => n + (p.overdueCount ?? 0), 0));
 
   // ───── Statutory ─────
   readonly obligations = signal<Obligation[] | null>(null);
   readonly obligationFilter = signal<ObligationState | ''>('');
   readonly obligationRows = computed(() => (this.obligations() ?? []).filter(o => !this.obligationFilter() || o.state === this.obligationFilter()));
+  readonly obligationsPager = clientPager(this.obligationRows);
+
+  /** Tally/chip se state filter; dobara click = filter hatao. Page 1 se. */
+  setObligationFilter(v: ObligationState | ''): void {
+    this.obligationFilter.set(v);
+    this.obligationsPager.reset();
+  }
   readonly upcomingCount = computed(() => (this.obligations() ?? []).filter(o => o.state === 'Upcoming').length);
 
   // ───── Drawers ─────

@@ -172,7 +172,7 @@
                   </tr>
                 </thead>
                 <tbody>
-                  @for (a of list; track a.id) {
+                  @for (a of signInsPager.rows(); track a.id) {
                     @let dev = describeDevice(a.userAgent);
                     <tr [class.is-failed]="!a.succeeded">
                       <td class="num">{{ utc(a.occurredAt) | date: 'd MMM, h:mm a' : undefined : language.language() }}</td>
@@ -190,6 +190,8 @@
                 </tbody>
               </table>
             </div>
+            <app-pagination [page]="signInsPager.page()" [pageSize]="signInsPager.pageSize()" [total]="signInsPager.total()"
+                            (pageChange)="signInsPager.setPage($event)" (pageSizeChange)="signInsPager.setPageSize($event)" />
           }
         } @else {
           <span class="skeleton" style="width: 60%"></span>

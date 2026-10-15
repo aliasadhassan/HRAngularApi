@@ -41,7 +41,7 @@
               </tr>
             }
           } @else {
-            @for (run of runs(); track run.id) {
+            @for (run of runsPager.rows(); track run.id) {
               <tr class="is-link" tabindex="0" (click)="open(run)" (keydown.enter)="open(run)">
                 <td>
                   <span class="cell-main period">{{ run.periodStart | date: 'MMMM y' : undefined : lang() }}</span>
@@ -75,6 +75,10 @@
         </tbody>
       </table>
     </div>
+    @if (!loading() && runsPager.total() > 0) {
+      <app-pagination [page]="runsPager.page()" [pageSize]="runsPager.pageSize()" [total]="runsPager.total()"
+                      (pageChange)="runsPager.setPage($event)" (pageSizeChange)="runsPager.setPageSize($event)" />
+    }
 
     @if (!loading() && !loadError() && runs().length === 0) {
       <div class="empty-state">

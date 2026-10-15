@@ -12,6 +12,8 @@ import { EmploymentType } from '../people/people.models';
 import { utc } from '../admin/admin.models';
 import { addDays, todayIso } from '../lifecycle/lifecycle.models';
 import { RecruitmentService } from './recruitment.service';
+import { PaginationComponent } from '../../shared/pagination/pagination';
+import { clientPager } from '../../shared/pagination/client-pager';
 import {
   Application, ApplicationListItem, BOARD_STAGES, Candidate, CandidateListItem, CandidateSource, EMPLOYMENT_TYPES, HeadcountRow,
   INTERVIEW_CHIP, Interview, InterviewMode, InterviewStatus, JOB_CHIP, JOB_STATUSES, Job, JobListItem, JobReason, JobStatus, Lookups,
@@ -91,7 +93,7 @@ interface HireForm {
 
 @Component({
   selector: 'app-recruitment',
-  imports: [DatePipe, DecimalPipe, FormsModule, RouterLink, TranslatePipe],
+  imports: [DatePipe, DecimalPipe, FormsModule, RouterLink, TranslatePipe, PaginationComponent],
   templateUrl: './recruitment.html',
   styleUrl: './recruitment.css'
 })
@@ -136,6 +138,7 @@ export class RecruitmentComponent {
 
   // ───── Jobs ─────
   readonly jobs = signal<JobListItem[] | null>(null);
+  readonly jobsPager = clientPager(() => this.jobs() ?? []);
   readonly jobStatus = signal<JobStatus | ''>('');
   readonly departmentId = signal('');
   readonly search = signal('');
@@ -151,6 +154,7 @@ export class RecruitmentComponent {
   // ───── Candidates ─────
   readonly candidates = signal<CandidateListItem[] | null>(null);
   readonly source = signal<CandidateSource | ''>('');
+  readonly candidatesPager = clientPager(() => this.candidates() ?? []);
 
   // ───── Interviews ─────
   readonly interviews = signal<Interview[] | null>(null);
@@ -160,6 +164,7 @@ export class RecruitmentComponent {
 
   // ───── Headcount ─────
   readonly headcount = signal<HeadcountRow[] | null>(null);
+  readonly headcountPager = clientPager(() => this.headcount() ?? []);
   readonly headcountMax = computed(() => Math.max(1, ...(this.headcount() ?? []).map(h => h.employees + h.openPositions)));
 
   // ───── Drawer ─────
@@ -296,27 +301,32 @@ export class RecruitmentComponent {
     if (this.tab() === t) return;
     this.tab.set(t);
     this.search.set('');
+    this.resetPages();
     this.confirm = null;
     this.reload();
   }
 
   onSearch(value: string): void {
     this.search.set(value);
+    this.resetPages();
     this.search$.next();
   }
 
   setJobStatus(value: JobStatus | ''): void {
     this.jobStatus.set(value);
+    this.jobsPager.reset();
     this.loadJobs();
   }
 
   setDepartment(value: string): void {
     this.departmentId.set(value);
+    this.jobsPager.reset();
     this.loadJobs();
   }
 
   setSource(value: CandidateSource | ''): void {
     this.source.set(value);
+    this.candidatesPager.reset();
     this.loadCandidates();
   }
 
@@ -335,6 +345,7 @@ export class RecruitmentComponent {
   /** Tally click → jobs list us status par */
   showJobs(status: JobStatus | ''): void {
     this.jobStatus.set(status);
+    this.jobsPager.reset();
     if (this.tab() !== 'jobs') {
       this.tab.set('jobs');
       this.search.set('');
@@ -349,6 +360,12 @@ export class RecruitmentComponent {
     this.tab.set('pipeline');
     this.search.set('');
     this.loadBoard();
+  }
+
+  /** Search/tab badle to lists page 1 se */
+  private resetPages(): void {
+    this.jobsPager.reset();
+    this.candidatesPager.reset();
   }
 
   // ───── Helpers ─────

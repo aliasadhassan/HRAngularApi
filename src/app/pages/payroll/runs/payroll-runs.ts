@@ -7,11 +7,13 @@ import { AmountPipe } from '../../../shared/pipes/amount.pipe';
 import { LanguageService } from '../../../core/i18n/language.service';
 import { AlertService } from '../../../services/alert/alert';
 import { PayrollService } from '../payroll.service';
+import { PaginationComponent } from '../../../shared/pagination/pagination';
+import { clientPager } from '../../../shared/pagination/client-pager';
 import { PayGroup, PayPeriod, PayrollRun, RUN_STATUS_CHIP } from '../payroll.models';
 
 @Component({
   selector: 'app-payroll-runs',
-  imports: [DatePipe, FormsModule, TranslatePipe, AmountPipe],
+  imports: [DatePipe, FormsModule, TranslatePipe, AmountPipe, PaginationComponent],
   templateUrl: './payroll-runs.html',
   styleUrl: './payroll-runs.css'
 })
@@ -25,6 +27,7 @@ export class PayrollRunsComponent {
   readonly statusChip = RUN_STATUS_CHIP;
 
   readonly runs = signal<PayrollRun[]>([]);
+  readonly runsPager = clientPager(this.runs);
   readonly loading = signal(true);
   readonly loadError = signal<string | null>(null);
 
