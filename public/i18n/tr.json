@@ -1018,7 +1018,13 @@
     "none": "Yok",
     "levelHint": "Daha yüksek sayı = daha kıdemli. Sıralama ve raporlarda kullanılır.",
     "headOffice": "Genel merkez",
-    "workWeekHint": "Bu lokasyondaki izin günleri için kullanılır."
+    "workWeekHint": "Bu lokasyondaki izin günleri için kullanılır.",
+    "search": {
+      "departments": "Departmanlarda ara",
+      "designations": "Unvanlarda ara",
+      "locations": "Konumlarda ara"
+    },
+    "noMatch": "Aramanızla eşleşen sonuç yok."
   },
   "leave": {
     "intro": "İzin bakiyeleriniz ve talepleriniz. Yöneticiler kendilerini bekleyen talepleri de burada onaylar.",

@@ -513,6 +513,8 @@
 .search:focus-within { border-color: var(--brass); box-shadow: var(--focus); }
 .search .material-icons-outlined { font-size: 20px; color: var(--text-faint); }
 .search input { flex: 1; border: none; background: none; outline: none; height: 100%; }
+/* Box khud focus dikhata hai (focus-within), andar wali double ring nahi */
+.search input:focus-visible { outline: none; }
 .select-sm {
   height: 40px;
   min-width: 160px;

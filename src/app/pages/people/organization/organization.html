@@ -12,6 +12,11 @@
         {{ 'org.tabs.' + t | translate }} <span class="tab-count num">{{ count(t) }}</span>
       </button>
     }
+    <label class="search org-search">
+      <span class="material-icons-outlined" aria-hidden="true">search</span>
+      <input type="search" [value]="query()" (input)="setQuery($any($event.target).value)"
+             [placeholder]="'org.search.' + tab() | translate" [attr.aria-label]="'org.search.' + tab() | translate" />
+    </label>
   </nav>
 
   <section class="panel panel-flush">
@@ -27,7 +32,7 @@
                 <td>{{ d.headName ?? '—' }}</td>
                 <td class="end num">{{ d.employeeCount }}</td>
               </tr>
-            } @empty { <tr><td colspan="4" class="dim">{{ 'org.empty' | translate }}</td></tr> }
+            } @empty { <tr><td colspan="4" class="dim">{{ (query().trim() ? 'org.noMatch' : 'org.empty') | translate }}</td></tr> }
           </tbody>
         </table>
       }
@@ -41,7 +46,7 @@
                 <td>@if (d.level) { <span class="level num">L{{ d.level }}</span> } @else { — }</td>
                 <td class="end num">{{ d.employeeCount }}</td>
               </tr>
-            } @empty { <tr><td colspan="3" class="dim">{{ 'org.empty' | translate }}</td></tr> }
+            } @empty { <tr><td colspan="3" class="dim">{{ (query().trim() ? 'org.noMatch' : 'org.empty') | translate }}</td></tr> }
           </tbody>
         </table>
       }
@@ -59,13 +64,13 @@
                 <td class="dim">{{ workDays(l.workWeekDays) }}</td>
                 <td class="end num">{{ l.employeeCount }}</td>
               </tr>
-            } @empty { <tr><td colspan="4" class="dim">{{ 'org.empty' | translate }}</td></tr> }
+            } @empty { <tr><td colspan="4" class="dim">{{ (query().trim() ? 'org.noMatch' : 'org.empty') | translate }}</td></tr> }
           </tbody>
         </table>
       }
     </div>
-    @if (count(tab()) > 0) {
-      <app-pagination [page]="page()" [pageSize]="pageSize()" [total]="count(tab())"
+    @if (shown(tab()) > 0) {
+      <app-pagination [page]="page()" [pageSize]="pageSize()" [total]="shown(tab())"
                       (pageChange)="setPage($event)" (pageSizeChange)="setPageSize($event)" />
     }
   </section>

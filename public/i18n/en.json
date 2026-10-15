@@ -1018,7 +1018,13 @@
     "none": "None",
     "levelHint": "Higher number = more senior. Used for sorting and reports.",
     "headOffice": "Head office",
-    "workWeekHint": "Used for leave days at this location."
+    "workWeekHint": "Used for leave days at this location.",
+    "search": {
+      "departments": "Search departments",
+      "designations": "Search designations",
+      "locations": "Search locations"
+    },
+    "noMatch": "Nothing matches your search."
   },
   "leave": {
     "intro": "Your leave balances and requests. Managers approve requests waiting for them here too.",
