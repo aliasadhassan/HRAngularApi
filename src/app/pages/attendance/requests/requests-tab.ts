@@ -6,6 +6,7 @@ import { Observable } from 'rxjs';
 import { LanguageService } from '../../../core/i18n/language.service';
 import { AlertService } from '../../../services/alert/alert';
 import { PayrollService } from '../../payroll/payroll.service';
+import { DEFAULT_PAGE_SIZE, PaginationComponent } from '../../../shared/pagination/pagination';
 import { AttendanceService } from '../attendance.service';
 import {
   AttendanceRequest, AttendanceRequestScope, AttendanceRequestStatus, AttendanceRequestType, Paged, REQUEST_STATUS_CHIP, hm, isoDate
@@ -14,7 +15,7 @@ import {
 /** Overtime aur Corrections & requests tabs — ek hi table, `overtime` input se filter. */
 @Component({
   selector: 'app-requests-tab',
-  imports: [DatePipe, FormsModule, TranslatePipe],
+  imports: [DatePipe, FormsModule, TranslatePipe, PaginationComponent],
   templateUrl: './requests-tab.html',
   styleUrl: './requests-tab.css'
 })
@@ -36,9 +37,8 @@ export class RequestsTabComponent implements OnInit {
   readonly scope = signal<AttendanceRequestScope>('Mine');
   status: AttendanceRequestStatus | '' = '';
   readonly page = signal(1);
-  readonly pageSize = 20;
+  readonly pageSize = signal(DEFAULT_PAGE_SIZE);
   readonly data = signal<Paged<AttendanceRequest> | null>(null);
-  readonly pages = computed(() => Math.max(1, Math.ceil((this.data()?.totalCount ?? 0) / this.pageSize)));
   readonly loading = signal(false);
   readonly busy = signal<string | null>(null);
   /** Approvals tab pe badge */
@@ -67,7 +67,7 @@ export class RequestsTabComponent implements OnInit {
 
   load(): void {
     this.loading.set(true);
-    this.api.requests({ scope: this.scope(), overtime: this.overtime(), status: this.status, page: this.page(), pageSize: this.pageSize }).subscribe({
+    this.api.requests({ scope: this.scope(), overtime: this.overtime(), status: this.status, page: this.page(), pageSize: this.pageSize() }).subscribe({
       next: d => {
         this.data.set(d);
         this.loading.set(false);
@@ -87,9 +87,14 @@ export class RequestsTabComponent implements OnInit {
     });
   }
 
-  goPage(p: number): void {
+  setPage(p: number): void {
     this.page.set(p);
     this.load();
+  }
+
+  setPageSize(size: number): void {
+    this.pageSize.set(size);
+    this.setPage(1);
   }
 
   // ── Submit ──

@@ -17,6 +17,7 @@ import {
 } from './attendance.models';
 import { RosterTabComponent } from './roster/roster-tab';
 import { RequestsTabComponent } from './requests/requests-tab';
+import { DEFAULT_PAGE_SIZE, PaginationComponent } from '../../shared/pagination/pagination';
 
 type Tab = 'timesheet' | 'roster' | 'overtime' | 'requests';
 
@@ -26,7 +27,7 @@ type Tab = 'timesheet' | 'roster' | 'overtime' | 'requests';
  */
 @Component({
   selector: 'app-attendance',
-  imports: [DatePipe, FormsModule, TranslatePipe, RosterTabComponent, RequestsTabComponent],
+  imports: [DatePipe, FormsModule, TranslatePipe, PaginationComponent, RosterTabComponent, RequestsTabComponent],
   templateUrl: './attendance.html',
   styleUrl: './attendance.css'
 })
@@ -74,8 +75,7 @@ export class AttendanceComponent {
     lateOnly: false
   };
   readonly page = signal(1);
-  readonly pageSize = 50;
-  readonly pages = computed(() => Math.max(1, Math.ceil((this.sheet()?.totalCount ?? 0) / this.pageSize)));
+  readonly pageSize = signal(DEFAULT_PAGE_SIZE);
 
   // Day overview (HR)
   summaryDate = isoDate(new Date());
@@ -165,15 +165,20 @@ export class AttendanceComponent {
     this.loadSheet();
   }
 
-  goPage(p: number): void {
+  setPage(p: number): void {
     this.page.set(p);
     this.loadSheet();
+  }
+
+  setPageSize(size: number): void {
+    this.pageSize.set(size);
+    this.setPage(1);
   }
 
   loadSheet(): void {
     const f = this.filter;
     this.loading.set(true);
-    this.api.timesheet({ ...f, page: this.page(), pageSize: this.pageSize }).subscribe({
+    this.api.timesheet({ ...f, page: this.page(), pageSize: this.pageSize() }).subscribe({
       next: s => {
         this.sheet.set(s);
         this.loading.set(false);

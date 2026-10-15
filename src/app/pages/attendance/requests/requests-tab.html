@@ -90,14 +90,9 @@
       </tbody>
     </table>
   </div>
-  @if (pages() > 1) {
-    <footer class="pager">
-      <span class="num dim">{{ 'attendance.pageOf' | translate: { page: page(), pages: pages(), total: data()?.totalCount } }}</span>
-      <div class="pager-buttons">
-        <button type="button" class="icon-btn-sm" [disabled]="page() <= 1" (click)="goPage(page() - 1)" [attr.aria-label]="'admin.users.prev' | translate"><span class="material-icons-outlined flip" aria-hidden="true">chevron_left</span></button>
-        <button type="button" class="icon-btn-sm" [disabled]="page() >= pages()" (click)="goPage(page() + 1)" [attr.aria-label]="'admin.users.next' | translate"><span class="material-icons-outlined flip" aria-hidden="true">chevron_right</span></button>
-      </div>
-    </footer>
+  @if ((data()?.totalCount ?? 0) > 0) {
+    <app-pagination [page]="page()" [pageSize]="pageSize()" [total]="data()?.totalCount ?? 0" [disabled]="loading()"
+                    (pageChange)="setPage($event)" (pageSizeChange)="setPageSize($event)" />
   }
 </section>
 
