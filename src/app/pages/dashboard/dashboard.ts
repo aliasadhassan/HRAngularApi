@@ -5,10 +5,12 @@ import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { catchError, forkJoin, map, Observable, of, startWith } from 'rxjs';
 import { ChartComponent } from '../../shared/widgets/chart/chart';
+import { PayrollBgComponent } from '../../shared/widgets/payroll-bg/payroll-bg.component';
+import { TiltDirective } from '../../shared/directives/tilt.directive';
+import { CountUpDirective } from '../../shared/directives/count-up.directive';
 import { AmountPipe } from '../../shared/pipes/amount.pipe';
 import { LanguageService } from '../../core/i18n/language.service';
 import { CurrentUserService } from '../../core/auth/current-user';
-import { buildGuilloche } from '../../shared/guilloche/guilloche';
 import { P, PermissionService } from '../../core/auth/permissions';
 import { AlertService } from '../../services/alert/alert';
 import { LeaveService } from '../leave/leave.service';
@@ -28,7 +30,7 @@ const day = (iso: string) => {
 
 @Component({
   selector: 'app-dashboard',
-  imports: [DatePipe, RouterLink, TranslatePipe, ChartComponent, AmountPipe],
+  imports: [DatePipe, RouterLink, TranslatePipe, ChartComponent, AmountPipe, PayrollBgComponent, TiltDirective, CountUpDirective],
   templateUrl: './dashboard.html',
   styleUrl: './dashboard.css'
 })
@@ -41,9 +43,10 @@ export class DashboardComponent {
   private readonly alert = inject(AlertService);
 
   readonly lang = this.language.language;
+  /** Count-up numbers isi locale mein (latin digits, baqi page ki tarah) */
+  readonly numLocale = computed(() => `${this.lang()}-u-nu-latn`);
   readonly firstName = inject(CurrentUserService).get().name.split(' ')[0];
   readonly today = new Date();
-  readonly guilloche = buildGuilloche();
 
   readonly greetingKey = (() => {
     const h = this.today.getHours();

@@ -41,19 +41,9 @@
   <!-- Banknote + aaj ki haazri -->
   <div class="row row-hero" [class.solo]="!showNote()">
     @if (showNote() && p) {
-    <article class="note" [attr.aria-label]="'dashboard.note.label' | translate">
-      <svg class="note-art" viewBox="0 0 640 400" preserveAspectRatio="xMaxYMid slice" aria-hidden="true">
-        <g class="rosettes">
-          @for (d of guilloche.rosettes; track $index) {
-            <path [attr.d]="d" pathLength="1" [style.animation-delay.ms]="$index * 60" />
-          }
-        </g>
-        <g class="waves">
-          @for (d of guilloche.waves; track $index) {
-            <path [attr.d]="d" />
-          }
-        </g>
-      </svg>
+    <article class="note" appTilt [tiltMax]="2.5" [tiltLift]="0" [attr.aria-label]="'dashboard.note.label' | translate">
+      <!-- 3D brass particle wave (replaces the guilloche SVG) -->
+      <app-payroll-bg />
 
       <div class="note-frame" aria-hidden="true"></div>
 
@@ -67,7 +57,7 @@
 
         <div class="note-figure num">
           <span class="note-currency">{{ p.currencyCode }}</span>
-          <span class="note-amount">{{ p.net | amount: lang() }}</span>
+          <span class="note-amount" [appCountUp]="p.net" [locale]="numLocale()" [duration]="1400"></span>
         </div>
         <p class="note-caption">
           {{ 'dashboard.note.caption' | translate: { count: p.employees, date: (payDate() | date: 'EEEE, d MMMM' : undefined : lang()) } }}
@@ -107,7 +97,7 @@
       </header>
 
       <p class="today-figure num">
-        <strong>{{ atWork() }}</strong>
+        <strong [appCountUp]="atWork()" [locale]="numLocale()"></strong>
         <span>{{ 'dashboard.today.ofTotal' | translate: { total: a.total } }}</span>
       </p>
 
@@ -156,22 +146,22 @@
   <section class="ledger num" [attr.aria-label]="'dashboard.ledger.label' | translate">
     <div class="ledger-cell">
       <span class="ledger-label">{{ 'dashboard.ledger.headcount' | translate }}</span>
-      <span class="ledger-value">{{ s.headcount }}</span>
+      <span class="ledger-value" [appCountUp]="s.headcount" [locale]="numLocale()"></span>
       <span class="ledger-note" [class.up]="s.headcountChange > 0">{{ 'dashboard.ledger.headcountChange' | translate: { count: (s.headcountChange > 0 ? '+' : '') + s.headcountChange } }}</span>
     </div>
     <div class="ledger-cell">
       <span class="ledger-label">{{ 'dashboard.ledger.joined' | translate }}</span>
-      <span class="ledger-value">{{ s.joinedThisMonth }}</span>
+      <span class="ledger-value" [appCountUp]="s.joinedThisMonth" [locale]="numLocale()"></span>
       <span class="ledger-note">{{ today | date: 'MMMM' : undefined : lang() }}</span>
     </div>
     <div class="ledger-cell">
       <span class="ledger-label">{{ 'dashboard.ledger.attrition' | translate }}</span>
-      <span class="ledger-value">{{ s.attritionRate | amount: lang() : 'full' : 1 }}<small>%</small></span>
+      <span class="ledger-value"><span [appCountUp]="s.attritionRate" [decimals]="1" [locale]="numLocale()"></span><small>%</small></span>
       <span class="ledger-note">{{ 'dashboard.ledger.last12' | translate }}</span>
     </div>
     <div class="ledger-cell">
       <span class="ledger-label">{{ 'dashboard.ledger.tenure' | translate }}</span>
-      <span class="ledger-value">{{ s.averageTenureYears | amount: lang() : 'full' : 1 }}</span>
+      <span class="ledger-value" [appCountUp]="s.averageTenureYears" [decimals]="1" [locale]="numLocale()"></span>
       <span class="ledger-note">{{ 'dashboard.ledger.years' | translate }}</span>
     </div>
   </section>

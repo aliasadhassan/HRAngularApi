@@ -326,3 +326,13 @@ tr.is-dim .avatar {
     flex: 1;
   }
 }
+.tag-sso {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px; /* Icon aur text ke darmiyan fasla */
+}
+
+.ms-icon {
+  width: 14px;  /* Icon ka size adjust karne ke liye */
+  height: 14px;
+}
