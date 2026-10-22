@@ -78,17 +78,16 @@
                       <span class="cell-sub">
                         {{ u.email }}
                         @if (u.isSso) {
-  <span class="tag tag-sso" [attr.title]="'admin.users.ssoHint' | translate">
-    <svg class="ms-icon" xmlns="http://w3.org" viewBox="0 0 23 23">
-      <path fill="#f35325" d="M0 0h11v11H0z"/>
-      <path fill="#81bc06" d="M12 0h11v11H12z"/>
-      <path fill="#00a4ef" d="M0 12h11v11H0z"/>
-      <path fill="#ffb900" d="M12 12h11v11H12z"/>
-    </svg>
-    Microsoft
-  </span>
-}
-
+                            <span class="tag tag-sso" [attr.title]="'admin.users.ssoHint' | translate">
+                              <svg class="ms-icon" xmlns="http://w3.org" viewBox="0 0 23 23">
+                                <path fill="#f35325" d="M0 0h11v11H0z"/>
+                                <path fill="#81bc06" d="M12 0h11v11H12z"/>
+                                <path fill="#00a4ef" d="M0 12h11v11H0z"/>
+                                <path fill="#ffb900" d="M12 12h11v11H12z"/>
+                              </svg>
+                              Microsoft
+                            </span>
+                          }
                       </span>
                     </span>
                   </div>
